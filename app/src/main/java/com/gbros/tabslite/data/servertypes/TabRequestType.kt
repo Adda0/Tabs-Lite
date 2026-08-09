@@ -8,11 +8,7 @@ import com.gbros.tabslite.data.chord.ChordVariation
 import com.gbros.tabslite.data.chord.Instrument
 import com.gbros.tabslite.data.tab.TabDataType
 import com.gbros.tabslite.data.tab.TabTuning
-import com.google.firebase.firestore.Exclude
-import com.google.firebase.firestore.IgnoreExtraProperties
-import com.google.firebase.firestore.PropertyName
 
-@IgnoreExtraProperties
 class TabRequestType(
     var id: String = "",
     var song_id: String = "",
@@ -34,11 +30,7 @@ class TabRequestType(
     var difficulty: String = "",
     var tuning: String = TabTuning.Standard.toString(),
     var capo: Int = 0,
-
-    // firestore uses Java Bean convention for converting between class and data types; this prevents firestore from removing the *is* prefix
-    // @set sets this property when read from firestore, @get reads this property when writing to firestore
-    // https://stackoverflow.com/a/63980376/3437608, https://firebase.google.com/docs/reference/kotlin/com/google/firebase/firestore/PropertyName
-    @get:PropertyName("is_tab_ml") @set:PropertyName("is_tab_ml") var is_tab_ml: Boolean = false,
+    var is_tab_ml: Boolean = false,
 
     var song_genre: String = "",
     var ug_difficulty: String = "",
@@ -82,7 +74,6 @@ class TabRequestType(
 
     class ContributorInfo(var user_id: String = "0", var username: String = "Unregistered")
     class ChordInfo(var chord: String = "", var variations: List<VarInfo> = emptyList()) {
-        @IgnoreExtraProperties
         class VarInfo(
             var id: String = "", var listCapos: List<CapoInfo> = emptyList(), var noteIndex: Int = 0, var notes: List<Int> = emptyList(), var frets: List<Int> = emptyList(), var fingers: List<Int> = emptyList(), var fret: Int = 0) {
             class CapoInfo(var fret: Int = 0, var startString: Int = 0, var lastString: Int = 0, var finger: Int = 0)
@@ -160,7 +151,6 @@ class TabRequestType(
         }
     }
 
-    @Exclude // don't create a property `tabFull` when writing to firestore
     fun getTabFull(): TabDataType {
         val tab = TabDataType(
             tabId = id,
@@ -184,9 +174,94 @@ class TabRequestType(
             contributorUserName = contributor.username,
             versionsCount = versions_count,
             versionDescription = version_description ?: "",
-            content = content
+            content = convertChordMarkup(content)
         )
 
         return tab
+    }
+
+    companion object {
+        private val UG_CHORD_TAG_REGEX = Regex("\\[ch](.*?)\\[/ch]")
+        private val APP_CHORD_TAG_REGEX = Regex("\\{ch:([^}]*)\\}")
+        private const val TAB_OPEN_TAG = "[tab]"
+        private const val TAB_CLOSE_TAG = "[/tab]"
+
+        /**
+         * Converts Ultimate Guitar's raw chord markup into the app's internal format.
+         *
+         * UG puts chords on their own line above the lyric line they apply to (standard chord-sheet
+         * convention), each couplet individually wrapped like:
+         * `[tab]  [ch]C[/ch]                 [ch]Am[/ch]\nI heard there was a secret chord[/tab]`.
+         * The app's renderer (TabContentBlockView) instead expects each chord embedded inline within
+         * its lyric line, floating above the exact character it applies to - it reserves headroom for
+         * this per rendered line, so a separate chord-only line before its lyric line doubles that
+         * headroom and reads as a phantom blank line. So after converting the tag syntax, merge each
+         * chord-only line into the lyric line immediately following it, at the column each chord would
+         * occupy if collapsed to its bare name (i.e. undoing the tag markup's own width).
+         */
+        private fun convertChordMarkup(rawContent: String): String {
+            // normalize line endings first: mixed \r\n/\n in the raw content would otherwise leave a
+            // trailing \r on some lines, silently breaking the startsWith/endsWith [tab] tag checks below
+            val normalized = rawContent.replace("\r\n", "\n").replace("\r", "\n")
+            val convertedTags = UG_CHORD_TAG_REGEX.replace(normalized) { matchResult -> "{ch:${matchResult.groupValues[1]}}" }
+            return mergeChordOnlyLines(convertedTags)
+        }
+
+        private fun isChordOnlyLine(line: String): Boolean {
+            val withoutTabOpen = line.removePrefix(TAB_OPEN_TAG)
+            return APP_CHORD_TAG_REGEX.containsMatchIn(line) && APP_CHORD_TAG_REGEX.replace(withoutTabOpen, "").isBlank()
+        }
+
+        private fun mergeChordOnlyLines(content: String): String {
+            val lines = content.split("\n")
+            val result = mutableListOf<String>()
+            var i = 0
+            while (i < lines.size) {
+                val line = lines[i]
+                val nextLine = lines.getOrNull(i + 1)
+                val nextLineBody = nextLine?.removeSuffix(TAB_CLOSE_TAG)
+                if (isChordOnlyLine(line) && nextLineBody != null && APP_CHORD_TAG_REGEX.replace(nextLineBody, "").isNotBlank()) {
+                    result.add(mergeChordLineIntoLyricLine(line, nextLine!!))
+                    i += 2
+                } else {
+                    result.add(line)
+                    i++
+                }
+            }
+            return result.joinToString("\n")
+        }
+
+        /**
+         * Inserts each chord tag from [chordLine] into [lyricLine] at the column it would occupy if
+         * the tags on [chordLine] were collapsed down to their bare chord names (undoing the extra
+         * width `{ch:...}` markup adds over the plain chord name it wraps). Preserves a leading
+         * `[tab]` on [chordLine] and/or a trailing `[/tab]` on [lyricLine] around the merged result.
+         */
+        private fun mergeChordLineIntoLyricLine(chordLine: String, lyricLine: String): String {
+            val tabPrefix = if (chordLine.startsWith(TAB_OPEN_TAG)) TAB_OPEN_TAG else ""
+            val chordLineBody = chordLine.removePrefix(TAB_OPEN_TAG)
+
+            val tabSuffix = if (lyricLine.endsWith(TAB_CLOSE_TAG)) TAB_CLOSE_TAG else ""
+            val lyricLineBody = lyricLine.removeSuffix(TAB_CLOSE_TAG)
+
+            var displayColumn = 0
+            var lastRawEnd = 0
+            val insertions = mutableListOf<Pair<Int, String>>()
+            for (match in APP_CHORD_TAG_REGEX.findAll(chordLineBody)) {
+                displayColumn += match.range.first - lastRawEnd // literal characters (e.g. spaces) before this chord
+                insertions.add(displayColumn to match.value)
+                displayColumn += match.groupValues[1].length // bare chord name width, e.g. "Am" -> 2
+                lastRawEnd = match.range.last + 1
+            }
+
+            val builder = StringBuilder(lyricLineBody)
+            var insertedSoFar = 0
+            for ((column, tag) in insertions) {
+                val insertPosition = (column + insertedSoFar).coerceIn(0, builder.length)
+                builder.insert(insertPosition, tag)
+                insertedSoFar += tag.length
+            }
+            return tabPrefix + builder.toString() + tabSuffix
+        }
     }
 }

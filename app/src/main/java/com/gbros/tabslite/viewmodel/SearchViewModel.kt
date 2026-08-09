@@ -155,11 +155,6 @@ class SearchViewModel
 
     init {
         viewModelScope.launch {
-            // fetch exact matches for the query
-            BackendConnection.fetchAllTabsBySongName(query, dataAccess, allowPending)
-        }
-
-        viewModelScope.launch {
             exactMatches.collect {
                 if (it.isNotEmpty()) {
                     val previousResults = results.value?.toMutableList() ?: mutableListOf()

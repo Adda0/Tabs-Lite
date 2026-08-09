@@ -33,8 +33,6 @@ import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.view.tabview.ITabViewState
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -60,8 +58,6 @@ class TabViewModel
     @Assisted private val urlHandler: UriHandler,
     @Assisted private val onNavigateToPlaylistEntry: (Int) -> Unit
 ) : ViewModel(), ITabViewState {
-
-    val db = Firebase.firestore
 
     //#region dependency injection factory
 

@@ -6,7 +6,6 @@ import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.playlist.DataPlaylistEntry
 import com.gbros.tabslite.data.playlist.IDataPlaylistEntry
 import com.gbros.tabslite.data.playlist.Playlist
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.parcelize.Parcelize
 
 @Parcelize  // used for playlist reordering

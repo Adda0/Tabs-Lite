@@ -35,12 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.R
+import com.gbros.tabslite.data.AppDatabase
 import com.gbros.tabslite.data.tab.SongGenre
 import com.gbros.tabslite.view.card.ErrorCard
 import com.gbros.tabslite.view.card.InfoCard
@@ -57,8 +59,9 @@ fun NavController.navigateToCreateSong(title: String = "") {
 fun NavGraphBuilder.createSongScreen(onNavigateBack: () -> Unit, navigateToCreateTabContent: (String) -> Unit) {
     composable(route = CREATE_SONG_ROUTE.format("{$CREATE_SONG_NAV_ARG}")) {
         val title = it.arguments?.getString(CREATE_SONG_NAV_ARG) ?: ""
+        val db = AppDatabase.getInstance(LocalContext.current)
         val createSongViewModel: CreateSongViewModel = hiltViewModel<CreateSongViewModel, CreateSongViewModel.CreateSongViewModelFactory> { factory ->
-            factory.create(initialSongName = title) }
+            factory.create(initialSongName = title, dataAccess = db.dataAccess()) }
 
         CreateSongScreen(
             viewState = createSongViewModel,

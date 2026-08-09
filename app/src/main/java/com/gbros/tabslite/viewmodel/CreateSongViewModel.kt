@@ -8,6 +8,7 @@ import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.R
+import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.servertypes.SongRequestType
 import com.gbros.tabslite.data.tab.SongGenre
 import com.gbros.tabslite.utilities.BackendConnection
@@ -24,14 +25,15 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel(assistedFactory = CreateSongViewModel.CreateSongViewModelFactory::class)
 class CreateSongViewModel @AssistedInject constructor(
-    @Assisted initialSongName: String
+    @Assisted initialSongName: String,
+    @Assisted private val dataAccess: DataAccess
 ) : ViewModel(), ICreateSongViewState {
 
     //#region dependency injection factory
 
     @AssistedFactory
     interface CreateSongViewModelFactory {
-        fun create(initialSongName: String = ""): CreateSongViewModel
+        fun create(initialSongName: String = "", dataAccess: DataAccess): CreateSongViewModel
     }
 
     //#endregion dependency injection factory
@@ -72,7 +74,7 @@ class CreateSongViewModel @AssistedInject constructor(
                 versions_count = 0,
                 status = "pending"
             )
-            val songId = BackendConnection.createSong(song)
+            val songId = BackendConnection.createSong(song, dataAccess)
             newSongId.postValue(songId)
             songCreationState.postValue(LoadingState.Success)
         }.invokeOnCompletion { throwable ->
@@ -103,7 +105,7 @@ class CreateSongViewModel @AssistedInject constructor(
         // attempt to fetch an artist ID for the artist name
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                artistId.postValue(BackendConnection.fetchArtistId(name.trim()))
+                artistId.postValue(BackendConnection.fetchArtistId(name.trim(), dataAccess))
                 artistFetchState.postValue(LoadingState.Success)
             } catch (ex: Resources.NotFoundException) {
                 artistFetchState.postValue(LoadingState.Error(messageStringRef = R.string.message_artist_name_not_found))

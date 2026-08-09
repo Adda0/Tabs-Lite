@@ -158,7 +158,6 @@ class HomeActivity : ComponentActivity() {
                     Log.d(TAG, "New empty tabs to fetch: ${idsToFetch.size}. Total pending: ${currentlyFetching.size}")
 
                     // Process in chunks to avoid overwhelming the network or database
-                    // firestore has a max of 30 disjunctions, multiply this by two for status in [accepted, pending]
                     idsToFetch.chunked(15).forEach { batch ->
                         scope.launch {
                             try {

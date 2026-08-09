@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.daggerHilt)
     alias(libs.plugins.navigationSafeargs)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.google.services)
 
     alias(libs.plugins.sentry)
 }
@@ -97,8 +96,6 @@ dependencies {
     implementation(libs.org.jetbrains.kotlinx.coroutines.core)
     implementation(libs.org.jetbrains.kotlinx.serialization.json)
     implementation(libs.compose.reorderable)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.firestore)
     implementation(libs.chrynan.chords.compose)
 
     // Debug dependencies

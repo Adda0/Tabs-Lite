@@ -175,7 +175,7 @@ class CreateTabViewModel @AssistedInject constructor(
             )
 
             CoroutineScope(Dispatchers.IO).async {
-                val completedTab = BackendConnection.createTab(tab = newTab)
+                val completedTab = BackendConnection.createTab(tab = newTab, dataAccess = dataAccess)
                 createdTabId.value = completedTab.tabId
                 dataAccess.upsert(completedTab)
                 dataAccess.insertToFavorites(completedTab.tabId, 0)
@@ -217,7 +217,7 @@ class CreateTabViewModel @AssistedInject constructor(
         // ensure that the song name has been fetched
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val songDetails = BackendConnection.fetchSongDetails(selectedSongId)
+                val songDetails = BackendConnection.fetchSongDetails(selectedSongId, dataAccess)
                 if (songDetails == null) {
                     Log.e(TAG, "Error fetching song details for tab creation")
                     selectedSongName.value = "Error: $selectedSongId not found."

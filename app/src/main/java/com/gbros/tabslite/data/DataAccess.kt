@@ -3,6 +3,7 @@ package com.gbros.tabslite.data
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.map
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -95,6 +96,27 @@ interface DataAccess {
 
     @Query("SELECT *, 0 as transpose FROM tabs WHERE song_id = :songId LIMIT 1")
     fun getFirstTabBySongId(songId: String): LiveData<Tab?>
+
+    /**
+     * Look up the artist_id of any locally-known tab (Ultimate Guitar-sourced or user-created)
+     * with a matching artist name. Used when creating a new song locally, so it attaches to an
+     * existing artist instead of always minting a new one.
+     */
+    @Query("SELECT artist_id FROM tabs WHERE artist_name = :artistName LIMIT 1")
+    suspend fun findArtistId(artistName: String): String?
+
+    /**
+     * Look up the song_id of an existing local tab matching the given song info, so re-creating
+     * the same song reuses its id instead of splitting versions across two song ids.
+     */
+    @Query("SELECT song_id FROM tabs WHERE song_name = :songName AND artist_name = :artistName AND artist_id = :artistId AND song_genre = :songGenre LIMIT 1")
+    suspend fun findSongId(songName: String, artistName: String, artistId: String, songGenre: String): String?
+
+    /**
+     * Look up song info by song_id from any locally-known tab already created for that song.
+     */
+    @Query("SELECT song_name, artist_name, artist_id, song_genre FROM tabs WHERE song_id = :songId LIMIT 1")
+    suspend fun findSongInfoBySongId(songId: String): SongInfo?
 
     @Upsert
     suspend fun upsert(tab: TabDataType)
@@ -359,3 +381,13 @@ interface DataAccess {
 
     //#endregion
 }
+
+/**
+ * Projection of the song-identifying columns of a [Tab] row, returned by [DataAccess.findSongInfoBySongId].
+ */
+data class SongInfo(
+    @ColumnInfo(name = "song_name") val songName: String,
+    @ColumnInfo(name = "artist_name") val artistName: String,
+    @ColumnInfo(name = "artist_id") val artistId: String,
+    @ColumnInfo(name = "song_genre") val songGenre: String,
+)
