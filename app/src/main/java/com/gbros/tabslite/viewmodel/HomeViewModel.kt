@@ -1,6 +1,8 @@
 package com.gbros.tabslite.viewmodel
 
 import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.LiveData
@@ -16,6 +18,7 @@ import com.gbros.tabslite.data.ThemeSelection
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.data.playlist.PlaylistFileExportType
 import com.gbros.tabslite.utilities.BackendConnection
+import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.view.homescreen.IHomeViewState
@@ -91,6 +94,11 @@ class HomeViewModel
     override val selectedFontStyle: LiveData<FontStyle> = dataAccess.getLivePreference(Preference.FONT_STYLE).map { stylePreference ->
         stylePreference?.let { FontStyle.valueOf(stylePreference.value) } ?: FontStyle.Modern
     }
+
+    /**
+     * The content:// tree URI of the user's chosen local song folder, or null if none has been chosen
+     */
+    override val localImportFolderUri: LiveData<String?> = dataAccess.getLivePreference(Preference.LOCAL_IMPORT_FOLDER_URI).map { it?.value }
 
     //#endregion
 
@@ -274,6 +282,47 @@ class HomeViewModel
         CoroutineScope(Dispatchers.IO).launch {
             val newPlaylist = Playlist(userCreated = true, title = title, description = description, dateCreated = System.currentTimeMillis(), dateModified = System.currentTimeMillis())
             dataAccess.upsert(newPlaylist)
+        }
+    }
+
+    /**
+     * Import (or re-import) songs from the given local folder into a "Local Files" playlist.
+     * Persists the folder's URI so future rescans (including [rescanLocalSongsFolder]) don't need
+     * the user to pick it again.
+     */
+    fun importLocalSongsFolder(folderUri: Uri, context: Context) {
+        context.contentResolver.takePersistableUriPermission(folderUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        playlistImportState.postValue(LoadingState.Loading)
+        playlistImportProgress.postValue(0.02f)
+
+        val importJob = CoroutineScope(Dispatchers.IO).async {
+            dataAccess.upsert(Preference(Preference.LOCAL_IMPORT_FOLDER_URI, folderUri.toString()))
+            LocalFileImporter.importFromFolder(
+                treeUri = folderUri,
+                context = context,
+                dataAccess = dataAccess,
+                onProgressChange = { progress -> playlistImportProgress.postValue(progress) }
+            )
+        }
+        importJob.invokeOnCompletion { ex ->
+            if (ex != null) {
+                playlistImportState.postValue(LoadingState.Error(R.string.message_playlist_import_export_unexpected_error))
+                Log.e(TAG, "Unexpected error during local song folder import: ${ex.message}", ex)
+            } else {
+                playlistImportState.postValue(LoadingState.Success)
+            }
+            playlistImportProgress.postValue(0f)
+        }
+    }
+
+    /**
+     * Re-scan the previously-chosen local song folder (if any) for new/changed/removed files.
+     */
+    fun rescanLocalSongsFolder(context: Context) {
+        val savedUri = localImportFolderUri.value
+        if (!savedUri.isNullOrBlank()) {
+            importLocalSongsFolder(Uri.parse(savedUri), context)
         }
     }
 

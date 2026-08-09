@@ -6,6 +6,8 @@
     <string name="app_about" translation_description="A brief description of the app, for use in the About dialog." tools:ignore="TypographyOther">TabsLite is a free, open source guitar tablature app with over a million songs available using existing popular tabs databases. It\'s built for speed and simplicity, 100% free with no ads. Managed by More Than Solitaire, Inc, a 501(c)(3) nonprofit dedicated to software learning.</string>
     <string name="app_action_export_playlists" translation_description="The button text to export playlists">Export favorites and playlists</string>
     <string name="app_action_import_playlists" translation_description="The button text to export playlists">Import favorites and playlists</string>
+    <string name="app_action_import_local_songs_folder" translation_description="The button text to import songs from a local folder">Import songs from folder</string>
+    <string name="app_action_rescan_local_songs_folder" translation_description="The button text to rescan the previously chosen local songs folder">Rescan local songs folder</string>
     <string name="app_action_leave_review" translation_description="The button text to leave a review">Leave review</string>
     <string name="app_action_donate" translation_description="The button text to donate to TabsLite">Donate</string>
     <string name="app_action_search" translation_description="The placeholder text for the search bar">Search TabsLite</string>

@@ -18,6 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -67,7 +69,10 @@ fun AboutDialog(
     onImportPlaylistsClicked: () -> Unit,
     onNavigateToCreateTab: () -> Unit,
     onSwitchThemeMode: (ThemeSelection) -> Unit,
-    onSwitchFontStyle: (FontStyle) -> Unit
+    onSwitchFontStyle: (FontStyle) -> Unit,
+    hasLocalSongsFolder: Boolean = false,
+    onImportLocalSongsFolderClicked: () -> Unit = {},
+    onRescanLocalSongsFolderClicked: () -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -134,7 +139,10 @@ fun AboutDialog(
                                     ImportExportActionsCompact(
                                         onImportPlaylistsClicked = onImportPlaylistsClicked,
                                         onExportPlaylistsClicked = onExportPlaylistsClicked,
-                                        onNavigateToCreateTab = onNavigateToCreateTab
+                                        onNavigateToCreateTab = onNavigateToCreateTab,
+                                        hasLocalSongsFolder = hasLocalSongsFolder,
+                                        onImportLocalSongsFolderClicked = onImportLocalSongsFolderClicked,
+                                        onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked
                                     )
 
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -172,7 +180,10 @@ fun AboutDialog(
                         ImportExportActionsCard(
                             onImportPlaylistsClicked = onImportPlaylistsClicked,
                             onExportPlaylistsClicked = onExportPlaylistsClicked,
-                            onNavigateToCreateTab = onNavigateToCreateTab
+                            onNavigateToCreateTab = onNavigateToCreateTab,
+                            hasLocalSongsFolder = hasLocalSongsFolder,
+                            onImportLocalSongsFolderClicked = onImportLocalSongsFolderClicked,
+                            onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked
                         )
                         ReviewDonateButtons()
                     }
@@ -421,6 +432,9 @@ private fun ImportExportActionsCard(
     onImportPlaylistsClicked: () -> Unit,
     onExportPlaylistsClicked: () -> Unit,
     onNavigateToCreateTab: () -> Unit,
+    hasLocalSongsFolder: Boolean = false,
+    onImportLocalSongsFolderClicked: () -> Unit = {},
+    onRescanLocalSongsFolderClicked: () -> Unit = {},
     compact: Boolean = false
 ) {
     val rowPadding = if (compact) 4.dp else 8.dp
@@ -459,6 +473,36 @@ private fun ImportExportActionsCard(
                     style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
                 )
             }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(all = rowPadding)
+                    .fillMaxWidth()
+                    .clickable { onImportLocalSongsFolderClicked() }
+            ) {
+                Icon(modifier = Modifier.padding(all = iconPadding), imageVector = Icons.Default.Folder, contentDescription = "")
+                Text(
+                    modifier = Modifier.padding(all = iconPadding),
+                    text = stringResource(id = R.string.app_action_import_local_songs_folder),
+                    style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+                )
+            }
+            if (hasLocalSongsFolder) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .padding(all = rowPadding)
+                        .fillMaxWidth()
+                        .clickable { onRescanLocalSongsFolderClicked() }
+                ) {
+                    Icon(modifier = Modifier.padding(all = iconPadding), imageVector = Icons.Default.Refresh, contentDescription = "")
+                    Text(
+                        modifier = Modifier.padding(all = iconPadding),
+                        text = stringResource(id = R.string.app_action_rescan_local_songs_folder),
+                        style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
             TextButton(onClick = onNavigateToCreateTab) {
                 Text(
                     text = "Create New Tab",
@@ -473,7 +517,10 @@ private fun ImportExportActionsCard(
 private fun ImportExportActionsCompact(
     onImportPlaylistsClicked: () -> Unit,
     onExportPlaylistsClicked: () -> Unit,
-    onNavigateToCreateTab: () -> Unit
+    onNavigateToCreateTab: () -> Unit,
+    hasLocalSongsFolder: Boolean = false,
+    onImportLocalSongsFolderClicked: () -> Unit = {},
+    onRescanLocalSongsFolderClicked: () -> Unit = {}
 ) {
     val rowPadding = 4.dp
     val iconPadding = 4.dp
@@ -505,6 +552,36 @@ private fun ImportExportActionsCompact(
                 text = stringResource(id = R.string.app_action_export_playlists),
                 style = MaterialTheme.typography.bodySmall
             )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(all = rowPadding)
+                .fillMaxWidth()
+                .clickable { onImportLocalSongsFolderClicked() }
+        ) {
+            Icon(modifier = Modifier.padding(all = iconPadding), imageVector = Icons.Default.Folder, contentDescription = "")
+            Text(
+                modifier = Modifier.padding(all = iconPadding),
+                text = stringResource(id = R.string.app_action_import_local_songs_folder),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (hasLocalSongsFolder) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(all = rowPadding)
+                    .fillMaxWidth()
+                    .clickable { onRescanLocalSongsFolderClicked() }
+            ) {
+                Icon(modifier = Modifier.padding(all = iconPadding), imageVector = Icons.Default.Refresh, contentDescription = "")
+                Text(
+                    modifier = Modifier.padding(all = iconPadding),
+                    text = stringResource(id = R.string.app_action_rescan_local_songs_folder),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
         TextButton(onClick = onNavigateToCreateTab) {
             Text(

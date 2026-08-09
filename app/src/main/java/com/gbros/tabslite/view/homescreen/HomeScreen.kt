@@ -2,6 +2,7 @@ package com.gbros.tabslite.view.homescreen
 
 import android.app.Activity.RESULT_OK
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
@@ -107,6 +108,8 @@ fun NavGraphBuilder.homeScreen(
             onNavigateToSearch = onNavigateToSearch,
             onExportPlaylists = viewModel::exportPlaylists,
             onImportPlaylists = viewModel::importPlaylists,
+            onImportLocalSongsFolder = viewModel::importLocalSongsFolder,
+            onRescanLocalSongsFolder = viewModel::rescanLocalSongsFolder,
             onCreatePlaylist = viewModel::createPlaylist,
             onThemeSelectionChange = viewModel::setAppTheme,
             onFontStyleSelectionChange = viewModel::setTextStyle,
@@ -131,6 +134,8 @@ fun HomeScreen(
     onNavigateToSearch: (query: String) -> Unit,
     onExportPlaylists: (destinationFile: Uri, contentResolver: ContentResolver) -> Unit,
     onImportPlaylists: (sourceFile: Uri, contentResolver: ContentResolver) -> Unit,
+    onImportLocalSongsFolder: (folderUri: Uri, context: Context) -> Unit,
+    onRescanLocalSongsFolder: (context: Context) -> Unit,
     onCreatePlaylist: (title: String, description: String) -> Unit,
     onThemeSelectionChange: (ThemeSelection) -> Unit,
     onFontStyleSelectionChange: (FontStyle) -> Unit,
@@ -153,7 +158,8 @@ fun HomeScreen(
     var pagerNav by remember { mutableIntStateOf(-1) }
     
     var showAboutDialog by remember { mutableStateOf(false) }
-    val contentResolver = LocalContext.current.contentResolver
+    val context = LocalContext.current
+    val contentResolver = context.contentResolver
 
     // handle playlist data export
     val exportDataFilePickerActivityLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
@@ -166,6 +172,13 @@ fun HomeScreen(
     val importPlaylistsPickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { fileToImport ->
         if (fileToImport != null) {
             onImportPlaylists(fileToImport, contentResolver)
+        } // else: user cancelled the action
+    }
+
+    // handle picking a local folder to import songs from
+    val importLocalSongsFolderPickerLauncher = rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocumentTree()) { folderUri ->
+        if (folderUri != null) {
+            onImportLocalSongsFolder(folderUri, context)
         } // else: user cancelled the action
     }
 
@@ -190,6 +203,17 @@ fun HomeScreen(
 
                 // launch a file picker to choose the file to import
                 importPlaylistsPickerLauncher.launch("application/json")
+            },
+            hasLocalSongsFolder = !viewState.localImportFolderUri.observeAsState(null).value.isNullOrBlank(),
+            onImportLocalSongsFolderClicked = {
+                showAboutDialog = false
+
+                // launch a folder picker to choose the local songs folder to import
+                importLocalSongsFolderPickerLauncher.launch(null)
+            },
+            onRescanLocalSongsFolderClicked = {
+                showAboutDialog = false
+                onRescanLocalSongsFolder(context)
             },
             onSwitchThemeMode = onThemeSelectionChange,
             onNavigateToCreateTab = onNavigateToCreateTab,
@@ -402,7 +426,8 @@ private fun HomeScreenPreview() {
         playlists = MutableLiveData(listOf()),
         playlistsSortBy = MutableLiveData(PlaylistsSortBy.Name),
         selectedAppTheme = MutableLiveData(ThemeSelection.System),
-        selectedFontStyle = MutableLiveData(FontStyle.Modern)
+        selectedFontStyle = MutableLiveData(FontStyle.Modern),
+        localImportFolderUri = MutableLiveData(null)
     )
 
     val songListState = SongListViewStateForTest(
@@ -430,6 +455,8 @@ private fun HomeScreenPreview() {
             onNavigateToSearch = {},
             onExportPlaylists = {_,_->},
             onImportPlaylists = {_,_->},
+            onImportLocalSongsFolder = {_,_->},
+            onRescanLocalSongsFolder = {_->},
             onCreatePlaylist = {_,_->},
             onThemeSelectionChange = {},
             onFontStyleSelectionChange = {},
@@ -447,7 +474,8 @@ private class HomeViewStateForTest(
     override val playlists: LiveData<List<Playlist>>,
     override val playlistsSortBy: LiveData<PlaylistsSortBy>,
     override val selectedAppTheme: LiveData<ThemeSelection>,
-    override val selectedFontStyle: LiveData<FontStyle>
+    override val selectedFontStyle: LiveData<FontStyle>,
+    override val localImportFolderUri: LiveData<String?>
 ) : IHomeViewState
 
 private class SongListViewStateForTest(

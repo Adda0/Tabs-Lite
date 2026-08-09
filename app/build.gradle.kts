@@ -97,6 +97,7 @@ dependencies {
     implementation(libs.org.jetbrains.kotlinx.serialization.json)
     implementation(libs.compose.reorderable)
     implementation(libs.chrynan.chords.compose)
+    implementation(libs.androidx.documentfile)
 
     // Debug dependencies
     debugImplementation(libs.androidx.compose.ui.tooling)

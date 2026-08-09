@@ -118,6 +118,18 @@ interface DataAccess {
     @Query("SELECT song_name, artist_name, artist_id, song_genre FROM tabs WHERE song_id = :songId LIMIT 1")
     suspend fun findSongInfoBySongId(songId: String): SongInfo?
 
+    /**
+     * Get the IDs of all tabs with the given [tabAccessType] (e.g. tabs imported from a local song folder)
+     */
+    @Query("SELECT id FROM tabs WHERE tab_access_type = :tabAccessType")
+    suspend fun getTabIdsByAccessType(tabAccessType: String): List<String>
+
+    @Query("DELETE FROM tabs WHERE id = :tabId")
+    suspend fun deleteTab(tabId: String)
+
+    @Query("DELETE FROM playlist_entry WHERE tab_id = :tabId")
+    suspend fun deleteAllPlaylistEntriesForTab(tabId: String)
+
     @Upsert
     suspend fun upsert(tab: TabDataType)
 

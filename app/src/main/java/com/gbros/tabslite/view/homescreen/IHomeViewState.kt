@@ -37,4 +37,9 @@ interface IHomeViewState {
      * The selected font style
      */
     val selectedFontStyle: LiveData<FontStyle>
+
+    /**
+     * The content:// tree URI of the user's chosen local song folder, or null if none has been chosen
+     */
+    val localImportFolderUri: LiveData<String?>
 }
