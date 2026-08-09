@@ -157,3 +157,5 @@ fastlane/readme.md
 
 # Sentry Config File
 sentry.properties
+
+.devenv/
