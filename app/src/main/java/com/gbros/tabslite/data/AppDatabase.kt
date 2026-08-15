@@ -18,7 +18,7 @@ const val DATABASE_NAME = "local-tabs-db"
 /**
  * The Room database for this app
  */
-@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class], version = 16)
+@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class], version = 18)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dataAccess(): DataAccess
@@ -272,6 +272,23 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            // per-song display preferences, remembered across app restarts
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tabs ADD COLUMN two_column_view INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE tabs ADD COLUMN text_size_sp REAL DEFAULT NULL")
+            }
+        }
+
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            // fallback transpose value for a tab that isn't in a playlist or favorited, so
+            // transposition is remembered across app restarts even then (playlist_entry.transpose
+            // already covers the favorited/in-playlist case)
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE tabs ADD COLUMN default_transpose INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         // Create and pre-populate the database. See this article for more details:
         // https://medium.com/google-developers/7-pro-tips-for-room-fbadea4bfbd1#4785
         private fun buildDatabase(context: Context): AppDatabase {
@@ -279,7 +296,7 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5,
                         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
                         MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
-                        MIGRATION_14_15, MIGRATION_15_16)
+                        MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
                     .build()
         }
     }

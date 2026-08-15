@@ -46,6 +46,7 @@ import kotlinx.coroutines.launch
 // font size constraints, measured in sp
 private const val MIN_FONT_SIZE_SP = 6f
 private const val MAX_FONT_SIZE_SP = 42f
+private const val TEXT_SIZE_STEP_SP = 2f
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel(assistedFactory = TabViewModel.TabViewModelFactory::class)
@@ -82,8 +83,8 @@ class TabViewModel
 
             val newTranspose = (currentTranspose + numHalfSteps) % 12  // update tab.transpose variable
 
-            // if tab is in a playlist or favorite, save the transposition preference to the db
             CoroutineScope(Dispatchers.IO).launch {
+                // if tab is in a playlist or favorite, save the transposition preference there too
                 if (currentTab is TabWithDataPlaylistEntry) {
                     dataAccess.updateEntryTransposition(currentTab.entryId, newTranspose)
                 } else if (dataAccess.tabExistsInFavorites(currentTab.tabId)) {
@@ -93,8 +94,9 @@ class TabViewModel
                     )
                 }
 
-                // backup transposition in case this tab's not in a playlist or favorited. This is only used when the tab.transpose value from the database is null
-                nonPlaylistTranspose.postValue(newTranspose)
+                // always remember this as the fallback transpose, used whenever this tab isn't (or
+                // is no longer) in a playlist or favorited, so transposition is never lost
+                dataAccess.updateDefaultTranspose(currentTab.tabId, newTranspose)
             }
         } else {
             Log.e(TAG, "Transpose button clicked while tab was null.")
@@ -342,7 +344,12 @@ class TabViewModel
             Pair(chord, instrument)
         } as MutableLiveData<Pair<String?, Instrument?>>
 
-    override val fontSizeSp: MutableLiveData<Float> = MutableLiveData(defaultFontSize)
+    /**
+     * The user's in-session override of the font size, if they've zoomed or clicked the text size
+     * buttons since this tab was opened. Null until then, in which case [fontSizeSp] tracks the
+     * song's remembered [ITab.textSizeSp] from the database instead
+     */
+    private val userAdjustedFontSize: MutableLiveData<Float?> = MutableLiveData(null)
 
     override val allPlaylists: LiveData<List<Playlist>> = dataAccess.getLivePlaylists()
 
@@ -408,13 +415,13 @@ class TabViewModel
     }
 
 
-    /**
-     * Fallback method of saving transposition while this tab is open, if this tab is not in a playlist or favorites. This is only used when the tab.transpose value from the database is null
-     */
-    private val nonPlaylistTranspose: MutableLiveData<Int> = MutableLiveData(0)
-    override val transpose: LiveData<Int> = tab.combine(nonPlaylistTranspose) { t, nonPlaylistTranspose ->
-        t?.transpose ?: nonPlaylistTranspose ?: 0
+    override val transpose: LiveData<Int> = tab.map { t -> t?.transpose ?: t?.defaultTranspose ?: 0 }
+
+    override val fontSizeSp: LiveData<Float> = tab.combine(userAdjustedFontSize) { t, override ->
+        override ?: t?.textSizeSp ?: defaultFontSize
     }
+
+    override val twoColumnView: LiveData<Boolean> = tab.map { t -> t?.twoColumnView ?: false }
 
     // tab content after transposition and useFlats
     private val transposedContentString: LiveData<String> = tab.combine(transpose, useFlats) { t, tr, f ->
@@ -436,7 +443,7 @@ class TabViewModel
     override val content: LiveData<List<TabContentBlock>> = tabContent.map { tc -> tc.contentBlocks }
 
     override val pinnedChordVariations: LiveData<List<ChordVariation>> = tabContent
-        .map{c -> c.chords.toList() }
+        .map{c -> c.chords.map { chord -> Chord.lookupName(chord) }.filter { it.isNotEmpty() }.distinct() }
         .combine(chordInstrument) { chords, instrument ->
             if (chords != null && instrument != null) {
                 CoroutineScope(Dispatchers.IO).launch {
@@ -493,7 +500,7 @@ class TabViewModel
                 // double check that the chord is downloaded
                 Chord.getChord(chord, instrument, dataAccess)
             }
-            dataAccess.chordVariations(chord, instrument)
+            dataAccess.chordVariations(Chord.lookupName(chord), instrument)
         }
     }
 
@@ -685,11 +692,43 @@ class TabViewModel
     fun onZoom(zoomFactor: Float) {
         val currentFontSize = fontSizeSp.value
         if (currentFontSize != null) {
-            fontSizeSp.value =
+            userAdjustedFontSize.value =
                 currentFontSize.times(zoomFactor).coerceIn(  // Add checks for maximum and minimum font size
                     MIN_FONT_SIZE_SP,
                     MAX_FONT_SIZE_SP
                 )
+        }
+    }
+
+    fun onTextSizeIncreaseClick() = adjustTextSize(TEXT_SIZE_STEP_SP)
+
+    fun onTextSizeDecreaseClick() = adjustTextSize(-TEXT_SIZE_STEP_SP)
+
+    /**
+     * Adjusts the text size by [deltaSp] and remembers the new size for this song, so it's restored
+     * next time this song is opened
+     */
+    private fun adjustTextSize(deltaSp: Float) {
+        val currentFontSize = fontSizeSp.value ?: return
+        val newFontSize = (currentFontSize + deltaSp).coerceIn(MIN_FONT_SIZE_SP, MAX_FONT_SIZE_SP)
+        userAdjustedFontSize.value = newFontSize
+
+        val tabId = tab.value?.tabId
+        if (tabId != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                dataAccess.updateTextSize(tabId, newFontSize)
+            }
+        }
+    }
+
+    /**
+     * Handle user toggling two-column view for this song's content, remembering the choice for
+     * next time this song is opened
+     */
+    fun onTwoColumnViewToggled(enabled: Boolean) {
+        val tabId = tab.value?.tabId ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.updateTwoColumnView(tabId, enabled)
         }
     }
 

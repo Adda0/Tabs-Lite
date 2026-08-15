@@ -334,6 +334,15 @@ interface DataAccess {
     @Query("UPDATE playlist_entry SET transpose = :transpose WHERE entry_id = :entryId")
     suspend fun updateEntryTransposition(entryId: Int, transpose: Int)
 
+    @Query("UPDATE tabs SET two_column_view = :enabled WHERE id = :tabId")
+    suspend fun updateTwoColumnView(tabId: String, enabled: Boolean)
+
+    @Query("UPDATE tabs SET text_size_sp = :textSizeSp WHERE id = :tabId")
+    suspend fun updateTextSize(tabId: String, textSizeSp: Float)
+
+    @Query("UPDATE tabs SET default_transpose = :transpose WHERE id = :tabId")
+    suspend fun updateDefaultTranspose(tabId: String, transpose: Int)
+
     //#endregion
 
     //#region chord variation table

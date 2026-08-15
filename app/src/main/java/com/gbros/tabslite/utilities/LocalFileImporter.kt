@@ -78,6 +78,17 @@ object LocalFileImporter {
                         capo = parsed.capo,
                         content = parsed.content
                     )
+                    // preserve this tab's remembered local settings (two-column view, text size,
+                    // fallback transpose) across a rescan of the same file, since re-importing
+                    // overwrites the whole row
+                    try {
+                        val existing = dataAccess.getTabInstance(tabId)
+                        tab.twoColumnView = existing.twoColumnView
+                        tab.textSizeSp = existing.textSizeSp
+                        tab.defaultTranspose = existing.defaultTranspose
+                    } catch (ex: Exception) {
+                        // no existing row for this tab id - nothing to preserve
+                    }
                     dataAccess.upsert(tab)
                     dataAccess.appendToPlaylist(playlistId, tabId, transpose = 0)
                     importedTabIds.add(tabId)

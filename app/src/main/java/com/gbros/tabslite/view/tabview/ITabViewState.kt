@@ -75,9 +75,16 @@ interface ITabViewState {
     val content: LiveData<List<TabContentBlock>>
 
     /**
-     * The font size that should be used to support the custom wrapping for [content]
+     * The font size that should be used to support the custom wrapping for [content]. Remembered
+     * per-song, persisted across app restarts.
      */
     val fontSizeSp: LiveData<Float>
+
+    /**
+     * Whether this song's content should render in two reflowing columns instead of one.
+     * Remembered per-song, persisted across app restarts.
+     */
+    val twoColumnView: LiveData<Boolean>
 
     /**
      * The current status of this tab's load process

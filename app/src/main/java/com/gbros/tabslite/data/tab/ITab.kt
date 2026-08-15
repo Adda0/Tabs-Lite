@@ -50,6 +50,16 @@ interface ITab {
 
     val transpose: Int?
 
+    /** Whether this song's content should render in two reflowing columns instead of one, remembered per-song */
+    var twoColumnView: Boolean
+    /** This song's remembered text size in sp, or null to use the app-wide default, remembered per-song */
+    var textSizeSp: Float?
+    /**
+     * Fallback transpose value for when this tab isn't in a playlist or favorited, in which case
+     * [transpose] is sourced from the playlist entry instead and this is unused
+     */
+    var defaultTranspose: Int
+
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret)
      */

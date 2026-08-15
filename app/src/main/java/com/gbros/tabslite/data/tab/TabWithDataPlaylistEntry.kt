@@ -62,6 +62,9 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "contributor_user_id") override var contributorUserId: String = "0",
     @ColumnInfo(name = "contributor_user_name") override var contributorUserName: String = "Unregistered",
     @ColumnInfo(name = "content") override var content: String = "",
+    @ColumnInfo(name = "two_column_view") override var twoColumnView: Boolean = false,
+    @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
+    @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
 
     // columns from Playlist
     @ColumnInfo(name = "user_created") var playlistUserCreated: Boolean? = true,
@@ -159,6 +162,9 @@ data class TabWithDataPlaylistEntry(
         tuning = tab.tuning
         capo = tab.capo
         content = tab.content
+        twoColumnView = tab.twoColumnView
+        textSizeSp = tab.textSizeSp
+        defaultTranspose = tab.defaultTranspose
 
         recommended = tab.recommended
     }

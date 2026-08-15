@@ -37,6 +37,13 @@ data class TabDataType(
     @ColumnInfo(name = "contributor_user_id") var contributorUserId: String = "0",
     @ColumnInfo(name = "contributor_user_name") var contributorUserName: String = "Unregistered",
     @ColumnInfo(name = "content") var content: String = "",
+
+    /** Whether this song's content should render in two reflowing columns instead of one */
+    @ColumnInfo(name = "two_column_view") var twoColumnView: Boolean = false,
+    /** This song's remembered text size in sp, or null to use the app-wide default */
+    @ColumnInfo(name = "text_size_sp") var textSizeSp: Float? = null,
+    /** Fallback transpose value for when this tab isn't in a playlist or favorited (see [ITab.transpose]) */
+    @ColumnInfo(name = "default_transpose") var defaultTranspose: Int = 0,
     ) {
     override fun toString() = "$songName by $artistName"
 }
