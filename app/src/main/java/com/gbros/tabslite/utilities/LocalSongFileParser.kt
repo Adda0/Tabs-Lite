@@ -7,7 +7,11 @@ package com.gbros.tabslite.utilities
  * - the app's own internal format directly (`{ch:C}` inline)
  * - Ultimate Guitar's raw wire format (`[ch]C[/ch]` on its own line above the lyric line)
  * - a hand-written chord sheet, chords on their own line above the lyrics (e.g. `Em7   G   Dsus4`
- *   above `Today is gonna be the day...`), the most natural way to type one by hand
+ *   above `Today is gonna be the day...`), the most natural way to type one by hand. A chord line
+ *   is normally recognized by shape (every token on it looks chord-like), with no annotation needed
+ *   at all, but it can also be marked explicitly with a leading `^` and/or trailing `$` (mirroring
+ *   the regex line anchors) to force a line the shape heuristic would otherwise miss - `$` is the
+ *   one to prefer when alignment matters, since it costs no column, unlike `^`
  */
 data class LocalSongFile(
     val songName: String,

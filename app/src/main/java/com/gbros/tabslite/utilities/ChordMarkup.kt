@@ -8,7 +8,9 @@ package com.gbros.tabslite.utilities
  * `I h{ch:C}eard...`, wrapped in `[tab]...[/tab]` so the renderer knows to float chords above the
  * text. Both Ultimate Guitar's raw API format (`[ch]C[/ch]` on its own line above the lyric line)
  * and a hand-written "chords above the lyrics" plaintext format (bare chord names, no tags at all,
- * on their own line) need converting into this shape.
+ * on their own line, optionally marked with a leading `^` and/or trailing `$` to mark the line as a
+ * chord line explicitly - see [LEADING_CHORD_LINE_MARKER]/[TRAILING_CHORD_LINE_MARKER]) need
+ * converting into this shape.
  */
 
 private const val TAB_OPEN_TAG = "[tab]"
@@ -61,15 +63,42 @@ fun convertUgChordTags(content: String): String =
     UG_CHORD_TAG_REGEX.replace(content) { matchResult -> "{ch:${matchResult.groupValues[1]}}" }
 
 /**
+ * A line can be explicitly marked as a chord line by starting and/or ending it with one of these
+ * characters (mirroring the regex start-/end-of-line anchors `^`/`$`), so the line doesn't have to
+ * be shape-checked by [isBareChordLine] at all - useful for the odd chord line the shape heuristic
+ * would otherwise get wrong (e.g. personal shorthand that doesn't look chord-shaped). Not required -
+ * plain unmarked chord lines are still recognized by their shape - but supported for when it's
+ * needed. [TRAILING_CHORD_LINE_MARKER] is the one to reach for when alignment matters, since chord
+ * lines are sparse and rarely reach the line's full width, so appending it costs no column; a
+ * leading [LEADING_CHORD_LINE_MARKER] always shifts every chord one column to the right of the
+ * lyric line beneath it, once its own column is accounted for.
+ */
+private const val LEADING_CHORD_LINE_MARKER = "^"
+private const val TRAILING_CHORD_LINE_MARKER = "$"
+
+/**
  * Converts any line made up entirely of bare chord names (no tags at all - the standard way chord
  * sheets are hand-written, chords on their own line above the lyrics they apply to) into the app's
  * `{ch:C}` tagged format, preserving each token's column position so [mergeChordOnlyLines] can
  * merge it into the following lyric line exactly as it would a tagged chord-only line. Each
  * chord's own notation is kept as typed (see [sanitizeChordNameForTag]).
+ *
+ * A line starting with [LEADING_CHORD_LINE_MARKER] and/or ending with [TRAILING_CHORD_LINE_MARKER]
+ * is always treated as a chord line (the marker(s) are stripped before conversion); otherwise a line
+ * is only treated as a chord line if every token on it is chord-shaped, per [isBareChordLine].
  */
 fun convertBareChordLines(content: String): String {
     return content.split("\n").joinToString("\n") { line ->
-        if (isBareChordLine(line)) {
+        val hasLeadingMarker = line.startsWith(LEADING_CHORD_LINE_MARKER)
+        val afterLeadingMarker = if (hasLeadingMarker) line.removePrefix(LEADING_CHORD_LINE_MARKER) else line
+
+        val trimmedEnd = afterLeadingMarker.trimEnd()
+        val hasTrailingMarker = trimmedEnd.endsWith(TRAILING_CHORD_LINE_MARKER)
+        val body = if (hasTrailingMarker) trimmedEnd.removeSuffix(TRAILING_CHORD_LINE_MARKER) else afterLeadingMarker
+
+        if (hasLeadingMarker || hasTrailingMarker) {
+            Regex("\\S+").replace(body) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
+        } else if (isBareChordLine(line)) {
             Regex("\\S+").replace(line) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
         } else {
             line
