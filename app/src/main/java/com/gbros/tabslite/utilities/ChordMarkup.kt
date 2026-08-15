@@ -40,10 +40,31 @@ private val CHORD_TOKEN_REGEX = Regex(
     "^[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
 )
 
-private val CHORD_DECORATION_REGEX = Regex("[()\\[\\]{}\\\\]")
+private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}\\\\]"
+private val CHORD_DECORATION_REGEX = Regex(CHORD_DECORATION_CHAR_CLASS)
+private val LEADING_CHORD_DECORATION_REGEX = Regex("^$CHORD_DECORATION_CHAR_CLASS+")
 private val TAG_INCOMPATIBLE_CHARS_REGEX = Regex("[{}]")
 
-private fun stripChordDecorations(token: String): String = CHORD_DECORATION_REGEX.replace(token, "")
+/**
+ * Removes any `()[]{}\` a chord token was written with, wherever they sit in it - `(D)` -> `D`,
+ * `(\Dm(7))` -> `Dm7` - leaving the chord name itself. Used both to decide whether a token is
+ * chord-shaped at all, and to build the name a chord is looked up by (see [Chord.lookupName]),
+ * since decoration is the writer's own annotation and means nothing to the chord database.
+ */
+fun stripChordDecorations(token: String): String = CHORD_DECORATION_REGEX.replace(token, "")
+
+/**
+ * Splits a chord name into the decoration it opens with - e.g. the `(` of `(Am7)`, the `(\` of
+ * `(\Dm(7))` - and the chord name proper that follows it. Transposition works off the start of the
+ * chord name (the root note), so a name that opens with such personal notation has to be split
+ * before it can be transposed, and put back together after; see [Chord.transposeChord]. Anything
+ * further in (`Am(7)`, `(D)`'s closing paren) never gets in the root note's way, so only the
+ * leading run is separated out here, and the chord keeps its notation exactly as typed.
+ */
+fun splitChordDecorationPrefix(chordName: String): Pair<String, String> {
+    val decoration = LEADING_CHORD_DECORATION_REGEX.find(chordName)?.value ?: ""
+    return decoration to chordName.substring(decoration.length)
+}
 
 /**
  * Keeps a chord token's own notation (parens, square brackets, backslash) intact for display -

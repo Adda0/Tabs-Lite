@@ -4,16 +4,39 @@ import android.util.Log
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.chord.Chord.useFlats
 import com.gbros.tabslite.utilities.TAG
+import com.gbros.tabslite.utilities.stripChordDecorations
+import com.gbros.tabslite.utilities.splitChordDecorationPrefix
 import com.gbros.tabslite.utilities.BackendConnection
 import kotlin.math.abs
 
 object Chord {
     // region public methods
 
+    /**
+     * The name a chord is stored and fetched under: the chord name with any hand-written notation
+     * normalized away - decoration like `(D)`/`[Am]`/`(\Dm(7))` (see [stripChordDecorations]), a
+     * German/Czech `H` root rewritten as the `B` it is, and the Czech `mi` minor suffix written as
+     * the English `m` (`Hmi` -> `Bm`). The chord database and the chord API only know plain English
+     * chord names, so a chord written in personal notation has to be looked up by this name; what's
+     * *displayed* stays exactly as written (see [transposeChord]).
+     */
+    fun lookupName(chordName: String): String {
+        val undecorated = stripChordDecorations(chordName)
+        val englishRoot = if (undecorated.startsWith(GERMAN_B_NATURAL_ROOT, true)) {
+            ENGLISH_B_NATURAL_ROOT + undecorated.substring(1)
+        } else {
+            undecorated
+        }
+
+        return CZECH_MINOR_SUFFIX_REGEX.replace(englishRoot, "$1m")
+    }
+
     suspend fun ensureAllChordsDownloaded(chords: List<String>, instrument: Instrument, dataAccess: DataAccess) {
+        val chordNames = chords.map { chord -> lookupName(chord) }.filter { it.isNotEmpty() }.distinct()
+
         // find chords that aren't in the database
-        val alreadyDownloadedChords = dataAccess.findAll(chords, instrument)
-        val chordsToDownload = chords.filter { usedChord -> !alreadyDownloadedChords.contains(usedChord) }
+        val alreadyDownloadedChords = dataAccess.findAll(chordNames, instrument)
+        val chordsToDownload = chordNames.filter { usedChord -> !alreadyDownloadedChords.contains(usedChord) }
 
         // download
         if (chordsToDownload.isNotEmpty()) {
@@ -25,6 +48,14 @@ object Chord {
     /**
      * Transpose one chord a specified number of steps up or down. Also converts to the correct form
      * (flats vs sharps)
+     *
+     * A chord name can carry hand-written notation of its own, which is kept as typed rather than
+     * getting in the way of transposition:
+     * - a leading `(`, `[`, `{` or `\` (see [splitChordDecorationPrefix]), e.g. `(Am7)` marking an
+     *   optional chord change: the decoration is separated off, the chord name inside it is
+     *   transposed, and the decoration is put back
+     * - a German/Czech `H` root (B natural), e.g. `Hmi`: transposed as the B it is, and written
+     *   back as `H` whenever the transposed root is still B natural, so the notation survives
      */
     fun transposeChord(chord: CharSequence, halfSteps: Int, useFlats: Boolean): String {
         val numSteps = abs(halfSteps)
@@ -32,35 +63,74 @@ object Chord {
 
         val chordParts = chord.split('/').toTypedArray()  // handle chords with a base note like G/B
         for (i in chordParts.indices) {
-            if (chordParts[i] != "") {
-                if (up) {
-                    // transpose up
-                    for (j in 0 until numSteps) {
-                        chordParts[i] = transposeUp(chordParts[i])
-                    }
-                } else {
-                    // transpose down
-                    for (j in 0 until numSteps) {
-                        chordParts[i] = transposeDown(chordParts[i])
-                    }
-                }
-                chordParts[i] = useFlats(chordParts[i], useFlats)
+            val (decoration, writtenName) = splitChordDecorationPrefix(chordParts[i])
+            if (writtenName.isEmpty()) {
+                continue  // nothing to transpose (e.g. the empty half of "C/", or a bare "()")
             }
+
+            val usesGermanBNatural = writtenName.startsWith(GERMAN_B_NATURAL_ROOT, true)
+            var chordName = if (usesGermanBNatural) ENGLISH_B_NATURAL_ROOT + writtenName.substring(1) else writtenName
+
+            if (up) {
+                // transpose up
+                for (j in 0 until numSteps) {
+                    chordName = transposeUp(chordName)
+                }
+            } else {
+                // transpose down
+                for (j in 0 until numSteps) {
+                    chordName = transposeDown(chordName)
+                }
+            }
+            chordName = useFlats(chordName, useFlats)
+
+            if (usesGermanBNatural && hasBNaturalRoot(chordName)) {
+                chordName = GERMAN_B_NATURAL_ROOT + chordName.substring(1)
+            }
+
+            chordParts[i] = decoration + chordName
         }
 
         return chordParts.joinToString("/")
     }
 
     suspend fun getChord(chord: String, instrument: Instrument, dataAccess: DataAccess) {
-        dataAccess.getChordVariations(chord, instrument).ifEmpty {
-            BackendConnection.updateChordVariations(listOf(chord), dataAccess, Instrument.Guitar)
-            BackendConnection.updateChordVariations(listOf(chord), dataAccess, Instrument.Ukulele)
+        val chordName = lookupName(chord)
+        if (chordName.isEmpty()) {
+            return
+        }
+
+        dataAccess.getChordVariations(chordName, instrument).ifEmpty {
+            BackendConnection.updateChordVariations(listOf(chordName), dataAccess, Instrument.Guitar)
+            BackendConnection.updateChordVariations(listOf(chordName), dataAccess, Instrument.Ukulele)
         }
     }
 
     // endregion
 
     // region private methods
+
+    /**
+     * German/Czech notation writes B natural as `H` (and B flat as plain `B`); the app writes both
+     * roots in English (`B`/`Bb`), so an `H` root is swapped for its English equivalent before
+     * transposing and swapped back after - see [transposeChord].
+     */
+    private const val GERMAN_B_NATURAL_ROOT = "H"
+    private const val ENGLISH_B_NATURAL_ROOT = "B"
+    private const val B_FLAT_ROOT = "Bb"
+
+    /**
+     * The Czech `mi` minor suffix (`Ami`, `F#mi7`) directly after the root note, captured with the
+     * root so [lookupName] can write it as the English `m` the chord database knows. `min` is left
+     * alone - it's already an English spelling of the same quality.
+     */
+    private val CZECH_MINOR_SUFFIX_REGEX = Regex("^([A-G][#b]?)mi(?!n)")
+
+    /**
+     * Whether [chordName] is rooted on B natural (`B`, `Bm7`, ...) rather than B flat (`Bb`, ...)
+     */
+    private fun hasBNaturalRoot(chordName: String): Boolean =
+        chordName.startsWith(ENGLISH_B_NATURAL_ROOT, true) && !chordName.startsWith(B_FLAT_ROOT, true)
 
     /**
      * Helper function to convert chords to the correct form (flats or sharps), depending on user
