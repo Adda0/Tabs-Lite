@@ -45,8 +45,8 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * `tempo`, `rhythm` (all optional). `key` is the key the chords are written in and `capo` the capo
  * they're written for; together they sound in key + capo, the original key unless `original_key`
  * (the sounding key) says otherwise. `favorite_key` is a comma-separated list of chord shapes, each
- * optionally `@` a capo fret, `*` marking the one that suits the singer's voice best:
- * `favorite_key: D@1, D@2*, E` (D shapes at capo 2 sound E; no `@` means no capo).
+ * optionally `@` a capo fret, a leading `*` marking the one that suits the singer's voice best:
+ * `favorite_key: D@1, *D@2, E` (D shapes at capo 2 sound E; no `@` means no capo).
  * `favorite_key` and `original_key` need `key`; without it, `favorite_transpose` takes half steps
  * from the written chords instead of chord names (`+2@2`). `tempo` holds the time
  * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
@@ -95,7 +95,7 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         .mapNotNull { entry -> FAVORITE_ENTRY_REGEX.matchEntire(entry.trim()) }
         .mapNotNull { match ->
             val transpose = offsetTo(match.groupValues[2]) ?: return@mapNotNull null
-            FavoriteKey(transpose, capo = match.groupValues[3].toIntOrNull() ?: 0, best = match.groupValues[1].isNotEmpty() || match.groupValues[4].isNotEmpty())
+            FavoriteKey(transpose, capo = match.groupValues[3].toIntOrNull() ?: 0, best = match.groupValues[1].isNotEmpty())
         }
     val originalTranspose = header["original_key"]?.takeIf { it.isNotBlank() }?.let { offsetTo(it) }?.minus(writtenCapo)
 
@@ -116,15 +116,15 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
     )
 }
 
-// `*D@2*`: best marker, chord shapes (or half steps), optional `@` capo, best marker
-private val FAVORITE_ENTRY_REGEX = Regex("^(\\*?)\\s*([^\\s@*]+)\\s*(?:@\\s*(\\d+))?\\s*(\\*?)$")
+// `*D@2`: best marker, chord shapes (or half steps), optional `@` capo
+private val FAVORITE_ENTRY_REGEX = Regex("^(\\*?)\\s*([^\\s@*]+)\\s*(?:@\\s*(\\d+))?$")
 
-/** Formats [favorite] for a `favorite_key` header (`D@2*`), or `favorite_transpose` (`+2@2*`) when [writtenKey] is blank */
+/** Formats [favorite] for a `favorite_key` header (`*D@2`), or `favorite_transpose` (`*+2@2`) when [writtenKey] is blank */
 fun formatFavoriteEntry(favorite: FavoriteKey, writtenKey: String, useFlats: Boolean, transposeChord: (String, Int, Boolean) -> String): String {
     val shapes = if (writtenKey.isNotBlank()) transposeChord(writtenKey, favorite.transpose, useFlats)
         else if (favorite.transpose > 0) "+${favorite.transpose}" else favorite.transpose.toString()
     val capo = if (favorite.capo > 0) "@${favorite.capo}" else ""
-    return shapes + capo + if (favorite.best) "*" else ""
+    return (if (favorite.best) "*" else "") + shapes + capo
 }
 
 private fun normalizeHeaderKey(key: String) = key.lowercase().replace('-', '_').replace("favourite", "favorite")
