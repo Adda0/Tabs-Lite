@@ -69,9 +69,9 @@ interface ITab {
     var rhythm: String
 
     /**
-     * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret)
+     * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret), of this tab's capo or [capo]
      */
-    fun getCapoText(context: Context): String {
+    fun getCapoText(context: Context, capo: Int = this.capo): String {
         return when {
             capo == 0 -> "None"
             capo == 11 -> String.format(context.getString(R.string.capo_11), capo.toString()) // 11th, 12th, 13th are exceptions

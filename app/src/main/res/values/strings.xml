@@ -136,6 +136,7 @@
     <string name="tab_difficulty">Difficulty: %s</string>
     <string name="tab_tuning">Tuning: %s</string>
     <string name="tab_capo">Capo: %s</string>
+    <string name="tab_capo_sounds_in" translation_description="Capo text followed by the key the song sounds in with that capo, e.g. \u00221st Fret, sounds in C#\u0022">%1$s, sounds in %2$s</string>
     <string name="tab_key">Key: %s</string>
     <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>

@@ -34,6 +34,7 @@ import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.utilities.isSameTransposition
+import com.gbros.tabslite.utilities.capoAfterTranspose
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -393,7 +394,19 @@ class TabViewModel
 
     override val tuning: LiveData<String> = tab.map { t -> t?.tuning ?: "" }
 
-    override fun getCapoText(context: Context): LiveData<String> = tab.map { t -> t?.getCapoText(context) ?: "" }
+    /**
+     * The capo for the current transposition (see [capoAfterTranspose]); for songs written with a
+     * capo, followed by the key the song then sounds in
+     */
+    override fun getCapoText(context: Context): LiveData<String> = tab.combine(transpose, useFlats) { t, tr, f ->
+        if (t == null) return@combine ""
+        val transposition = tr ?: 0
+        val capo = capoAfterTranspose(t.capo, transposition)
+        val capoText = t.getCapoText(context, capo)
+        if (t.capo <= 0 || t.tonalityName.isBlank()) return@combine capoText
+        val soundingKey = Chord.transposeChord(t.tonalityName, transposition + capo, f == true)
+        context.getString(R.string.tab_capo_sounds_in, capoText, soundingKey)
+    }
 
     override val key: LiveData<String> = tab.map { t -> t?.tonalityName ?: "" }
 

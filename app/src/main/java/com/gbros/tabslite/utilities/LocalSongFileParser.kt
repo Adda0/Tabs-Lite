@@ -44,7 +44,8 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`,
  * `tempo`, `rhythm` (all optional). `key` is the key the content is written in; `original_key` and
  * `favorite_key` only take effect alongside it, since they're stored as transpositions relative to
- * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. `tempo` holds the time
+ * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. Without `original_key`,
+ * `capo` marks the original key: `key` played at that capo fret. `tempo` holds the time
  * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
  * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. Header parsing stops at the
  * first line that isn't a `key: value` pair; everything from there on (after skipping a single
@@ -95,7 +96,7 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         versionDescription = header["version_description"].orEmpty(),
         content = convertedBody,
         key = writtenKey,
-        originalTranspose = transposeTo("original_key"),
+        originalTranspose = transposeTo("original_key") ?: header["capo"]?.toIntOrNull()?.takeIf { it in 1..11 },
         favoriteTranspose = transposeTo("favorite_key") ?: header["favorite_transpose"]?.toIntOrNull(),
         tempo = header["tempo"].orEmpty(),
         rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
