@@ -120,16 +120,29 @@ fun convertBareChordLines(content: String): String {
         if (hasLeadingMarker || hasTrailingMarker) {
             Regex("\\S+").replace(body) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
         } else if (isBareChordLine(line)) {
-            Regex("\\S+").replace(line) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
+            val label = SECTION_LABEL_REGEX.find(line)?.value.orEmpty()
+            label + Regex("\\S+").replace(line.substring(label.length)) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
         } else {
             line
         }
     }
 }
 
+/**
+ * A section label opening a line, e.g. `I: ` (intro), `B: `, `O: `, `R2: `. A line of chords behind
+ * such a label (`I: Em Em Em Em`) is a chord line too: the chords are tagged, the label is kept as text.
+ */
+private val SECTION_LABEL_REGEX = Regex("^\\s*[A-Z][0-9]*:\\s+")
+
 private fun isBareChordLine(line: String): Boolean {
-    val tokens = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    val tokens = line.replaceFirst(SECTION_LABEL_REGEX, "").trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
     return tokens.isNotEmpty() && tokens.all { CHORD_TOKEN_REGEX.matches(stripChordDecorations(it)) }
+}
+
+/** A section label followed only by chord tags, e.g. `O: {ch:D} {ch:A}` - an instrumental part with no lyrics */
+private fun isLabelledChordOnlyLine(line: String): Boolean {
+    val label = SECTION_LABEL_REGEX.find(line) ?: return false
+    return isChordOnlyLine(line.substring(label.value.length))
 }
 
 private fun isChordOnlyLine(line: String): Boolean {
@@ -199,10 +212,12 @@ private fun mergeChordLineIntoLyricLine(chordLine: String, lyricLine: String): S
  * Wraps any line that has a `{ch:C}` chord annotation but isn't already inside a `[tab]...[/tab]`
  * block, in its own such block - so hand-written local song files render with the same "chords
  * floating above the lyrics" styling as fetched tabs, without the user needing to type [tab] tags.
+ * A labelled chord-only line (`I: Em Em`) has no lyrics to float above, so it stays unwrapped and
+ * its chords render inline, on the line itself.
  */
 fun wrapUnwrappedChordLines(content: String): String {
     return content.split("\n").joinToString("\n") { line ->
-        if (!line.startsWith(TAB_OPEN_TAG) && APP_CHORD_TAG_REGEX.containsMatchIn(line)) {
+        if (!line.startsWith(TAB_OPEN_TAG) && APP_CHORD_TAG_REGEX.containsMatchIn(line) && !isLabelledChordOnlyLine(line)) {
             "$TAB_OPEN_TAG$line$TAB_CLOSE_TAG"
         } else {
             line
