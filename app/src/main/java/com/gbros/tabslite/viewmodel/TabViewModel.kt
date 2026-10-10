@@ -386,6 +386,8 @@ class TabViewModel
 
     override val chordsPinned: LiveData<Boolean> = dataAccess.getLivePreference(Preference.PIN_CHORDS).map { p -> p?.value?.toBoolean() == true }
 
+    override val detailsHidden: LiveData<Boolean> = dataAccess.getLivePreference(Preference.HIDE_TAB_DETAILS).map { p -> p?.value?.toBoolean() == true }
+
     override val songName: LiveData<String> = tab.map { t -> t?.songName ?: "" }
 
     override val version: LiveData<Int> = tab.map { t -> t?.version ?: 0 }
@@ -868,6 +870,15 @@ class TabViewModel
     fun onChordsPinnedToggled(pinChords: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.PIN_CHORDS, pinChords.toString()))
+        }
+    }
+
+    /**
+     * Handle user hiding or showing the song details and transpose controls
+     */
+    fun onDetailsHiddenToggled(hidden: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.HIDE_TAB_DETAILS, hidden.toString()))
         }
     }
 

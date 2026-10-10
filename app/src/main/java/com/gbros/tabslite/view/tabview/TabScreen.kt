@@ -163,6 +163,7 @@ fun NavGraphBuilder.tabScreen(
             onInstrumentSelected = viewModel::onInstrumentSelected,
             onUseFlatsToggled = viewModel::onUseFlatsToggled,
             onChordsPinnedToggled = viewModel::onChordsPinnedToggled,
+            onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
@@ -248,6 +249,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onInstrumentSelected = viewModel::onInstrumentSelected,
             onUseFlatsToggled = viewModel::onUseFlatsToggled,
             onChordsPinnedToggled = viewModel::onChordsPinnedToggled,
+            onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
@@ -290,6 +292,7 @@ fun TabScreen(
     onInstrumentSelected: (instrument: Instrument) -> Unit,
     onUseFlatsToggled: (useFlats: Boolean) -> Unit,
     onChordsPinnedToggled: (pinChords: Boolean) -> Unit,
+    onDetailsHiddenToggled: (hidden: Boolean) -> Unit,
     onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
     onEditTabClick: (songId: String, tabId: String) -> Unit,
     onTwoColumnViewToggled: (Boolean) -> Unit,
@@ -330,6 +333,7 @@ fun TabScreen(
     val songId by viewState.songId.observeAsState()
     val tabId by viewState.tabId.observeAsState()
     val chordsPinned by viewState.chordsPinned.observeAsState(false)
+    val detailsHidden by viewState.detailsHidden.observeAsState(false)
     val chordBlocks = viewState.content.observeAsState(emptyList()).value
     val loadingState = viewState.state.observeAsState(LoadingState.Loading).value
     val twoColumnView by viewState.twoColumnView.observeAsState(false)
@@ -380,6 +384,8 @@ fun TabScreen(
                 selectPlaylistConfirmButtonEnabled = viewState.addToPlaylistDialogConfirmButtonEnabled.observeAsState(false).value,
                 onExportToPdfClick = onExportToPdfClick,
                 onChordsPinnedToggled = onChordsPinnedToggled,
+                detailsHidden = detailsHidden,
+                onDetailsHiddenToggled = onDetailsHiddenToggled,
                 onEditTabClick = {
                     if (songId != null && tabId != null) {
                         onEditTabClick(songId!!, tabId!!)
@@ -389,63 +395,65 @@ fun TabScreen(
                 }
             )
 
-            Text(  // Tab title
-                text = titleBuilder,
-                style = MaterialTheme.typography.headlineMedium,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp)
-            )
-            if (isPlaylistEntry) {
-                TabPlaylistNavigation(
-                    title = playlistTitle,
-                    nextSongButtonEnabled = viewState.playlistNextSongButtonEnabled.observeAsState(false).value,
-                    previousSongButtonEnabled = viewState.playlistPreviousSongButtonEnabled.observeAsState(false).value,
-                    onNextSongClick = onPlaylistNextSongClick,
-                    onPreviousSongClick = onPlaylistPreviousSongClick
+            if (!detailsHidden) {
+                Text(  // Tab title
+                    text = titleBuilder,
+                    style = MaterialTheme.typography.headlineMedium,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                )
+                if (isPlaylistEntry) {
+                    TabPlaylistNavigation(
+                        title = playlistTitle,
+                        nextSongButtonEnabled = viewState.playlistNextSongButtonEnabled.observeAsState(false).value,
+                        previousSongButtonEnabled = viewState.playlistPreviousSongButtonEnabled.observeAsState(false).value,
+                        onNextSongClick = onPlaylistNextSongClick,
+                        onPreviousSongClick = onPlaylistPreviousSongClick
+                    )
+                }
+
+                TabSummary(
+                    difficulty = viewState.difficulty.observeAsState("").value,
+                    tuning = viewState.tuning.observeAsState("").value,
+                    capo = viewState.getCapoText(context = LocalContext.current).observeAsState("").value,
+                    key = viewState.key.observeAsState("").value,
+                    author = viewState.author.observeAsState("").value,
+                    version = viewState.version.observeAsState(-1).value,
+                    songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
+                    onNavigateToTabById = onNavigateToTabByTabId,
+                    tempo = viewState.tempo.observeAsState("").value,
+                    rhythm = viewState.rhythm.observeAsState("").value
+                )
+
+                TabTransposeSection(
+                    currentTransposition = viewState.transpose.observeAsState(0).value,
+                    currentCapo = viewState.capo.observeAsState(0).value,
+                    writtenCapo = viewState.writtenCapo.observeAsState(0).value,
+                    favorites = viewState.favoriteKeys.observeAsState(emptyList()).value,
+                    originalTransposition = viewState.originalTranspose.observeAsState(0).value,
+                    key = viewState.key.observeAsState("").value,
+                    useFlats = viewState.useFlats.observeAsState(false).value,
+                    onTransposeResetClick = onTransposeResetClick,
+                    onTransposeUpClick = onTransposeUpClick,
+                    onTransposeDownClick = onTransposeDownClick,
+                    onCapoUpClick = onCapoUpClick,
+                    onCapoDownClick = onCapoDownClick,
+                    onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
+                    onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
+                    onTransposeToOriginalClick = onTransposeToOriginalClick
+                )
+
+                TabDisplayOptionsSection(
+                    twoColumnView = twoColumnView,
+                    onTwoColumnViewToggled = onTwoColumnViewToggled,
+                    onTextSizeDecreaseClick = onTextSizeDecreaseClick,
+                    onTextSizeIncreaseClick = onTextSizeIncreaseClick
                 )
             }
-
-            TabSummary(
-                difficulty = viewState.difficulty.observeAsState("").value,
-                tuning = viewState.tuning.observeAsState("").value,
-                capo = viewState.getCapoText(context = LocalContext.current).observeAsState("").value,
-                key = viewState.key.observeAsState("").value,
-                author = viewState.author.observeAsState("").value,
-                version = viewState.version.observeAsState(-1).value,
-                songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
-                onNavigateToTabById = onNavigateToTabByTabId,
-                tempo = viewState.tempo.observeAsState("").value,
-                rhythm = viewState.rhythm.observeAsState("").value
-            )
-
-            TabTransposeSection(
-                currentTransposition = viewState.transpose.observeAsState(0).value,
-                currentCapo = viewState.capo.observeAsState(0).value,
-                writtenCapo = viewState.writtenCapo.observeAsState(0).value,
-                favorites = viewState.favoriteKeys.observeAsState(emptyList()).value,
-                originalTransposition = viewState.originalTranspose.observeAsState(0).value,
-                key = viewState.key.observeAsState("").value,
-                useFlats = viewState.useFlats.observeAsState(false).value,
-                onTransposeResetClick = onTransposeResetClick,
-                onTransposeUpClick = onTransposeUpClick,
-                onTransposeDownClick = onTransposeDownClick,
-                onCapoUpClick = onCapoUpClick,
-                onCapoDownClick = onCapoDownClick,
-                onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
-                onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
-                onTransposeToOriginalClick = onTransposeToOriginalClick
-            )
-
-            TabDisplayOptionsSection(
-                twoColumnView = twoColumnView,
-                onTwoColumnViewToggled = onTwoColumnViewToggled,
-                onTextSizeDecreaseClick = onTextSizeDecreaseClick,
-                onTextSizeIncreaseClick = onTextSizeIncreaseClick
-            )
 
             if (chordsPinned) {
                 val chordVariations = viewState.pinnedChordVariations.observeAsState(emptyList()).value
@@ -511,6 +519,8 @@ fun TabScreen(
                     selectPlaylistConfirmButtonEnabled = viewState.addToPlaylistDialogConfirmButtonEnabled.observeAsState(false).value,
                     onExportToPdfClick = onExportToPdfClick,
                     onChordsPinnedToggled = onChordsPinnedToggled,
+                    detailsHidden = detailsHidden,
+                    onDetailsHiddenToggled = onDetailsHiddenToggled,
                     onEditTabClick = {
                         if (songId != null && tabId != null) {
                             onEditTabClick(songId!!, tabId!!)
@@ -520,63 +530,65 @@ fun TabScreen(
                     }
                 )
 
-                Text(  // Tab title
-                    text = titleBuilder,
-                    style = MaterialTheme.typography.headlineMedium,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                )
-                if (isPlaylistEntry) {
-                    TabPlaylistNavigation(
-                        title = playlistTitle,
-                        nextSongButtonEnabled = viewState.playlistNextSongButtonEnabled.observeAsState(false).value,
-                        previousSongButtonEnabled = viewState.playlistPreviousSongButtonEnabled.observeAsState(false).value,
-                        onNextSongClick = onPlaylistNextSongClick,
-                        onPreviousSongClick = onPlaylistPreviousSongClick
+                if (!detailsHidden) {
+                    Text(  // Tab title
+                        text = titleBuilder,
+                        style = MaterialTheme.typography.headlineMedium,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp)
+                    )
+                    if (isPlaylistEntry) {
+                        TabPlaylistNavigation(
+                            title = playlistTitle,
+                            nextSongButtonEnabled = viewState.playlistNextSongButtonEnabled.observeAsState(false).value,
+                            previousSongButtonEnabled = viewState.playlistPreviousSongButtonEnabled.observeAsState(false).value,
+                            onNextSongClick = onPlaylistNextSongClick,
+                            onPreviousSongClick = onPlaylistPreviousSongClick
+                        )
+                    }
+
+                    TabSummary(
+                        difficulty = viewState.difficulty.observeAsState("").value,
+                        tuning = viewState.tuning.observeAsState("").value,
+                        capo = viewState.getCapoText(context = LocalContext.current).observeAsState("").value,
+                        key = viewState.key.observeAsState("").value,
+                        author = viewState.author.observeAsState("").value,
+                        version = viewState.version.observeAsState(-1).value,
+                        songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
+                        onNavigateToTabById = onNavigateToTabByTabId,
+                        tempo = viewState.tempo.observeAsState("").value,
+                        rhythm = viewState.rhythm.observeAsState("").value
+                    )
+
+                    TabTransposeSection(
+                        currentTransposition = viewState.transpose.observeAsState(0).value,
+                        currentCapo = viewState.capo.observeAsState(0).value,
+                        writtenCapo = viewState.writtenCapo.observeAsState(0).value,
+                        favorites = viewState.favoriteKeys.observeAsState(emptyList()).value,
+                        originalTransposition = viewState.originalTranspose.observeAsState(0).value,
+                        key = viewState.key.observeAsState("").value,
+                        useFlats = viewState.useFlats.observeAsState(false).value,
+                        onTransposeResetClick = onTransposeResetClick,
+                        onTransposeUpClick = onTransposeUpClick,
+                        onTransposeDownClick = onTransposeDownClick,
+                        onCapoUpClick = onCapoUpClick,
+                        onCapoDownClick = onCapoDownClick,
+                        onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
+                        onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
+                        onTransposeToOriginalClick = onTransposeToOriginalClick
+                    )
+
+                    TabDisplayOptionsSection(
+                        twoColumnView = twoColumnView,
+                        onTwoColumnViewToggled = onTwoColumnViewToggled,
+                        onTextSizeDecreaseClick = onTextSizeDecreaseClick,
+                        onTextSizeIncreaseClick = onTextSizeIncreaseClick
                     )
                 }
-
-                TabSummary(
-                    difficulty = viewState.difficulty.observeAsState("").value,
-                    tuning = viewState.tuning.observeAsState("").value,
-                    capo = viewState.getCapoText(context = LocalContext.current).observeAsState("").value,
-                    key = viewState.key.observeAsState("").value,
-                    author = viewState.author.observeAsState("").value,
-                    version = viewState.version.observeAsState(-1).value,
-                    songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
-                    onNavigateToTabById = onNavigateToTabByTabId,
-                    tempo = viewState.tempo.observeAsState("").value,
-                    rhythm = viewState.rhythm.observeAsState("").value
-                )
-
-                TabTransposeSection(
-                    currentTransposition = viewState.transpose.observeAsState(0).value,
-                    currentCapo = viewState.capo.observeAsState(0).value,
-                    writtenCapo = viewState.writtenCapo.observeAsState(0).value,
-                    favorites = viewState.favoriteKeys.observeAsState(emptyList()).value,
-                    originalTransposition = viewState.originalTranspose.observeAsState(0).value,
-                    key = viewState.key.observeAsState("").value,
-                    useFlats = viewState.useFlats.observeAsState(false).value,
-                    onTransposeResetClick = onTransposeResetClick,
-                    onTransposeUpClick = onTransposeUpClick,
-                    onTransposeDownClick = onTransposeDownClick,
-                    onCapoUpClick = onCapoUpClick,
-                    onCapoDownClick = onCapoDownClick,
-                    onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
-                    onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
-                    onTransposeToOriginalClick = onTransposeToOriginalClick
-                )
-
-                TabDisplayOptionsSection(
-                    twoColumnView = twoColumnView,
-                    onTwoColumnViewToggled = onTwoColumnViewToggled,
-                    onTextSizeDecreaseClick = onTextSizeDecreaseClick,
-                    onTextSizeIncreaseClick = onTextSizeIncreaseClick
-                )
             }
 
             // Sticky pinned chords header
@@ -772,6 +784,7 @@ private fun TabViewPreview() {
         override val chordInstrument: LiveData<Instrument>,
         override val useFlats: LiveData<Boolean>,
         override val chordsPinned: LiveData<Boolean>,
+        override val detailsHidden: LiveData<Boolean>,
         override val pinnedChordVariations: LiveData<List<ChordVariation>>,
         override val fontStylePreference: LiveData<FontStyle>
 
@@ -818,6 +831,7 @@ private fun TabViewPreview() {
             chordInstrument = MutableLiveData(Instrument.Guitar),
             useFlats = MutableLiveData(false),
             chordsPinned = MutableLiveData(true),
+            detailsHidden = MutableLiveData(false),
             pinnedChordVariations = MutableLiveData(emptyList()),
             fontStylePreference = MutableLiveData(FontStyle.Modern)
         )
@@ -895,6 +909,7 @@ private fun TabViewPreview() {
             onExportToPdfClick = { _, _ -> },
             onNavigateToTabByTabId = { _ -> },
             onChordsPinnedToggled = { },
+            onDetailsHiddenToggled = { },
             onEditTabClick = { _, _ -> },
             onTwoColumnViewToggled = { },
             onTextSizeDecreaseClick = { },

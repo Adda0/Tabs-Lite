@@ -150,6 +150,8 @@
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>
     <string name="tab_text_size_decrease_accessibility_text" translation_description="Accessibility text for the button that decreases the tab content text size">Decrease text size</string>
     <string name="tab_text_size_increase_accessibility_text" translation_description="Accessibility text for the button that increases the tab content text size">Increase text size</string>
+    <string name="tab_hide_details_accessibility_text" translation_description="Accessibility text for the button that hides the song details and transpose controls above the tab content">Hide song details</string>
+    <string name="tab_show_details_accessibility_text" translation_description="Accessibility text for the button that shows the song details and transpose controls above the tab content">Show song details</string>
     <string name="tab_version_number">Version %d</string>
     <string name="tab_version_abbreviation" translation_description="Shortened version number for display in places where space is limited (like in search results)">ver. %s</string>
     <string name="tab_favorite_button_accessibility_text" translation_description="Accessibility text used for the favorite button">Favorite</string>

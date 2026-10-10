@@ -167,6 +167,11 @@ interface ITabViewState {
     val chordsPinned: LiveData<Boolean>
 
     /**
+     * Whether the song details and transpose controls above the content are hidden, for room while playing
+     */
+    val detailsHidden: LiveData<Boolean>
+
+    /**
      * Map of chord names to their first chord variation for pinned display
      */
     val pinnedChordVariations: LiveData<List<ChordVariation>>

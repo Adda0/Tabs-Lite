@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.UnfoldLess
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PushPin
@@ -67,6 +69,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onPlaylistSelectionChange: (Playlist) -> Unit,
                  onFavoriteButtonClick: () -> Unit,
                  onChordsPinnedToggled: (pinChords: Boolean) -> Unit = {},
+                 detailsHidden: Boolean = false,
+                 onDetailsHiddenToggled: (hidden: Boolean) -> Unit = {},
                  onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
                  onEditTabClick: () -> Unit
 ) {
@@ -105,6 +109,14 @@ fun TabTopAppBar(isFavorite: Boolean,
             }
         },
         actions = {
+            IconButton(onClick = { onDetailsHiddenToggled(!detailsHidden) }) {
+                Icon(
+                    imageVector = if (detailsHidden) Icons.Filled.UnfoldMore else Icons.Filled.UnfoldLess,
+                    contentDescription = stringResource(
+                        if (detailsHidden) R.string.tab_show_details_accessibility_text else R.string.tab_hide_details_accessibility_text
+                    ),
+                )
+            }
             IconButton(onClick = {onChordsPinnedToggled(!chordsPinned)}) {
                 Icon(
                     imageVector = if (chordsPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,

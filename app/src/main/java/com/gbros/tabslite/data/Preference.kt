@@ -80,5 +80,11 @@ data class Preference(
          */
         const val LOCAL_IMPORT_FOLDER_URI: String = "LOCAL_IMPORT_FOLDER_URI"
 
+        /**
+         * The preference name for whether the tab screen hides the song details and transpose
+         * controls above the content, leaving more room while playing
+         */
+        const val HIDE_TAB_DETAILS: String = "HIDE_TAB_DETAILS"
+
     }
 }
