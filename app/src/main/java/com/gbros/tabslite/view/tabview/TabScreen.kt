@@ -287,6 +287,7 @@ fun TabScreen(
     // handle autoscroll
     val scrollState = rememberLazyListState()
     val twoColumnScrollState = rememberScrollState()
+    val twoColumnAutoscroll = remember { TwoColumnAutoscroll() }
     // create clickable title
     val songName by viewState.songName.observeAsState("...")
     val artistName by viewState.artist.observeAsState("...")
@@ -444,6 +445,7 @@ fun TabScreen(
                     fontStyle = fontStyle,
                     onChordClick = onTextClick,
                     rightColumnScrollState = twoColumnScrollState,
+                    autoscroll = twoColumnAutoscroll,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -652,7 +654,16 @@ fun TabScreen(
             LaunchedEffect(key1 = autoscrollDelay.value) {
                 while (isActive) {
                     delay(autoscrollDelay.value.toLong())
-                    if (!twoColumnScrollState.isScrollInProgress && twoColumnScrollState.canScrollForward) {  // pause autoscroll while user is manually scrolling
+                    if (twoColumnScrollState.isScrollInProgress) continue  // pause autoscroll while user is manually scrolling
+                    if (twoColumnScrollState.value > 0) {
+                        // the right column was already scrolled (e.g. by hand): the reader is past the left column
+                        twoColumnAutoscroll.leftColumnProgress = twoColumnAutoscroll.leftColumnHeight.toFloat()
+                    }
+                    if (twoColumnAutoscroll.leftColumnProgress < twoColumnAutoscroll.leftColumnHeight) {
+                        // the left column is fixed: spend the time it would take to scroll through it,
+                        // so the right column only starts moving once the reader gets there
+                        twoColumnAutoscroll.leftColumnProgress += 1f
+                    } else if (twoColumnScrollState.canScrollForward) {
                         twoColumnScrollState.scrollBy(1f)
                     }
                 }
