@@ -443,7 +443,7 @@ fun TabScreen(
                     fontSizeSp = fontSizeSp,
                     fontStyle = fontStyle,
                     onChordClick = onTextClick,
-                    scrollState = twoColumnScrollState,
+                    rightColumnScrollState = twoColumnScrollState,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
