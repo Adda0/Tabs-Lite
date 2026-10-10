@@ -1,7 +1,9 @@
 package com.gbros.tabslite.view.tabview
-
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -9,14 +11,12 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.unit.Constraints
 import com.gbros.tabslite.data.FontStyle
 import com.gbros.tabslite.data.tab.TabContentBlock
-
 /**
- * Reflows [blocks] across two side-by-side columns, like a printed songbook page: [blocks] are
- * measured once at the target column width to find how much content fits in roughly half the
- * total measured height, that much goes in the left column, and the rest flows into the right
- * column. Each column scrolls independently via its own [ScrollState] - the caller drives both
- * during autoscroll, first exhausting [leftColumnScrollState] before advancing
- * [rightColumnScrollState] (see the autoscroll effect in [TabScreen]).
+ * Lays [blocks] out like a printed songbook: the left column is filled with as many blocks as fit
+ * in the visible height, the rest continues at the top of the right column, and whatever still
+ * doesn't fit starts a further two-column page below, reached by scrolling [scrollState] one
+ * screen down. Blocks are measured at the column width with the current text size, so changing
+ * the zoom reflows the pages. A single block taller than the screen gets a column of its own.
  */
 @Composable
 fun TwoColumnTabContent(
@@ -24,55 +24,56 @@ fun TwoColumnTabContent(
     fontSizeSp: Float,
     fontStyle: FontStyle,
     onChordClick: (chord: String) -> Unit,
-    leftColumnScrollState: ScrollState,
-    rightColumnScrollState: ScrollState,
+    scrollState: ScrollState,
     modifier: Modifier = Modifier
 ) {
     SubcomposeLayout(modifier = modifier) { constraints ->
-        val leftColumnWidth = constraints.maxWidth / 2
-        val rightColumnWidth = constraints.maxWidth - leftColumnWidth
-        val columnHeight = constraints.maxHeight
-        val measureConstraints = Constraints(maxWidth = leftColumnWidth)
-
-        // measure each block once at the column's width to decide how much fits in the left column
+        val columnWidth = constraints.maxWidth / 2
+        val pageHeight = constraints.maxHeight
         val heights = blocks.mapIndexed { index, block ->
             subcompose("measure-$index") {
                 TabContentBlockView(block = block, fontSizeSp = fontSizeSp, fontStyle = fontStyle, onChordClick = {})
-            }.first().measure(measureConstraints).height
+            }.first().measure(Constraints(maxWidth = columnWidth)).height
         }
-        val targetHeight = heights.sum() / 2
 
-        var accumulatedHeight = 0
-        var splitIndex = blocks.size
-        for (i in heights.indices) {
-            accumulatedHeight += heights[i]
-            if (accumulatedHeight >= targetHeight) {
-                splitIndex = i + 1
-                break
+        // greedily fill columns up to the visible height
+        val columns = mutableListOf<List<TabContentBlock>>()
+        var current = mutableListOf<TabContentBlock>()
+        var currentHeight = 0
+        blocks.forEachIndexed { index, block ->
+            if (current.isNotEmpty() && currentHeight + heights[index] > pageHeight) {
+                columns.add(current)
+                current = mutableListOf()
+                currentHeight = 0
             }
+            current.add(block)
+            currentHeight += heights[index]
         }
-        val leftBlocks = blocks.subList(0, splitIndex)
-        val rightBlocks = blocks.subList(splitIndex, blocks.size)
+        if (current.isNotEmpty()) columns.add(current)
+        val pages = columns.chunked(2)
 
-        val leftPlaceable = subcompose("left") {
-            Column(modifier = Modifier.verticalScroll(leftColumnScrollState)) {
-                leftBlocks.forEach {
-                    TabContentBlockView(block = it, fontSizeSp = fontSizeSp, fontStyle = fontStyle, onChordClick = onChordClick)
+        val columnWidthDp = columnWidth.toDp()
+        val pageHeightDp = pageHeight.toDp()
+        val content = subcompose("pages") {
+            Column(modifier = Modifier.verticalScroll(scrollState)) {
+                pages.forEachIndexed { pageIndex, page ->
+                    // every page but the last spans a full screen, so scrolling one screen lands on the next page
+                    val rowModifier = if (pageIndex < pages.lastIndex) Modifier.heightIn(min = pageHeightDp) else Modifier
+                    Row(modifier = rowModifier) {
+                        page.forEach { columnBlocks ->
+                            Column(modifier = Modifier.width(columnWidthDp)) {
+                                columnBlocks.forEach {
+                                    TabContentBlockView(block = it, fontSizeSp = fontSizeSp, fontStyle = fontStyle, onChordClick = onChordClick)
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }.first().measure(Constraints.fixed(leftColumnWidth, columnHeight))
+        }.first().measure(Constraints.fixed(constraints.maxWidth, pageHeight))
 
-        val rightPlaceable = subcompose("right") {
-            Column(modifier = Modifier.verticalScroll(rightColumnScrollState)) {
-                rightBlocks.forEach {
-                    TabContentBlockView(block = it, fontSizeSp = fontSizeSp, fontStyle = fontStyle, onChordClick = onChordClick)
-                }
-            }
-        }.first().measure(Constraints.fixed(rightColumnWidth, columnHeight))
-
-        layout(constraints.maxWidth, columnHeight) {
-            leftPlaceable.placeRelative(0, 0)
-            rightPlaceable.placeRelative(leftColumnWidth, 0)
+        layout(constraints.maxWidth, pageHeight) {
+            content.placeRelative(0, 0)
         }
     }
 }

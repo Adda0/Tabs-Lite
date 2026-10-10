@@ -286,8 +286,7 @@ fun TabScreen(
     val context = LocalContext.current
     // handle autoscroll
     val scrollState = rememberLazyListState()
-    val leftColumnScrollState = rememberScrollState()
-    val rightColumnScrollState = rememberScrollState()
+    val twoColumnScrollState = rememberScrollState()
     // create clickable title
     val songName by viewState.songName.observeAsState("...")
     val artistName by viewState.artist.observeAsState("...")
@@ -444,8 +443,7 @@ fun TabScreen(
                     fontSizeSp = fontSizeSp,
                     fontStyle = fontStyle,
                     onChordClick = onTextClick,
-                    leftColumnScrollState = leftColumnScrollState,
-                    rightColumnScrollState = rightColumnScrollState,
+                    scrollState = twoColumnScrollState,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -651,13 +649,11 @@ fun TabScreen(
     if (!viewState.autoscrollPaused.observeAsState(true).value) {
         val autoscrollDelay = viewState.autoscrollDelay.observeAsState(Float.POSITIVE_INFINITY)
         if (twoColumnView) {
-            // scroll the left column first; once it's exhausted, continue scrolling the right column
             LaunchedEffect(key1 = autoscrollDelay.value) {
                 while (isActive) {
                     delay(autoscrollDelay.value.toLong())
-                    val activeColumnScrollState = if (leftColumnScrollState.canScrollForward) leftColumnScrollState else rightColumnScrollState
-                    if (!activeColumnScrollState.isScrollInProgress && activeColumnScrollState.canScrollForward) {  // pause autoscroll while user is manually scrolling
-                        activeColumnScrollState.scrollBy(1f)
+                    if (!twoColumnScrollState.isScrollInProgress && twoColumnScrollState.canScrollForward) {  // pause autoscroll while user is manually scrolling
+                        twoColumnScrollState.scrollBy(1f)
                     }
                 }
             }
