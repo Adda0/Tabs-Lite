@@ -79,6 +79,7 @@ object LocalFileImporter {
                     val songId = UUID.nameUUIDFromBytes("song:$relativePath".toByteArray()).toString()
                     val tabId = tabIdFor(relativePath)
 
+                    val startFavorite = parsed.favorites.firstOrNull { it.best } ?: parsed.favorites.firstOrNull()
                     val tab = TabDataType(
                         tabId = tabId,
                         songId = songId,
@@ -95,10 +96,11 @@ object LocalFileImporter {
                         content = parsed.content,
                         tonalityName = parsed.key,
                         originalTranspose = parsed.originalTranspose ?: 0,
-                        favoriteTranspose = parsed.favoriteTranspose,
-                        favoriteTransposes = formatTranspositionList(parsed.favoriteTranspositions),
+                        favoriteTranspose = parsed.favorites.firstOrNull { it.best }?.transpose,
+                        favoriteTransposes = formatFavoriteKeys(parsed.favorites),
                         // a song never played yet opens in its best favourite key
-                        defaultTranspose = parsed.favoriteTranspose ?: parsed.favoriteTranspositions.firstOrNull() ?: 0,
+                        defaultTranspose = startFavorite?.transpose ?: 0,
+                        currentCapo = startFavorite?.capo,
                         tempo = parsed.tempo,
                         rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms)
                     )
@@ -110,7 +112,8 @@ object LocalFileImporter {
                         tab.twoColumnView = existing.twoColumnView
                         tab.textSizeSp = existing.textSizeSp
                         tab.defaultTranspose = existing.defaultTranspose
-                        if (parsed.favoriteTranspositions.isEmpty()) {
+                        tab.currentCapo = existing.currentCapo
+                        if (parsed.favorites.isEmpty()) {
                             tab.favoriteTranspose = existing.favoriteTranspose
                             tab.favoriteTransposes = existing.favoriteTransposes
                         }
@@ -144,12 +147,13 @@ object LocalFileImporter {
     /**
      * Writes [favorites] into the header of the local song file behind [tabId] (or removes the
      * favourite header when empty), so the file stays the source of truth across rescans: as
-     * `favorite_key: D#, E*` when the file declares its `key`, else as `favorite_transpose: +1, +2*`,
-     * `*` marking [best]. No-op for tabs that didn't come from the local song folder.
+     * `favorite_key: D# (capo 1), E (capo 2)*` when the file declares its `key`, else as
+     * `favorite_transpose: +1 (capo 1), +2 (capo 2)*`. No-op for tabs that didn't come from the
+     * local song folder.
      *
      * @return whether the file was written
      */
-    suspend fun writeFavoritesToFile(context: Context, dataAccess: DataAccess, tabId: String, favorites: List<Int>, best: Int?, useFlats: Boolean): Boolean {
+    suspend fun writeFavoritesToFile(context: Context, dataAccess: DataAccess, tabId: String, favorites: List<FavoriteKey>, useFlats: Boolean): Boolean {
         val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return false
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
         val files = mutableListOf<Pair<String, DocumentFile>>()
@@ -160,11 +164,7 @@ object LocalFileImporter {
         val rawText = resolver.openInputStream(file.uri)?.use { it.reader().readText() } ?: return false
         val writtenKey = parseLocalSongFile(rawText)?.key.orEmpty()
         val favorite = favorites.takeIf { it.isNotEmpty() }?.let { list ->
-            val entries = list.joinToString(", ") { transpose ->
-                val entry = if (writtenKey.isNotBlank()) Chord.transposeChord(writtenKey, transpose, useFlats)
-                    else if (transpose > 0) "+$transpose" else transpose.toString()
-                if (transpose == best) "$entry*" else entry
-            }
+            val entries = list.joinToString(", ") { formatFavoriteEntry(it, writtenKey, useFlats) { chord, steps, flats -> Chord.transposeChord(chord, steps, flats) } }
             (if (writtenKey.isNotBlank()) "favorite_key" else "favorite_transpose") to entries
         }
         val newText = withFavoriteHeader(rawText, favorite)

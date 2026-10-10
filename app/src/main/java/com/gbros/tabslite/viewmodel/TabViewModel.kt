@@ -34,9 +34,10 @@ import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.utilities.isSameTransposition
-import com.gbros.tabslite.utilities.capoAfterTranspose
-import com.gbros.tabslite.utilities.formatTranspositionList
-import com.gbros.tabslite.utilities.parseTranspositionList
+import com.gbros.tabslite.utilities.FavoriteKey
+import com.gbros.tabslite.utilities.MAX_CAPO
+import com.gbros.tabslite.utilities.formatFavoriteKeys
+import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -95,6 +96,20 @@ class TabViewModel
         } else {
             Log.e(TAG, "Transpose button clicked while tab was null.")
         }
+    }
+
+    /** Sets the capo the user plays with, remembered per song */
+    private fun setCapo(capo: Int) {
+        val currentTab = tab.value ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.updateCurrentCapo(currentTab.tabId, capo)
+        }
+    }
+
+    /** Moves to the given chord shape transposition and capo */
+    private fun playAs(transposition: Int, capo: Int) {
+        transpose(transposition - (transpose.value ?: 0))
+        setCapo(capo)
     }
 
     //#region autoscroll
@@ -396,19 +411,19 @@ class TabViewModel
 
     override val tuning: LiveData<String> = tab.map { t -> t?.tuning ?: "" }
 
-    /**
-     * The capo for the current transposition (see [capoAfterTranspose]); for songs written with a
-     * capo, followed by the key the song then sounds in
-     */
+    /** The capo the user plays with, followed by the key the song then sounds in when the key is known */
     override fun getCapoText(context: Context): LiveData<String> = tab.combine(transpose, useFlats) { t, tr, f ->
         if (t == null) return@combine ""
-        val transposition = tr ?: 0
-        val capo = capoAfterTranspose(t.capo, transposition)
+        val capo = t.currentCapo ?: t.capo
         val capoText = t.getCapoText(context, capo)
-        if (t.capo <= 0 || t.tonalityName.isBlank()) return@combine capoText
-        val soundingKey = Chord.transposeChord(t.tonalityName, transposition + capo, f == true)
+        if (t.tonalityName.isBlank()) return@combine capoText
+        val soundingKey = Chord.transposeChord(t.tonalityName, (tr ?: 0) + capo, f == true)
         context.getString(R.string.tab_capo_sounds_in, capoText, soundingKey)
     }
+
+    override val capo: LiveData<Int> = tab.map { t -> t?.currentCapo ?: t?.capo ?: 0 }
+
+    override val writtenCapo: LiveData<Int> = tab.map { t -> t?.capo ?: 0 }
 
     override val key: LiveData<String> = tab.map { t -> t?.tonalityName ?: "" }
 
@@ -427,9 +442,7 @@ class TabViewModel
 
     override val transpose: LiveData<Int> = tab.map { t -> t?.transpose ?: t?.defaultTranspose ?: 0 }
 
-    override val favoriteTranspose: LiveData<Int?> = tab.map { t -> t?.favoriteTranspose }
-
-    override val favoriteTransposes: LiveData<List<Int>> = tab.map { t -> parseTranspositionList(t?.favoriteTransposes.orEmpty()) }
+    override val favoriteKeys: LiveData<List<FavoriteKey>> = tab.map { t -> parseFavoriteKeys(t?.favoriteTransposes.orEmpty(), t?.capo ?: 0) }
 
     override val originalTranspose: LiveData<Int> = tab.map { t -> t?.originalTranspose ?: 0 }
 
@@ -591,10 +604,12 @@ class TabViewModel
         }
     }
 
+    /** Back to the chords and capo as written */
     fun onTransposeResetClick() {
-        transpose(-(transpose.value ?: 0))
+        playAs(0, tab.value?.capo ?: 0)
     }
 
+    /** Key up: chord shapes up, same capo, so the song sounds a half step higher */
     fun onTransposeUpClick() {
         transpose(1)
     }
@@ -603,54 +618,70 @@ class TabViewModel
         transpose(-1)
     }
 
+    /** Capo up a fret, chord shapes down a half step: same sounding key */
+    fun onCapoUpClick() {
+        val current = capo.value ?: 0
+        if (current >= MAX_CAPO) return
+        setCapo(current + 1)
+        transpose(-1)
+    }
+
+    fun onCapoDownClick() {
+        val current = capo.value ?: 0
+        if (current <= 0) return
+        setCapo(current - 1)
+        transpose(1)
+    }
+
     /**
-     * Jumps to the favourite [transposition]; if it's already the current one, toggles it as the
-     * favourite that suits the singer's voice best.
+     * Plays as [favorite]; if that's already how it's played, toggles it as the favourite that
+     * suits the singer's voice best.
      */
-    fun onTransposeToFavoriteClick(context: Context, transposition: Int) {
-        val current = transpose.value ?: 0
-        if (!isSameTransposition(transposition, current)) {
-            transpose(transposition - current)
+    fun onTransposeToFavoriteClick(context: Context, favorite: FavoriteKey) {
+        if (!favorite.sameAs(transpose.value ?: 0, capo.value ?: 0)) {
+            playAs(favorite.transpose, favorite.capo)
             return
         }
-        val best = favoriteTranspose.value
-        saveFavorites(context, favoriteTransposes.value.orEmpty(), if (isSameTransposition(best, transposition)) null else transposition)
+        val makeBest = !favorite.best
+        saveFavorites(context, favoriteKeys.value.orEmpty().map { it.copy(best = makeBest && it == favorite) })
     }
 
+    /** The original key, with the capo as written */
     fun onTransposeToOriginalClick() {
-        transpose((originalTranspose.value ?: 0) - (transpose.value ?: 0))
+        playAs(originalTranspose.value ?: 0, tab.value?.capo ?: 0)
     }
 
     /**
-     * Adds the current transposition to this song's favourites, or removes it if it already is one.
+     * Adds the current chord shapes and capo to this song's favourites, or removes them if they
+     * already are one.
      */
     fun onFavoriteTransposeToggle(context: Context) {
-        val current = transpose.value ?: 0
-        val favorites = favoriteTransposes.value.orEmpty()
-        val best = favoriteTranspose.value
-        if (favorites.any { isSameTransposition(it, current) }) {
-            saveFavorites(context, favorites.filterNot { isSameTransposition(it, current) }, best.takeUnless { isSameTransposition(it, current) })
+        val currentTranspose = transpose.value ?: 0
+        val currentCapo = capo.value ?: 0
+        val favorites = favoriteKeys.value.orEmpty()
+        if (favorites.any { it.sameAs(currentTranspose, currentCapo) }) {
+            saveFavorites(context, favorites.filterNot { it.sameAs(currentTranspose, currentCapo) })
         } else {
-            saveFavorites(context, favorites + current, best)
+            saveFavorites(context, favorites + FavoriteKey(currentTranspose, currentCapo))
         }
     }
 
     /**
-     * Stores the favourite transpositions; for a song imported from the local song folder, also
-     * writes them into the file's header.
+     * Stores the favourites; for a song imported from the local song folder, also writes them
+     * into the file's header.
      */
-    private fun saveFavorites(context: Context, favorites: List<Int>, best: Int?) {
+    private fun saveFavorites(context: Context, favorites: List<FavoriteKey>) {
         val currentTab = tab.value ?: return
         val flats = useFlats.value == true
         CoroutineScope(Dispatchers.IO).launch {
-            dataAccess.updateFavoriteTransposes(currentTab.tabId, formatTranspositionList(favorites), best)
+            dataAccess.updateFavoriteTransposes(currentTab.tabId, formatFavoriteKeys(favorites), favorites.firstOrNull { it.best }?.transpose)
             if (currentTab.tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE) {
                 try {
-                    if (!LocalFileImporter.writeFavoritesToFile(context.applicationContext, dataAccess, currentTab.tabId, favorites, best, flats)) {
-                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its favorite transpositions")
+                    if (!LocalFileImporter.writeFavoritesToFile(context.applicationContext, dataAccess, currentTab.tabId, favorites, flats)) {
+                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its favorite keys")
                     }
                 } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
-                    Log.e(TAG, "Couldn't save favorite transpositions to local song file: ${ex.message}", ex)
+                    Log.e(TAG, "Couldn't save favorite keys to local song file: ${ex.message}", ex)
                 }
             }
         }

@@ -3,18 +3,29 @@ package com.gbros.tabslite.utilities
 /** Whether two transpositions sound the same, i.e. differ by whole octaves (transpose values wrap at ±12) */
 fun isSameTransposition(a: Int?, b: Int?): Boolean = a != null && b != null && Math.floorMod(a - b, 12) == 0
 
-/** Transpositions stored comma-separated (see [com.gbros.tabslite.data.tab.ITab.favoriteTransposes]) */
-fun parseTranspositionList(text: String): List<Int> = text.split(',').mapNotNull { it.trim().toIntOrNull() }
-
-fun formatTranspositionList(transpositions: List<Int>): String = transpositions.joinToString(",")
+/** The highest capo fret the capo buttons go to */
+const val MAX_CAPO = 11
 
 /**
- * Capo fret after transposing chords written for [capo] by [transpose] half steps, keeping the
- * sounding pitch while the capo can move: transposing up lowers the capo until it's off (then the
- * pitch rises); transposing down leaves the capo at [capo] (raising it instead would make lowering
- * the pitch impossible), so the pitch drops.
+ * A way to play a song: chord shapes [transpose]d from the written key, with a capo at fret
+ * [capo]; it sounds [transpose] + [capo] half steps above the written key played without a capo.
+ * [best] marks the favourite that suits the singer's voice best.
  */
-fun capoAfterTranspose(capo: Int, transpose: Int): Int = (capo - transpose).coerceIn(0, maxOf(capo, 0))
+data class FavoriteKey(val transpose: Int, val capo: Int, val best: Boolean = false) {
+    /** Same chord shapes (up to octaves) and the same capo */
+    fun sameAs(transpose: Int, capo: Int) = isSameTransposition(this.transpose, transpose) && this.capo == capo
+}
+
+/** Favourites stored as `transpose@capo` entries, comma-separated, `*` after the best one (see [com.gbros.tabslite.data.tab.ITab.favoriteTransposes]) */
+fun parseFavoriteKeys(text: String, defaultCapo: Int): List<FavoriteKey> = text.split(',').mapNotNull { raw ->
+    val entry = raw.trim()
+    val parts = entry.removeSuffix("*").split('@')
+    val transpose = parts[0].toIntOrNull() ?: return@mapNotNull null
+    FavoriteKey(transpose, parts.getOrNull(1)?.toIntOrNull() ?: defaultCapo, entry.endsWith('*'))
+}
+
+fun formatFavoriteKeys(favorites: List<FavoriteKey>): String =
+    favorites.joinToString(",") { "${it.transpose}@${it.capo}" + if (it.best) "*" else "" }
 
 private val KEY_ROOT_REGEX = Regex("^\\s*([A-Ha-h])([#b]?)")
 private val NATURAL_PITCH_CLASSES = mapOf('C' to 0, 'D' to 2, 'E' to 4, 'F' to 5, 'G' to 7, 'A' to 9, 'B' to 11, 'H' to 11)

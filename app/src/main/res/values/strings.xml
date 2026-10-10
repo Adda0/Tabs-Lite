@@ -137,14 +137,16 @@
     <string name="tab_tuning">Tuning: %s</string>
     <string name="tab_capo">Capo: %s</string>
     <string name="tab_capo_sounds_in" translation_description="Capo text followed by the key the song sounds in with that capo, e.g. \u00221st Fret, sounds in C#\u0022">%1$s, sounds in %2$s</string>
-    <string name="tab_key">Key: %s</string>
+    <string name="tab_key" translation_description="The key the song's chords are written in">Written in: %s</string>
     <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>
-    <string name="tab_transpose" translation_description="Current transposition, e.g. \u0022D (+2)\u0022 or \u0022+2\u0022 when the key is unknown">Transpose: %s</string>
-    <string name="tab_transpose_original" translation_description="Chip that jumps to the transposition matching the original recording's key">Original: %s</string>
-    <string name="tab_transpose_favorite" translation_description="Chip that jumps to the user's favorite transposition">Favorite: %s</string>
-    <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that marks the current transposition as favorite">Add to favorite transpositions</string>
-    <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that clears the favorite transposition">Remove from favorite transpositions</string>
+    <string name="tab_transpose" translation_description="The key the song sounds in as currently played (chord shapes + capo), e.g. \u0022E\u0022, or \u0022+2\u0022 when the written key is unknown">Key: %s</string>
+    <string name="tab_capo_chord_shapes" translation_description="Capo fret the user plays with, and the chord shapes that go with it, e.g. \u0022Capo: 2 · chords as D\u0022">Capo: %1$d · chords as %2$s</string>
+    <string name="tab_capo_up_accessibility_text" translation_description="Accessibility text for the button that moves the capo up a fret, keeping the key">Capo up</string>
+    <string name="tab_capo_down_accessibility_text" translation_description="Accessibility text for the button that moves the capo down a fret, keeping the key">Capo down</string>
+    <string name="tab_transpose_original" translation_description="Chip that plays the song in the original recording's key, e.g. \u0022Original: C# (capo 1)\u0022">Original: %s</string>
+    <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that adds the current key and capo to the favorites">Add to favorite keys</string>
+    <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that removes the current key and capo from the favorites">Remove from favorite keys</string>
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>
     <string name="tab_text_size_decrease_accessibility_text" translation_description="Accessibility text for the button that decreases the tab content text size">Decrease text size</string>
     <string name="tab_text_size_increase_accessibility_text" translation_description="Accessibility text for the button that increases the tab content text size">Increase text size</string>

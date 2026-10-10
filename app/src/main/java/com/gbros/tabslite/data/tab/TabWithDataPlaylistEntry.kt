@@ -67,6 +67,7 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
     @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
     @ColumnInfo(name = "favorite_transposes") override var favoriteTransposes: String = "",
+    @ColumnInfo(name = "current_capo") override var currentCapo: Int? = null,
     @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
     @ColumnInfo(name = "tempo") override var tempo: String = "",
     @ColumnInfo(name = "rhythm") override var rhythm: String = "",
@@ -172,6 +173,7 @@ data class TabWithDataPlaylistEntry(
         defaultTranspose = tab.defaultTranspose
         favoriteTranspose = tab.favoriteTranspose
         favoriteTransposes = tab.favoriteTransposes
+        currentCapo = tab.currentCapo
         originalTranspose = tab.originalTranspose
         tempo = tab.tempo
         rhythm = tab.rhythm

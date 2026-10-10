@@ -48,6 +48,8 @@ data class TabDataType(
     @ColumnInfo(name = "favorite_transpose") var favoriteTranspose: Int? = null,
     /** All favourite transpositions (see [ITab.favoriteTransposes]) */
     @ColumnInfo(name = "favorite_transposes") var favoriteTransposes: String = "",
+    /** See [ITab.currentCapo] */
+    @ColumnInfo(name = "current_capo") var currentCapo: Int? = null,
     /** The transposition matching the original recording's key (see [ITab.originalTranspose]) */
     @ColumnInfo(name = "original_transpose") var originalTranspose: Int = 0,
     /** See [ITab.tempo] */

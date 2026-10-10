@@ -39,6 +39,12 @@ interface ITabViewState {
 
     fun getCapoText(context: Context): LiveData<String>
 
+    /** The capo the user plays with */
+    val capo: LiveData<Int>
+
+    /** The capo the song is written for */
+    val writtenCapo: LiveData<Int>
+
     val key: LiveData<String>
 
     /** Time signature and/or speed from a local song file's header, blank if none */
@@ -75,11 +81,8 @@ interface ITabViewState {
      */
     val transpose: LiveData<Int>
 
-    /** The favourite transposition that suits the singer's voice best, or null if none is marked */
-    val favoriteTranspose: LiveData<Int?>
-
-    /** All of the song's favourite transpositions */
-    val favoriteTransposes: LiveData<List<Int>>
+    /** The song's favourite ways to play it (chord shapes + capo), one possibly marked best */
+    val favoriteKeys: LiveData<List<com.gbros.tabslite.utilities.FavoriteKey>>
 
     /** The transposition matching the original recording's key */
     val originalTranspose: LiveData<Int>

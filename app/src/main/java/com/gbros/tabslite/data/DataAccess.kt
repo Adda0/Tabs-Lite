@@ -346,6 +346,9 @@ interface DataAccess {
     @Query("UPDATE tabs SET favorite_transposes = :transposes, favorite_transpose = :best WHERE id = :tabId")
     suspend fun updateFavoriteTransposes(tabId: String, transposes: String, best: Int?)
 
+    @Query("UPDATE tabs SET current_capo = :capo WHERE id = :tabId")
+    suspend fun updateCurrentCapo(tabId: String, capo: Int?)
+
     //#endregion
 
     //#region chord variation table

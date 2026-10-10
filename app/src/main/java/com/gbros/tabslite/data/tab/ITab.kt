@@ -59,11 +59,13 @@ interface ITab {
      * [transpose] is sourced from the playlist entry instead and this is unused
      */
     var defaultTranspose: Int
-    /** The favourite transposition that suits the user's voice best, or null if none is chosen; one of [favoriteTransposes] */
+    /** Chord shape transposition of the favourite that suits the user's voice best; see [favoriteTransposes] */
     var favoriteTranspose: Int?
-    /** All of the user's favourite transpositions, comma-separated (see [com.gbros.tabslite.utilities.parseTranspositionList]) */
+    /** The user's favourite ways to play this song (see [com.gbros.tabslite.utilities.parseFavoriteKeys]) */
     var favoriteTransposes: String
-    /** The transposition matching the original recording's key; 0 when the content is written in it */
+    /** The capo the user plays with, or null for the written [capo]; sounds in key + transpose + capo */
+    var currentCapo: Int?
+    /** Chord shape transposition that, with the written [capo], sounds in the original recording's key */
     var originalTranspose: Int
     /** Time signature and/or speed from a local song file's `tempo` header, blank if none */
     var tempo: String

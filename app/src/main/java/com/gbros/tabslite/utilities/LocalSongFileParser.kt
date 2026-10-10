@@ -24,12 +24,10 @@ data class LocalSongFile(
     val content: String,
     /** The key the content is written in, or blank if not given */
     val key: String = "",
-    /** Half steps from [key] to the original recording's key, or null if not given */
+    /** Chord shape transposition that, with the written [capo], sounds in the original recording's key; null if not given */
     val originalTranspose: Int? = null,
-    /** Half steps from [key] to each favourite key, in file order */
-    val favoriteTranspositions: List<Int> = emptyList(),
-    /** The favourite marked with `*` (suits the singer's voice best), or null if none is */
-    val favoriteTranspose: Int? = null,
+    /** Favourite ways to play it (sounding key + capo), in file order */
+    val favorites: List<FavoriteKey> = emptyList(),
     /** Time signature and/or speed as written, e.g. `4/4` or `4/4 (~68 BPM)` */
     val tempo: String = "",
     /** `label: id` references into the rhythms file, see [parseRhythmReferences] */
@@ -44,11 +42,13 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * Recognized header keys (case-insensitive, `-` and `_` interchangeable, `favourite` accepted for
  * `favorite`): `song_name` and `artist_name` (required), `capo`, `tuning`, `difficulty`,
  * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`,
- * `tempo`, `rhythm` (all optional). `key` is the key the content is written in; `original_key` and
- * `favorite_key` only take effect alongside it, since they're stored as transpositions relative to
- * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. Both take a comma-separated
- * list (`favorite_key: D#, E*`), `*` marking the one that suits the singer's voice best. Without `original_key`,
- * `capo` marks the original key: `key` played at that capo fret. `tempo` holds the time
+ * `tempo`, `rhythm` (all optional). `key` is the key the chords are written in and `capo` the capo
+ * they're written for; together they sound in key + capo, the original key unless `original_key`
+ * (the sounding key) says otherwise. `favorite_key` is a comma-separated list of sounding keys, each
+ * optionally with a capo, `*` marking the one that suits the singer's voice best:
+ * `favorite_key: D# (capo 1), E (capo 2)*, E`; the chord shapes follow (E with capo 2 → D shapes).
+ * `favorite_key` and `original_key` need `key`; without it, `favorite_transpose` takes half steps
+ * instead of keys (`+2 (capo 2)`). `tempo` holds the time
  * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
  * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. Header parsing stops at the
  * first line that isn't a `key: value` pair; everything from there on (after skipping a single
@@ -86,36 +86,47 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
     val rawBody = lines.drop(bodyStartIndex).joinToString("\n")
     val convertedBody = wrapUnwrappedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(rawBody))))
     val writtenKey = header["key"].orEmpty()
-    fun transposeTo(headerKey: String): Int? =
-        header[headerKey]?.takeIf { it.isNotBlank() && writtenKey.isNotBlank() }?.let { transposeBetweenKeys(writtenKey, it) }
-    // (transposition, starred) for each favourite_key / favorite_transpose entry
+    val writtenCapo = header["capo"]?.toIntOrNull() ?: 0
+    // half steps from the written key (no capo) to a sounding key, or a signed number of them
+    fun soundingOffset(value: String): Int? =
+        value.toIntOrNull() ?: writtenKey.takeIf { it.isNotBlank() }?.let { transposeBetweenKeys(it, value) }
     val favorites = listOfNotNull(header["favorite_key"], header["favorite_transpose"])
         .flatMap { it.split(',') }
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .mapNotNull { entry ->
-            val value = entry.trim('*', ' ')
-            val transposition = value.toIntOrNull()
-                ?: writtenKey.takeIf { it.isNotBlank() }?.let { transposeBetweenKeys(it, value) }
-            transposition?.let { it to (entry.startsWith('*') || entry.endsWith('*')) }
+        .mapNotNull { entry -> FAVORITE_ENTRY_REGEX.matchEntire(entry.trim()) }
+        .mapNotNull { match ->
+            val capo = match.groupValues[3].toIntOrNull() ?: 0
+            val sounding = soundingOffset(match.groupValues[2]) ?: return@mapNotNull null
+            FavoriteKey(transpose = sounding - capo, capo = capo, best = match.groupValues[1].isNotEmpty() || match.groupValues[4].isNotEmpty())
         }
+    val originalTranspose = header["original_key"]?.takeIf { it.isNotBlank() }?.let { soundingOffset(it) }?.minus(writtenCapo)
 
     return LocalSongFile(
         songName = songName,
         artistName = artistName,
-        capo = header["capo"]?.toIntOrNull() ?: 0,
+        capo = writtenCapo,
         tuning = header["tuning"]?.takeIf { it.isNotBlank() } ?: "E A D G B E",
         difficulty = header["difficulty"]?.takeIf { it.isNotBlank() } ?: "novice",
         songGenre = header["song_genre"].orEmpty(),
         versionDescription = header["version_description"].orEmpty(),
         content = convertedBody,
         key = writtenKey,
-        originalTranspose = transposeTo("original_key") ?: header["capo"]?.toIntOrNull()?.takeIf { it in 1..11 },
-        favoriteTranspositions = favorites.map { it.first },
-        favoriteTranspose = favorites.firstOrNull { it.second }?.first,
+        originalTranspose = originalTranspose,
+        favorites = favorites,
         tempo = header["tempo"].orEmpty(),
         rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
     )
+}
+
+// `*E (capo 2)*`: best marker, sounding key or half steps, optional capo, best marker
+private val FAVORITE_ENTRY_REGEX = Regex("^(\\*?)\\s*([^\\s(*]+)\\s*(?:\\((?i:capo)\\s*(\\d+)\\))?\\s*(\\*?)$")
+
+/** Formats [favorite] for a `favorite_key` header (`E (capo 2)*`), or `favorite_transpose` (`+4 (capo 2)*`) when [writtenKey] is blank */
+fun formatFavoriteEntry(favorite: FavoriteKey, writtenKey: String, useFlats: Boolean, transposeChord: (String, Int, Boolean) -> String): String {
+    val sounding = favorite.transpose + favorite.capo
+    val value = if (writtenKey.isNotBlank()) transposeChord(writtenKey, sounding, useFlats)
+        else if (sounding > 0) "+$sounding" else sounding.toString()
+    val capo = if (favorite.capo > 0) " (capo ${favorite.capo})" else ""
+    return value + capo + if (favorite.best) "*" else ""
 }
 
 private fun normalizeHeaderKey(key: String) = key.lowercase().replace('-', '_').replace("favourite", "favorite")
