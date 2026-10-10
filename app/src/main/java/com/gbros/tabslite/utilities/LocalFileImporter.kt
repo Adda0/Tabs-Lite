@@ -53,14 +53,28 @@ object LocalFileImporter {
             ?: throw IllegalArgumentException("Couldn't open local song folder $treeUri")
 
         val files = mutableListOf<Pair<String, DocumentFile>>() // relative path -> file
-        collectSongFiles(root, "", files)
+        val tables = mutableMapOf<String, Pair<Int, DocumentFile>>() // table file name -> (depth, file)
+        collectSongFiles(root, "", files, tables)
 
-        // the shared tables sit at the top of the folder and aren't songs themselves
-        fun readTable(name: String): String? = root.findFile(name)?.let { file ->
-            context.contentResolver.openInputStream(file.uri)?.use { it.reader().readText() }
+        // the shared tables may sit in any folder (the shallowest copy wins); a broken table
+        // mustn't stop the songs from importing
+        fun readTable(name: String): String? = try {
+            tables[name]?.second?.let { file -> context.contentResolver.openInputStream(file.uri)?.use { it.reader().readText() } }
+        } catch (ex: Exception) {
+            Log.e(TAG, "Couldn't read $name: ${ex.message}", ex)
+            null
         }
-        val rhythms = readTable(RHYTHMS_FILE_NAME)?.let { parseRhythms(it) }.orEmpty()
-        importChordFingerings(readTable(CHORDS_FILE_NAME), dataAccess)
+        val rhythms = try {
+            readTable(RHYTHMS_FILE_NAME)?.let { parseRhythms(it) }.orEmpty()
+        } catch (ex: Exception) {
+            Log.e(TAG, "Couldn't parse $RHYTHMS_FILE_NAME: ${ex.message}", ex)
+            emptyMap()
+        }
+        try {
+            importChordFingerings(readTable(CHORDS_FILE_NAME), dataAccess)
+        } catch (ex: Exception) {
+            Log.e(TAG, "Couldn't import $CHORDS_FILE_NAME: ${ex.message}", ex)
+        }
 
         val playlistId = getOrCreateLocalFilesPlaylistId(dataAccess)
         dataAccess.clearPlaylist(playlistId)
@@ -176,13 +190,20 @@ object LocalFileImporter {
     // deterministic per file path, so re-importing the same file updates its tab in place
     private fun tabIdFor(relativePath: String) = UUID.nameUUIDFromBytes("tab:$relativePath".toByteArray()).toString()
 
-    private fun collectSongFiles(dir: DocumentFile, relativePath: String, into: MutableList<Pair<String, DocumentFile>>) {
+    private fun collectSongFiles(
+        dir: DocumentFile,
+        relativePath: String,
+        into: MutableList<Pair<String, DocumentFile>>,
+        tables: MutableMap<String, Pair<Int, DocumentFile>> = mutableMapOf(),
+        depth: Int = 0
+    ) {
         for (child in dir.listFiles()) {
             val childRelativePath = if (relativePath.isEmpty()) child.name.orEmpty() else "$relativePath/${child.name}"
+            val name = child.name.orEmpty().lowercase()
             if (child.isDirectory) {
-                collectSongFiles(child, childRelativePath, into)
-            } else if (relativePath.isEmpty() && child.name.orEmpty().lowercase() in setOf(RHYTHMS_FILE_NAME, CHORDS_FILE_NAME)) {
-                continue
+                collectSongFiles(child, childRelativePath, into, tables, depth + 1)
+            } else if (name in setOf(RHYTHMS_FILE_NAME, CHORDS_FILE_NAME)) {
+                if ((tables[name]?.first ?: Int.MAX_VALUE) > depth) tables[name] = depth to child
             } else if (SONG_FILE_EXTENSIONS.any { ext -> child.name?.endsWith(".$ext", ignoreCase = true) == true }) {
                 into.add(childRelativePath to child)
             }
