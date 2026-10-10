@@ -386,6 +386,10 @@ fun TabScreen(
                 onChordsPinnedToggled = onChordsPinnedToggled,
                 detailsHidden = detailsHidden,
                 onDetailsHiddenToggled = onDetailsHiddenToggled,
+                twoColumnView = twoColumnView,
+                onTwoColumnViewToggled = onTwoColumnViewToggled,
+                onTextSizeDecreaseClick = onTextSizeDecreaseClick,
+                onTextSizeIncreaseClick = onTextSizeIncreaseClick,
                 onEditTabClick = {
                     if (songId != null && tabId != null) {
                         onEditTabClick(songId!!, tabId!!)
@@ -445,13 +449,6 @@ fun TabScreen(
                     onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
                     onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
                     onTransposeToOriginalClick = onTransposeToOriginalClick
-                )
-
-                TabDisplayOptionsSection(
-                    twoColumnView = twoColumnView,
-                    onTwoColumnViewToggled = onTwoColumnViewToggled,
-                    onTextSizeDecreaseClick = onTextSizeDecreaseClick,
-                    onTextSizeIncreaseClick = onTextSizeIncreaseClick
                 )
             }
 
@@ -521,6 +518,10 @@ fun TabScreen(
                     onChordsPinnedToggled = onChordsPinnedToggled,
                     detailsHidden = detailsHidden,
                     onDetailsHiddenToggled = onDetailsHiddenToggled,
+                    twoColumnView = twoColumnView,
+                    onTwoColumnViewToggled = onTwoColumnViewToggled,
+                    onTextSizeDecreaseClick = onTextSizeDecreaseClick,
+                    onTextSizeIncreaseClick = onTextSizeIncreaseClick,
                     onEditTabClick = {
                         if (songId != null && tabId != null) {
                             onEditTabClick(songId!!, tabId!!)
@@ -580,13 +581,6 @@ fun TabScreen(
                         onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
                         onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
                         onTransposeToOriginalClick = onTransposeToOriginalClick
-                    )
-
-                    TabDisplayOptionsSection(
-                        twoColumnView = twoColumnView,
-                        onTwoColumnViewToggled = onTwoColumnViewToggled,
-                        onTextSizeDecreaseClick = onTextSizeDecreaseClick,
-                        onTextSizeIncreaseClick = onTextSizeIncreaseClick
                     )
                 }
             }

@@ -20,6 +20,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
+import androidx.compose.material.icons.filled.TextDecrease
+import androidx.compose.material.icons.filled.TextIncrease
+import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PushPin
@@ -28,6 +32,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -71,6 +76,10 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onChordsPinnedToggled: (pinChords: Boolean) -> Unit = {},
                  detailsHidden: Boolean = false,
                  onDetailsHiddenToggled: (hidden: Boolean) -> Unit = {},
+                 twoColumnView: Boolean = false,
+                 onTwoColumnViewToggled: (Boolean) -> Unit = {},
+                 onTextSizeDecreaseClick: () -> Unit = {},
+                 onTextSizeIncreaseClick: () -> Unit = {},
                  onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
                  onEditTabClick: () -> Unit
 ) {
@@ -115,6 +124,20 @@ fun TabTopAppBar(isFavorite: Boolean,
                     contentDescription = stringResource(
                         if (detailsHidden) R.string.tab_show_details_accessibility_text else R.string.tab_hide_details_accessibility_text
                     ),
+                )
+            }
+            IconButton(onClick = onTextSizeDecreaseClick) {
+                Icon(Icons.Filled.TextDecrease, stringResource(R.string.tab_text_size_decrease_accessibility_text))
+            }
+            IconButton(onClick = onTextSizeIncreaseClick) {
+                Icon(Icons.Filled.TextIncrease, stringResource(R.string.tab_text_size_increase_accessibility_text))
+            }
+            IconButton(onClick = { onTwoColumnViewToggled(!twoColumnView) }) {
+                Icon(
+                    imageVector = if (twoColumnView) Icons.Filled.ViewColumn else Icons.Outlined.ViewColumn,
+                    contentDescription = stringResource(R.string.tab_two_column_view_accessibility_text),
+                    // filled and outlined look alike; colour shows the state
+                    tint = if (twoColumnView) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                 )
             }
             IconButton(onClick = {onChordsPinnedToggled(!chordsPinned)}) {
