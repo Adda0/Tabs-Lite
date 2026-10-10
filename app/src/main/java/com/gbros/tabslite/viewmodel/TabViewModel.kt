@@ -31,7 +31,9 @@ import com.gbros.tabslite.data.tab.TabContentBlock
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.utilities.TAG
+import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.combine
+import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -72,9 +74,9 @@ class TabViewModel
     //#region private methods
 
     /**
-     * Handle transposition by a set number of steps. Transposes the tab content, saves the updated
-     * transpose value to the playlist if the tab is favorited or in a playlist, and ensures all the
-     * new chords are downloaded for quick access
+     * Handle transposition by a set number of steps. Transposes the tab content and remembers the
+     * new value as this song's last played transposition, wherever it's opened from next (every
+     * playlist entry of the tab, favorites included, plus the tab's own fallback value).
      */
     private fun transpose(numHalfSteps: Int) {
         val currentTab = tab.value
@@ -84,18 +86,7 @@ class TabViewModel
             val newTranspose = (currentTranspose + numHalfSteps) % 12  // update tab.transpose variable
 
             CoroutineScope(Dispatchers.IO).launch {
-                // if tab is in a playlist or favorite, save the transposition preference there too
-                if (currentTab is TabWithDataPlaylistEntry) {
-                    dataAccess.updateEntryTransposition(currentTab.entryId, newTranspose)
-                } else if (dataAccess.tabExistsInFavorites(currentTab.tabId)) {
-                    dataAccess.updateFavoriteTabTransposition(
-                        currentTab.tabId,
-                        newTranspose
-                    )
-                }
-
-                // always remember this as the fallback transpose, used whenever this tab isn't (or
-                // is no longer) in a playlist or favorited, so transposition is never lost
+                dataAccess.updateAllEntriesTransposition(currentTab.tabId, newTranspose)
                 dataAccess.updateDefaultTranspose(currentTab.tabId, newTranspose)
             }
         } else {
@@ -417,6 +408,10 @@ class TabViewModel
 
     override val transpose: LiveData<Int> = tab.map { t -> t?.transpose ?: t?.defaultTranspose ?: 0 }
 
+    override val favoriteTranspose: LiveData<Int?> = tab.map { t -> t?.favoriteTranspose }
+
+    override val originalTranspose: LiveData<Int> = tab.map { t -> t?.originalTranspose ?: 0 }
+
     override val fontSizeSp: LiveData<Float> = tab.combine(userAdjustedFontSize) { t, override ->
         override ?: t?.textSizeSp ?: defaultFontSize
     }
@@ -585,6 +580,39 @@ class TabViewModel
 
     fun onTransposeDownClick() {
         transpose(-1)
+    }
+
+    fun onTransposeToFavoriteClick() {
+        val favorite = favoriteTranspose.value ?: return
+        transpose(favorite - (transpose.value ?: 0))
+    }
+
+    fun onTransposeToOriginalClick() {
+        transpose((originalTranspose.value ?: 0) - (transpose.value ?: 0))
+    }
+
+    /**
+     * Marks the current transposition as this song's favourite, or clears the favourite if the
+     * current transposition already is it. For a song imported from the local song folder, the
+     * favourite is also written into the file's header.
+     */
+    fun onFavoriteTransposeToggle(context: Context) {
+        val currentTab = tab.value ?: return
+        val current = transpose.value ?: 0
+        val newFavorite = if (isSameTransposition(favoriteTranspose.value, current)) null else current
+        val flats = useFlats.value == true
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.updateFavoriteTranspose(currentTab.tabId, newFavorite)
+            if (currentTab.tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE) {
+                try {
+                    if (!LocalFileImporter.writeFavoriteToFile(context.applicationContext, dataAccess, currentTab.tabId, newFavorite, flats)) {
+                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its favorite transposition")
+                    }
+                } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
+                    Log.e(TAG, "Couldn't save favorite transposition to local song file: ${ex.message}", ex)
+                }
+            }
+        }
     }
 
     /**

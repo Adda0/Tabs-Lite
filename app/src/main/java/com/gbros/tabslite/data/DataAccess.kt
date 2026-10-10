@@ -330,11 +330,9 @@ interface DataAccess {
     @Query("SELECT EXISTS(SELECT * FROM playlist_entry WHERE playlist_id = $FAVORITES_PLAYLIST_ID AND tab_id = :tabId)")
     suspend fun tabExistsInFavorites(tabId: String): Boolean
 
-    @Query("UPDATE playlist_entry SET transpose = :transpose WHERE playlist_id = $FAVORITES_PLAYLIST_ID AND tab_id = :tabId")
-    suspend fun updateFavoriteTabTransposition(tabId: String, transpose: Int)
-
-    @Query("UPDATE playlist_entry SET transpose = :transpose WHERE entry_id = :entryId")
-    suspend fun updateEntryTransposition(entryId: Int, transpose: Int)
+    /** Transposition is remembered per song: every playlist entry (incl. favorites) of a tab follows the last one played */
+    @Query("UPDATE playlist_entry SET transpose = :transpose WHERE tab_id = :tabId")
+    suspend fun updateAllEntriesTransposition(tabId: String, transpose: Int)
 
     @Query("UPDATE tabs SET two_column_view = :enabled WHERE id = :tabId")
     suspend fun updateTwoColumnView(tabId: String, enabled: Boolean)
@@ -344,6 +342,9 @@ interface DataAccess {
 
     @Query("UPDATE tabs SET default_transpose = :transpose WHERE id = :tabId")
     suspend fun updateDefaultTranspose(tabId: String, transpose: Int)
+
+    @Query("UPDATE tabs SET favorite_transpose = :transpose WHERE id = :tabId")
+    suspend fun updateFavoriteTranspose(tabId: String, transpose: Int?)
 
     //#endregion
 

@@ -395,14 +395,16 @@ object BackendConnection {
 
         val result = requestResponse.getTabFull()
         if (result.content.isNotBlank()) {
-            // preserve this tab's remembered local settings (two-column view, text size, fallback
-            // transpose) across a re-fetch from the internet, since they're local-only and the API
-            // knows nothing of them
+            // preserve this tab's remembered local settings (two-column view, text size, fallback,
+            // favourite and original transpose) across a re-fetch from the internet, since they're
+            // local-only and the API knows nothing of them
             try {
                 val existing = dataAccess.getTabInstance(tabId)
                 result.twoColumnView = existing.twoColumnView
                 result.textSizeSp = existing.textSizeSp
                 result.defaultTranspose = existing.defaultTranspose
+                result.favoriteTranspose = existing.favoriteTranspose
+                result.originalTranspose = existing.originalTranspose
             } catch (ex: Exception) {
                 // no existing row for this tab id - nothing to preserve
             }

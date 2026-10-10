@@ -44,6 +44,10 @@ data class TabDataType(
     @ColumnInfo(name = "text_size_sp") var textSizeSp: Float? = null,
     /** Fallback transpose value for when this tab isn't in a playlist or favorited (see [ITab.transpose]) */
     @ColumnInfo(name = "default_transpose") var defaultTranspose: Int = 0,
+    /** The user's favourite transposition, or null if none is chosen (see [ITab.favoriteTranspose]) */
+    @ColumnInfo(name = "favorite_transpose") var favoriteTranspose: Int? = null,
+    /** The transposition matching the original recording's key (see [ITab.originalTranspose]) */
+    @ColumnInfo(name = "original_transpose") var originalTranspose: Int = 0,
     ) {
     override fun toString() = "$songName by $artistName"
 }

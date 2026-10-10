@@ -69,6 +69,12 @@ interface ITabViewState {
      */
     val transpose: LiveData<Int>
 
+    /** The song's favourite transposition, or null if none is chosen */
+    val favoriteTranspose: LiveData<Int?>
+
+    /** The transposition matching the original recording's key */
+    val originalTranspose: LiveData<Int>
+
     /**
      * The wrapped, transposed tab content to display
      */

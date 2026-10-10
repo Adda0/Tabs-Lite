@@ -59,6 +59,10 @@ interface ITab {
      * [transpose] is sourced from the playlist entry instead and this is unused
      */
     var defaultTranspose: Int
+    /** The user's favourite transposition of this song, or null if none is chosen */
+    var favoriteTranspose: Int?
+    /** The transposition matching the original recording's key; 0 when the content is written in it */
+    var originalTranspose: Int
 
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret)

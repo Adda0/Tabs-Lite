@@ -40,7 +40,9 @@ data class Tab(
     @ColumnInfo(name = "transpose") override var transpose: Int? = null,
     @ColumnInfo(name = "two_column_view") override var twoColumnView: Boolean = false,
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
-    @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0
+    @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
+    @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
+    @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0
 ): ITab {
     //#region "static" functions
     companion object {
@@ -85,7 +87,8 @@ data class Tab(
         type = tabFromDatabase.type, part = tabFromDatabase.part, version = tabFromDatabase.version, votes = tabFromDatabase.votes, rating = tabFromDatabase.rating, date = tabFromDatabase.date, status = tabFromDatabase.status, tabAccessType = tabFromDatabase.tabAccessType,
         tonalityName = tabFromDatabase.tonalityName, versionDescription = tabFromDatabase.versionDescription, recommended = tabFromDatabase.recommended, difficulty = tabFromDatabase.difficulty, tuning = tabFromDatabase.tuning,
         capo = tabFromDatabase.capo, contributorUserId = tabFromDatabase.contributorUserId, contributorUserName = tabFromDatabase.contributorUserName, content = tabFromDatabase.content,
-        twoColumnView = tabFromDatabase.twoColumnView, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose)
+        twoColumnView = tabFromDatabase.twoColumnView, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose,
+        favoriteTranspose = tabFromDatabase.favoriteTranspose, originalTranspose = tabFromDatabase.originalTranspose)
 
     //#endregion
 
@@ -148,6 +151,8 @@ data class Tab(
         twoColumnView = tab.twoColumnView
         textSizeSp = tab.textSizeSp
         defaultTranspose = tab.defaultTranspose
+        favoriteTranspose = tab.favoriteTranspose
+        originalTranspose = tab.originalTranspose
 
         recommended = tab.recommended
     }

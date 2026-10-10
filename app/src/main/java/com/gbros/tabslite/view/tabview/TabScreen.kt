@@ -139,6 +139,9 @@ fun NavGraphBuilder.tabScreen(
             onTransposeUpClick = viewModel::onTransposeUpClick,
             onTransposeDownClick = viewModel::onTransposeDownClick,
             onTransposeResetClick = viewModel::onTransposeResetClick,
+            onFavoriteTransposeToggle = viewModel::onFavoriteTransposeToggle,
+            onTransposeToFavoriteClick = viewModel::onTransposeToFavoriteClick,
+            onTransposeToOriginalClick = viewModel::onTransposeToOriginalClick,
             onTextClick = viewModel::onChordClick,
             onZoom = viewModel::onZoom,
             onChordDetailsDismiss = viewModel::onChordDetailsDismiss,
@@ -218,6 +221,9 @@ fun NavGraphBuilder.playlistEntryScreen(
             onTransposeUpClick = viewModel::onTransposeUpClick,
             onTransposeDownClick = viewModel::onTransposeDownClick,
             onTransposeResetClick = viewModel::onTransposeResetClick,
+            onFavoriteTransposeToggle = viewModel::onFavoriteTransposeToggle,
+            onTransposeToFavoriteClick = viewModel::onTransposeToFavoriteClick,
+            onTransposeToOriginalClick = viewModel::onTransposeToOriginalClick,
             onTextClick = viewModel::onChordClick,
             onZoom = viewModel::onZoom,
             onChordDetailsDismiss = viewModel::onChordDetailsDismiss,
@@ -254,6 +260,9 @@ fun TabScreen(
     onTransposeUpClick: () -> Unit,
     onTransposeDownClick: () -> Unit,
     onTransposeResetClick: () -> Unit,
+    onFavoriteTransposeToggle: (Context) -> Unit,
+    onTransposeToFavoriteClick: () -> Unit,
+    onTransposeToOriginalClick: () -> Unit,
     onTextClick: (chord: String) -> Unit,
     onZoom: (zoomFactor: Float) -> Unit,
     onChordDetailsDismiss: () -> Unit,
@@ -274,6 +283,7 @@ fun TabScreen(
     onTextSizeDecreaseClick: () -> Unit,
     onTextSizeIncreaseClick: () -> Unit
 ) {
+    val context = LocalContext.current
     // handle autoscroll
     val scrollState = rememberLazyListState()
     val leftColumnScrollState = rememberScrollState()
@@ -398,9 +408,16 @@ fun TabScreen(
 
             TabTransposeSection(
                 currentTransposition = viewState.transpose.observeAsState(0).value,
+                favoriteTransposition = viewState.favoriteTranspose.observeAsState(null).value,
+                originalTransposition = viewState.originalTranspose.observeAsState(0).value,
+                key = viewState.key.observeAsState("").value,
+                useFlats = viewState.useFlats.observeAsState(false).value,
                 onTransposeResetClick = onTransposeResetClick,
                 onTransposeUpClick = onTransposeUpClick,
-                onTransposeDownClick = onTransposeDownClick
+                onTransposeDownClick = onTransposeDownClick,
+                onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
+                onTransposeToFavoriteClick = onTransposeToFavoriteClick,
+                onTransposeToOriginalClick = onTransposeToOriginalClick
             )
 
             TabDisplayOptionsSection(
@@ -516,9 +533,16 @@ fun TabScreen(
 
                 TabTransposeSection(
                     currentTransposition = viewState.transpose.observeAsState(0).value,
+                    favoriteTransposition = viewState.favoriteTranspose.observeAsState(null).value,
+                    originalTransposition = viewState.originalTranspose.observeAsState(0).value,
+                    key = viewState.key.observeAsState("").value,
+                    useFlats = viewState.useFlats.observeAsState(false).value,
                     onTransposeResetClick = onTransposeResetClick,
                     onTransposeUpClick = onTransposeUpClick,
-                    onTransposeDownClick = onTransposeDownClick
+                    onTransposeDownClick = onTransposeDownClick,
+                    onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
+                    onTransposeToFavoriteClick = onTransposeToFavoriteClick,
+                    onTransposeToOriginalClick = onTransposeToOriginalClick
                 )
 
                 TabDisplayOptionsSection(
@@ -681,6 +705,8 @@ private fun TabViewPreview() {
         override val version: LiveData<Int>,
         override val songVersions: LiveData<List<ITab>>,
         override val transpose: LiveData<Int>,
+        override val favoriteTranspose: LiveData<Int?>,
+        override val originalTranspose: LiveData<Int>,
         override val content: LiveData<List<TabContentBlock>>,
         override val state: LiveData<LoadingState>,
         override val autoscrollPaused: LiveData<Boolean>,
@@ -721,6 +747,8 @@ private fun TabViewPreview() {
             version = MutableLiveData(tab.version),
             songVersions = MutableLiveData(listOf()),
             transpose = MutableLiveData(tab.transpose),
+            favoriteTranspose = MutableLiveData(tab.favoriteTranspose),
+            originalTranspose = MutableLiveData(tab.originalTranspose),
             content = MutableLiveData(listOf(TabContentBlock(AnnotatedString(tab.content), tab = true))),
             state = MutableLiveData(LoadingState.Success),
             autoscrollPaused = MutableLiveData(true),
@@ -795,6 +823,9 @@ private fun TabViewPreview() {
             onTransposeUpClick = { },
             onTransposeDownClick = { },
             onTransposeResetClick = { },
+            onFavoriteTransposeToggle = { _ -> },
+            onTransposeToFavoriteClick = { },
+            onTransposeToOriginalClick = { },
             onTextClick = { },
             onChordDetailsDismiss = { },
             onAutoscrollSliderValueChange = { },

@@ -301,7 +301,14 @@ class HomeViewModel
      * the user to pick it again.
      */
     fun importLocalSongsFolder(folderUri: Uri, context: Context) {
-        context.contentResolver.takePersistableUriPermission(folderUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        // write access lets favorite transpositions be saved back into the song files; a folder
+        // granted read-only before (rescan of an older pick) keeps working read-only
+        try {
+            context.contentResolver.takePersistableUriPermission(folderUri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        } catch (ex: SecurityException) {
+            context.contentResolver.takePersistableUriPermission(folderUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
 
         playlistImportState.postValue(LoadingState.Loading)
         playlistImportProgress.postValue(0.02f)

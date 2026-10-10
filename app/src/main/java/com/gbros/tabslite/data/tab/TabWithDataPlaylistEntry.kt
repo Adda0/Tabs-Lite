@@ -65,6 +65,8 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "two_column_view") override var twoColumnView: Boolean = false,
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
+    @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
+    @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
 
     // columns from Playlist
     @ColumnInfo(name = "user_created") var playlistUserCreated: Boolean? = true,
@@ -165,6 +167,8 @@ data class TabWithDataPlaylistEntry(
         twoColumnView = tab.twoColumnView
         textSizeSp = tab.textSizeSp
         defaultTranspose = tab.defaultTranspose
+        favoriteTranspose = tab.favoriteTranspose
+        originalTranspose = tab.originalTranspose
 
         recommended = tab.recommended
     }

@@ -137,7 +137,11 @@
     <string name="tab_capo">Capo: %s</string>
     <string name="tab_key">Key: %s</string>
     <string name="tab_author">Tab Author: %s</string>
-    <string name="tab_transpose">Transpose: %d</string>
+    <string name="tab_transpose" translation_description="Current transposition, e.g. \u0022D (+2)\u0022 or \u0022+2\u0022 when the key is unknown">Transpose: %s</string>
+    <string name="tab_transpose_original" translation_description="Chip that jumps to the transposition matching the original recording's key">Original: %s</string>
+    <string name="tab_transpose_favorite" translation_description="Chip that jumps to the user's favorite transposition">Favorite: %s</string>
+    <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that marks the current transposition as favorite">Set as favorite transposition</string>
+    <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that clears the favorite transposition">Remove favorite transposition</string>
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>
     <string name="tab_text_size_decrease_accessibility_text" translation_description="Accessibility text for the button that decreases the tab content text size">Decrease text size</string>
     <string name="tab_text_size_increase_accessibility_text" translation_description="Accessibility text for the button that increases the tab content text size">Increase text size</string>
