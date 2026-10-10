@@ -129,6 +129,16 @@ class HomeViewModel
         dataAccess = dataAccess
     )
 
+    /**
+     * The view model for the list of songs imported from the local song folder ("Local files" tab)
+     */
+    val localFilesSongListViewModel = SongListViewModel(
+        playlistId = Playlist.LOCAL_FILES_PLAYLIST_ID,
+        defaultSortBy = SortBy.Name,
+        sortPreferenceName = Preference.LOCAL_FILES_SORT,
+        dataAccess = dataAccess
+    )
+
     //#endregion
 
     //#region public methods

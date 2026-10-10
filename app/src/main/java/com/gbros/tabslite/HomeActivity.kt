@@ -105,6 +105,7 @@ class HomeActivity : ComponentActivity() {
     private suspend fun initializeUserPreferences(dataAccess: DataAccess) {
         dataAccess.insert(Preference(Preference.FAVORITES_SORT, SortBy.DateAdded.name))
         dataAccess.insert(Preference(Preference.POPULAR_SORT, SortBy.Popularity.name))
+        dataAccess.insert(Preference(Preference.LOCAL_FILES_SORT, SortBy.Name.name))
         dataAccess.insert(Preference(Preference.PLAYLIST_SORT, PlaylistsSortBy.Name.name))
         dataAccess.insert(Preference(Preference.AUTOSCROLL_DELAY, .5f.toString()))
         dataAccess.insert(Preference(Preference.INSTRUMENT, Instrument.Guitar.name))

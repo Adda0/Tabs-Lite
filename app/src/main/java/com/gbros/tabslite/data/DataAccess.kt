@@ -22,6 +22,7 @@ import com.gbros.tabslite.data.playlist.IPlaylistEntry
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.data.playlist.Playlist.Companion.FAVORITES_PLAYLIST_ID
 import com.gbros.tabslite.data.playlist.Playlist.Companion.TOP_TABS_PLAYLIST_ID
+import com.gbros.tabslite.data.playlist.Playlist.Companion.LOCAL_FILES_PLAYLIST_ID
 import com.gbros.tabslite.data.playlist.SelfContainedPlaylist
 import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.data.tab.TabDataType
@@ -156,10 +157,11 @@ interface DataAccess {
 
     //#region playlist table
 
-    @Query("SELECT * FROM playlist WHERE id != $FAVORITES_PLAYLIST_ID AND id != $TOP_TABS_PLAYLIST_ID")
+    // system playlists have their own home tabs
+    @Query("SELECT * FROM playlist WHERE id NOT IN ($FAVORITES_PLAYLIST_ID, $TOP_TABS_PLAYLIST_ID, $LOCAL_FILES_PLAYLIST_ID)")
     fun getLivePlaylists(): LiveData<List<Playlist>>
 
-    @Query("SELECT * FROM playlist WHERE id != $FAVORITES_PLAYLIST_ID AND id != $TOP_TABS_PLAYLIST_ID")
+    @Query("SELECT * FROM playlist WHERE id NOT IN ($FAVORITES_PLAYLIST_ID, $TOP_TABS_PLAYLIST_ID, $LOCAL_FILES_PLAYLIST_ID)")
     suspend fun getPlaylists(): List<Playlist>
 
     @Query("UPDATE playlist SET title = :newTitle WHERE id = :playlistId")

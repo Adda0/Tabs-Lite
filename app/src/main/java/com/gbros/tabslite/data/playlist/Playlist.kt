@@ -59,5 +59,11 @@ data class Playlist(
          * The reserved playlist ID for the Popular/Top Tabs system playlist
          */
         const val TOP_TABS_PLAYLIST_ID = -2
+
+        /**
+         * The reserved playlist ID for the Local Files system playlist, holding songs imported from
+         * the local song folder
+         */
+        const val LOCAL_FILES_PLAYLIST_ID = -3
     }
 }

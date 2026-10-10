@@ -5,7 +5,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.gbros.tabslite.data.DataAccess
-import com.gbros.tabslite.data.Preference
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.data.tab.TabDataType
 import java.util.UUID
@@ -124,18 +123,16 @@ object LocalFileImporter {
     }
 
     private suspend fun getOrCreateLocalFilesPlaylistId(dataAccess: DataAccess): Int {
-        dataAccess.getPreferenceValue(Preference.LOCAL_FILES_PLAYLIST_ID)?.toIntOrNull()?.let { return it }
-
-        val newId = dataAccess.upsert(
+        dataAccess.insert(
             Playlist(
+                playlistId = Playlist.LOCAL_FILES_PLAYLIST_ID,
                 userCreated = false,
                 title = LOCAL_FILES_PLAYLIST_TITLE,
                 dateCreated = System.currentTimeMillis(),
                 dateModified = System.currentTimeMillis(),
                 description = "Songs imported from a local folder"
             )
-        ).toInt()
-        dataAccess.upsert(Preference(Preference.LOCAL_FILES_PLAYLIST_ID, newId.toString()))
-        return newId
+        )  // ignored if it already exists
+        return Playlist.LOCAL_FILES_PLAYLIST_ID
     }
 }

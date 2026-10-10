@@ -23,7 +23,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -102,6 +104,8 @@ fun NavGraphBuilder.homeScreen(
             onFavoriteSongListSortByChange = viewModel.favoriteSongListViewModel::onSortSelectionChange,
             popularSongListViewState = viewModel.popularSongListViewModel,
             onPopularSongListSortByChange = viewModel.popularSongListViewModel::onSortSelectionChange,
+            localFilesSongListViewState = viewModel.localFilesSongListViewModel,
+            onLocalFilesSongListSortByChange = viewModel.localFilesSongListViewModel::onSortSelectionChange,
             onPlaylistsSortByChange = viewModel::sortPlaylists,
             tabSearchBarViewState = viewModel.tabSearchBarViewModel,
             onTabSearchBarQueryChange = viewModel.tabSearchBarViewModel::onQueryChange,
@@ -128,6 +132,8 @@ fun HomeScreen(
     onFavoriteSongListSortByChange: (SortBy) -> Unit,
     popularSongListViewState: ISongListViewState,
     onPopularSongListSortByChange: (SortBy) -> Unit,
+    localFilesSongListViewState: ISongListViewState,
+    onLocalFilesSongListSortByChange: (SortBy) -> Unit,
     onPlaylistsSortByChange: (PlaylistsSortBy) -> Unit,
     tabSearchBarViewState: ITabSearchBarViewState,
     onTabSearchBarQueryChange: (query: String) -> Unit,
@@ -144,8 +150,8 @@ fun HomeScreen(
     navigateToPlaylistEntryById: (id: Int) -> Unit,
     onNavigateToCreateTab: () -> Unit
 ) {
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
-    val secondaryPagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
+    val secondaryPagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
     val scrollingFollowingPair by remember {  // handle the sort by dropdown being in a separate pager
         derivedStateOf {
             if (pagerState.isScrollInProgress) {
@@ -283,6 +289,14 @@ fun HomeScreen(
                 ) {
                     pagerNav = if (pagerNav != 2) 2 else -1
                 }
+                TabRowItem(
+                    selected = pagerState.currentPage == 3,
+                    inactiveIcon = Icons.Outlined.Folder,
+                    activeIcon = Icons.Filled.Folder,
+                    title = stringResource(id = R.string.title_local_files_page)
+                ) {
+                    pagerNav = if (pagerNav != 3) 3 else -1
+                }
             }
 
             // Sort By dropdowns
@@ -311,6 +325,12 @@ fun HomeScreen(
                     2 -> SortByDropdown(
                         selectedSort = viewState.playlistsSortBy.observeAsState().value,
                         onOptionSelected = onPlaylistsSortByChange
+                    )
+
+                    // Local files page
+                    3 -> SortByDropdown(
+                        selectedSort = localFilesSongListViewState.sortBy.observeAsState().value,
+                        onOptionSelected = onLocalFilesSongListSortByChange
                     )
                 }
             }
@@ -349,6 +369,15 @@ fun HomeScreen(
                     livePlaylists = viewState.playlists,
                     onCreatePlaylist = onCreatePlaylist,
                     navigateToPlaylistById = navigateToPlaylistById
+                )
+
+                // Local files page
+                3 -> SongListView(
+                    viewState = localFilesSongListViewState,
+                    emptyListText = stringResource(R.string.empty_local_files),
+                    navigateToTabById = navigateToTabByTabId,
+                    navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
+                    navigateByPlaylistEntryId = true,  // open as playlist entries so next/previous song works
                 )
             }
         }
@@ -449,6 +478,8 @@ private fun HomeScreenPreview() {
             onFavoriteSongListSortByChange = {},
             popularSongListViewState = songListState,
             onPopularSongListSortByChange = {},
+            localFilesSongListViewState = songListState,
+            onLocalFilesSongListSortByChange = {},
             onPlaylistsSortByChange = {},
             tabSearchBarViewState = tabSearchBarViewState,
             onTabSearchBarQueryChange = {},

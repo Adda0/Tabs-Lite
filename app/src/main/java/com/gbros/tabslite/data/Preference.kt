@@ -36,6 +36,11 @@ data class Preference(
         const val POPULAR_SORT: String = "POPULAR_SORT"
 
         /**
+         * The preference name for which order the local files playlist should be ordered in
+         */
+        const val LOCAL_FILES_SORT: String = "LOCAL_FILES_SORT"
+
+        /**
          * The preference name for which order the user-created playlists should be sorted in
          */
         const val PLAYLIST_SORT: String = "PLAYLIST_SORT"
@@ -74,12 +79,6 @@ data class Preference(
          * The preference name for the content:// tree URI of the user's chosen local song folder
          */
         const val LOCAL_IMPORT_FOLDER_URI: String = "LOCAL_IMPORT_FOLDER_URI"
-
-        /**
-         * The preference name for the ID of the auto-created playlist holding songs imported from
-         * the local song folder
-         */
-        const val LOCAL_FILES_PLAYLIST_ID: String = "LOCAL_FILES_PLAYLIST_ID"
 
     }
 }
