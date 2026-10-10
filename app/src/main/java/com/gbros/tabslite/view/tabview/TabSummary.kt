@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
@@ -51,7 +52,9 @@ fun TabSummary(
     author: String,
     version: Int,
     songVersions: List<ITab>,
-    onNavigateToTabById: (String) -> Unit) {
+    onNavigateToTabById: (String) -> Unit,
+    tempo: String = "",
+    rhythm: String = "") {
     var versionDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -90,6 +93,12 @@ fun TabSummary(
                     text = stringResource(id = R.string.tab_key, key),
                     color = MaterialTheme.colorScheme.onBackground
                 )
+                if (tempo.isNotBlank()) {
+                    Text(
+                        text = stringResource(id = R.string.tab_tempo, tempo),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
             // versions dropdown to switch versions of this song
             ExposedDropdownMenuBox(
@@ -142,6 +151,15 @@ fun TabSummary(
             text = stringResource(id = R.string.tab_author, author),
             color = MaterialTheme.colorScheme.onBackground
         )
+        if (rhythm.isNotBlank()) {
+            // monospaced so the strums line up under the beat header
+            Text(
+                text = rhythm,
+                fontFamily = FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
     }
 }
 
@@ -170,6 +188,8 @@ private fun TabSummaryPreview() {
             author = "Joe Blow",
             version = 1,
             songVersions = listOf(tab),
+            tempo = "4/4",
+            rhythm = "         | 1 & | 2 & | 3 & | 4 &\nverse: 8 | d - | d - | D - | d u\nr: 4     | D - | D U | D U | D U",
             onNavigateToTabById = {}
         )
     }

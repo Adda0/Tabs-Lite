@@ -396,6 +396,10 @@ class TabViewModel
     override fun getCapoText(context: Context): LiveData<String> = tab.map { t -> t?.getCapoText(context) ?: "" }
 
     override val key: LiveData<String> = tab.map { t -> t?.tonalityName ?: "" }
+
+    override val tempo: LiveData<String> = tab.map { t -> t?.tempo ?: "" }
+
+    override val rhythm: LiveData<String> = tab.map { t -> t?.rhythm ?: "" }
     
     override val author: LiveData<String> = tab.map { t -> t?.contributorUserName ?: "" }
 

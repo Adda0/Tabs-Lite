@@ -350,17 +350,23 @@ interface DataAccess {
 
     //#region chord variation table
 
-    @Query("SELECT * FROM chord_variation WHERE chord_id = :chordId AND instrument = :instrument")
+    // fingerings from the local chords file (ids starting `local-`) are listed before fetched ones
+    @Query("SELECT * FROM chord_variation WHERE chord_id = :chordId AND instrument = :instrument ORDER BY id NOT LIKE 'local-%'")
     suspend fun getChordVariations(chordId: String, instrument: Instrument): List<ChordVariation>
 
     /**
-     * Get one variation for each chordId
+     * Get one variation for each chordId, a local one where there is one
      */
-    @Query("SELECT * FROM chord_variation WHERE chord_id IN (:chordIds) AND instrument = :instrument GROUP BY chord_id")
+    @Query("SELECT * FROM chord_variation WHERE chord_id IN (:chordIds) AND instrument = :instrument" +
+            " AND (id LIKE 'local-%' OR chord_id NOT IN (SELECT chord_id FROM chord_variation WHERE id LIKE 'local-%' AND instrument = :instrument))" +
+            " GROUP BY chord_id")
     fun getFirstChordVariations(chordIds: List<String>, instrument: Instrument): LiveData<List<ChordVariation>>
 
-    @Query("SELECT * FROM chord_variation WHERE chord_id = :chordId AND instrument = :instrument")
+    @Query("SELECT * FROM chord_variation WHERE chord_id = :chordId AND instrument = :instrument ORDER BY id NOT LIKE 'local-%'")
     fun chordVariations(chordId: String, instrument: Instrument): LiveData<List<ChordVariation>>
+
+    @Query("DELETE FROM chord_variation WHERE id LIKE 'local-%'")
+    suspend fun deleteLocalChordVariations()
 
     @Query("SELECT DISTINCT chord_id FROM chord_variation WHERE chord_id IN (:chordIds) AND instrument = :instrument")
     suspend fun findAll(chordIds: List<String>, instrument: Instrument): List<String>

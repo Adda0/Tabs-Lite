@@ -409,7 +409,9 @@ fun TabScreen(
                 author = viewState.author.observeAsState("").value,
                 version = viewState.version.observeAsState(-1).value,
                 songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
-                onNavigateToTabById = onNavigateToTabByTabId
+                onNavigateToTabById = onNavigateToTabByTabId,
+                tempo = viewState.tempo.observeAsState("").value,
+                rhythm = viewState.rhythm.observeAsState("").value
             )
 
             TabTransposeSection(
@@ -534,7 +536,9 @@ fun TabScreen(
                     author = viewState.author.observeAsState("").value,
                     version = viewState.version.observeAsState(-1).value,
                     songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
-                    onNavigateToTabById = onNavigateToTabByTabId
+                    onNavigateToTabById = onNavigateToTabByTabId,
+                    tempo = viewState.tempo.observeAsState("").value,
+                    rhythm = viewState.rhythm.observeAsState("").value
                 )
 
                 TabTransposeSection(
@@ -722,6 +726,8 @@ private fun TabViewPreview() {
         override val difficulty: LiveData<String>,
         override val tuning: LiveData<String>,
         override val key: LiveData<String>,
+        override val tempo: LiveData<String>,
+        override val rhythm: LiveData<String>,
         override val author: LiveData<String>,
         override val version: LiveData<Int>,
         override val songVersions: LiveData<List<ITab>>,
@@ -764,6 +770,8 @@ private fun TabViewPreview() {
             difficulty = MutableLiveData(tab.difficulty),
             tuning = MutableLiveData(tab.tuning),
             key = MutableLiveData(tab.tonalityName),
+            tempo = MutableLiveData(tab.tempo),
+            rhythm = MutableLiveData(tab.rhythm),
             author = MutableLiveData(tab.artistName),
             version = MutableLiveData(tab.version),
             songVersions = MutableLiveData(listOf()),

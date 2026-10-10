@@ -63,6 +63,10 @@ interface ITab {
     var favoriteTranspose: Int?
     /** The transposition matching the original recording's key; 0 when the content is written in it */
     var originalTranspose: Int
+    /** Time signature and/or speed from a local song file's `tempo` header, blank if none */
+    var tempo: String
+    /** The song's strumming patterns, rendered from its `rhythm` header (see [com.gbros.tabslite.utilities.formatRhythms]), blank if none */
+    var rhythm: String
 
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret)

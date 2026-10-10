@@ -137,6 +137,7 @@
     <string name="tab_tuning">Tuning: %s</string>
     <string name="tab_capo">Capo: %s</string>
     <string name="tab_key">Key: %s</string>
+    <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>
     <string name="tab_transpose" translation_description="Current transposition, e.g. \u0022D (+2)\u0022 or \u0022+2\u0022 when the key is unknown">Transpose: %s</string>
     <string name="tab_transpose_original" translation_description="Chip that jumps to the transposition matching the original recording's key">Original: %s</string>

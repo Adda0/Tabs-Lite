@@ -41,6 +41,12 @@ interface ITabViewState {
 
     val key: LiveData<String>
 
+    /** Time signature and/or speed from a local song file's header, blank if none */
+    val tempo: LiveData<String>
+
+    /** The song's strumming patterns, one per line with a beat header, blank if none */
+    val rhythm: LiveData<String>
+
     /**
      * The author of the tab not the song
      */

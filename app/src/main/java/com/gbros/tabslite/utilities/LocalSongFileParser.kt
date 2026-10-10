@@ -28,6 +28,10 @@ data class LocalSongFile(
     val originalTranspose: Int? = null,
     /** Half steps from [key] to the favourite key, or null if not given */
     val favoriteTranspose: Int? = null,
+    /** Time signature and/or speed as written, e.g. `4/4` or `4/4 (~68 BPM)` */
+    val tempo: String = "",
+    /** `label: id` references into the rhythms file, see [parseRhythmReferences] */
+    val rhythms: List<RhythmReference> = emptyList(),
 )
 
 private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
@@ -37,10 +41,12 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  *
  * Recognized header keys (case-insensitive, `-` and `_` interchangeable, `favourite` accepted for
  * `favorite`): `song_name` and `artist_name` (required), `capo`, `tuning`, `difficulty`,
- * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`
- * (all optional). `key` is the key the content is written in; `original_key` and `favorite_key`
- * only take effect alongside it, since they're stored as transpositions relative to it;
- * `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. Header parsing stops at the
+ * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`,
+ * `tempo`, `rhythm` (all optional). `key` is the key the content is written in; `original_key` and
+ * `favorite_key` only take effect alongside it, since they're stored as transpositions relative to
+ * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. `tempo` holds the time
+ * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
+ * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. Header parsing stops at the
  * first line that isn't a `key: value` pair; everything from there on (after skipping a single
  * separating blank line, if present) is the tab content body.
  *
@@ -90,7 +96,9 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         content = convertedBody,
         key = writtenKey,
         originalTranspose = transposeTo("original_key"),
-        favoriteTranspose = transposeTo("favorite_key") ?: header["favorite_transpose"]?.toIntOrNull()
+        favoriteTranspose = transposeTo("favorite_key") ?: header["favorite_transpose"]?.toIntOrNull(),
+        tempo = header["tempo"].orEmpty(),
+        rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
     )
 }
 

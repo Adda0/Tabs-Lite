@@ -6,7 +6,13 @@ import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.Preference
+import com.chrynan.chords.model.ChordMarker
+import com.chrynan.chords.model.Finger
+import com.chrynan.chords.model.FretNumber
+import com.chrynan.chords.model.StringNumber
 import com.gbros.tabslite.data.chord.Chord
+import com.gbros.tabslite.data.chord.ChordVariation
+import com.gbros.tabslite.data.chord.Instrument
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.data.tab.TabDataType
 import java.util.UUID
@@ -25,6 +31,8 @@ object LocalFileImporter {
     const val LOCAL_FILE_ACCESS_TYPE = "local_file"
 
     private const val LOCAL_FILES_PLAYLIST_TITLE = "Local Files"
+    /** Marks chord variations imported from the chords file; must match the `local-%` patterns in [DataAccess] */
+    private const val LOCAL_CHORD_VARIATION_ID_PREFIX = "local-"
     private val SONG_FILE_EXTENSIONS = setOf("txt", "song")
 
     /**
@@ -46,6 +54,13 @@ object LocalFileImporter {
 
         val files = mutableListOf<Pair<String, DocumentFile>>() // relative path -> file
         collectSongFiles(root, "", files)
+
+        // the shared tables sit at the top of the folder and aren't songs themselves
+        fun readTable(name: String): String? = root.findFile(name)?.let { file ->
+            context.contentResolver.openInputStream(file.uri)?.use { it.reader().readText() }
+        }
+        val rhythms = readTable(RHYTHMS_FILE_NAME)?.let { parseRhythms(it) }.orEmpty()
+        importChordFingerings(readTable(CHORDS_FILE_NAME), dataAccess)
 
         val playlistId = getOrCreateLocalFilesPlaylistId(dataAccess)
         dataAccess.clearPlaylist(playlistId)
@@ -82,7 +97,9 @@ object LocalFileImporter {
                         originalTranspose = parsed.originalTranspose ?: 0,
                         favoriteTranspose = parsed.favoriteTranspose,
                         // a song never played yet opens in its favourite key
-                        defaultTranspose = parsed.favoriteTranspose ?: 0
+                        defaultTranspose = parsed.favoriteTranspose ?: 0,
+                        tempo = parsed.tempo,
+                        rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms)
                     )
                     // preserve this tab's remembered local settings (two-column view, text size,
                     // last played transpose, and an in-app favourite when the file names none)
@@ -158,10 +175,44 @@ object LocalFileImporter {
             val childRelativePath = if (relativePath.isEmpty()) child.name.orEmpty() else "$relativePath/${child.name}"
             if (child.isDirectory) {
                 collectSongFiles(child, childRelativePath, into)
+            } else if (relativePath.isEmpty() && child.name.orEmpty().lowercase() in setOf(RHYTHMS_FILE_NAME, CHORDS_FILE_NAME)) {
+                continue
             } else if (SONG_FILE_EXTENSIONS.any { ext -> child.name?.endsWith(".$ext", ignoreCase = true) == true }) {
                 into.add(childRelativePath to child)
             }
         }
+    }
+
+    /**
+     * Replaces the fingerings previously imported from the chords file with those in [text] (none
+     * when the file is gone). They're stored as guitar chord variations under each chord's lookup
+     * name (so `Hm` serves `Bm`), and are shown before any fetched from the internet.
+     */
+    private suspend fun importChordFingerings(text: String?, dataAccess: DataAccess) {
+        dataAccess.deleteLocalChordVariations()
+        val fingerings = text?.let { parseChordFingerings(it) }.orEmpty()
+        val variations = fingerings.groupBy { Chord.lookupName(it.name) }.flatMap { (chordId, chordFingerings) ->
+            chordFingerings.mapIndexed { index, fingering ->
+                val notes = ArrayList<ChordMarker.Note>()
+                val open = ArrayList<ChordMarker.Open>()
+                val muted = ArrayList<ChordMarker.Muted>()
+                fingering.frets.forEachIndexed { index, fret ->
+                    val string = StringNumber(6 - index) // the file runs low E -> high e; string 1 is high e
+                    when {
+                        fret == null -> muted.add(ChordMarker.Muted(string))
+                        fret == 0 -> open.add(ChordMarker.Open(string))
+                        else -> notes.add(ChordMarker.Note(fret = FretNumber(fret), finger = Finger.UNKNOWN, string = string))
+                    }
+                }
+                ChordVariation(
+                    varId = "$LOCAL_CHORD_VARIATION_ID_PREFIX$chordId-$index", chordId = chordId,
+                    noteChordMarkers = notes, openChordMarkers = open, mutedChordMarkers = muted,
+                    barChordMarkers = arrayListOf(), instrument = Instrument.Guitar
+                )
+            }
+        }
+        dataAccess.insertAll(variations)
+        Log.i(TAG, "Imported ${variations.size} chord fingerings from $CHORDS_FILE_NAME")
     }
 
     private suspend fun getOrCreateLocalFilesPlaylistId(dataAccess: DataAccess): Int {

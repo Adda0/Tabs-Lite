@@ -42,7 +42,9 @@ data class Tab(
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
     @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
-    @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0
+    @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
+    @ColumnInfo(name = "tempo") override var tempo: String = "",
+    @ColumnInfo(name = "rhythm") override var rhythm: String = ""
 ): ITab {
     //#region "static" functions
     companion object {
@@ -88,7 +90,8 @@ data class Tab(
         tonalityName = tabFromDatabase.tonalityName, versionDescription = tabFromDatabase.versionDescription, recommended = tabFromDatabase.recommended, difficulty = tabFromDatabase.difficulty, tuning = tabFromDatabase.tuning,
         capo = tabFromDatabase.capo, contributorUserId = tabFromDatabase.contributorUserId, contributorUserName = tabFromDatabase.contributorUserName, content = tabFromDatabase.content,
         twoColumnView = tabFromDatabase.twoColumnView, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose,
-        favoriteTranspose = tabFromDatabase.favoriteTranspose, originalTranspose = tabFromDatabase.originalTranspose)
+        favoriteTranspose = tabFromDatabase.favoriteTranspose, originalTranspose = tabFromDatabase.originalTranspose,
+        tempo = tabFromDatabase.tempo, rhythm = tabFromDatabase.rhythm)
 
     //#endregion
 
@@ -153,6 +156,8 @@ data class Tab(
         defaultTranspose = tab.defaultTranspose
         favoriteTranspose = tab.favoriteTranspose
         originalTranspose = tab.originalTranspose
+        tempo = tab.tempo
+        rhythm = tab.rhythm
 
         recommended = tab.recommended
     }

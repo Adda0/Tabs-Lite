@@ -48,6 +48,10 @@ data class TabDataType(
     @ColumnInfo(name = "favorite_transpose") var favoriteTranspose: Int? = null,
     /** The transposition matching the original recording's key (see [ITab.originalTranspose]) */
     @ColumnInfo(name = "original_transpose") var originalTranspose: Int = 0,
+    /** See [ITab.tempo] */
+    @ColumnInfo(name = "tempo") var tempo: String = "",
+    /** See [ITab.rhythm] */
+    @ColumnInfo(name = "rhythm") var rhythm: String = "",
     ) {
     override fun toString() = "$songName by $artistName"
 }
