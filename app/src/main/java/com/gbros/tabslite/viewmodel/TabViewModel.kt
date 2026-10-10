@@ -35,6 +35,8 @@ import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.utilities.capoAfterTranspose
+import com.gbros.tabslite.utilities.formatTranspositionList
+import com.gbros.tabslite.utilities.parseTranspositionList
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -427,6 +429,8 @@ class TabViewModel
 
     override val favoriteTranspose: LiveData<Int?> = tab.map { t -> t?.favoriteTranspose }
 
+    override val favoriteTransposes: LiveData<List<Int>> = tab.map { t -> parseTranspositionList(t?.favoriteTransposes.orEmpty()) }
+
     override val originalTranspose: LiveData<Int> = tab.map { t -> t?.originalTranspose ?: 0 }
 
     override val fontSizeSp: LiveData<Float> = tab.combine(userAdjustedFontSize) { t, override ->
@@ -599,9 +603,18 @@ class TabViewModel
         transpose(-1)
     }
 
-    fun onTransposeToFavoriteClick() {
-        val favorite = favoriteTranspose.value ?: return
-        transpose(favorite - (transpose.value ?: 0))
+    /**
+     * Jumps to the favourite [transposition]; if it's already the current one, toggles it as the
+     * favourite that suits the singer's voice best.
+     */
+    fun onTransposeToFavoriteClick(context: Context, transposition: Int) {
+        val current = transpose.value ?: 0
+        if (!isSameTransposition(transposition, current)) {
+            transpose(transposition - current)
+            return
+        }
+        val best = favoriteTranspose.value
+        saveFavorites(context, favoriteTransposes.value.orEmpty(), if (isSameTransposition(best, transposition)) null else transposition)
     }
 
     fun onTransposeToOriginalClick() {
@@ -609,24 +622,35 @@ class TabViewModel
     }
 
     /**
-     * Marks the current transposition as this song's favourite, or clears the favourite if the
-     * current transposition already is it. For a song imported from the local song folder, the
-     * favourite is also written into the file's header.
+     * Adds the current transposition to this song's favourites, or removes it if it already is one.
      */
     fun onFavoriteTransposeToggle(context: Context) {
-        val currentTab = tab.value ?: return
         val current = transpose.value ?: 0
-        val newFavorite = if (isSameTransposition(favoriteTranspose.value, current)) null else current
+        val favorites = favoriteTransposes.value.orEmpty()
+        val best = favoriteTranspose.value
+        if (favorites.any { isSameTransposition(it, current) }) {
+            saveFavorites(context, favorites.filterNot { isSameTransposition(it, current) }, best.takeUnless { isSameTransposition(it, current) })
+        } else {
+            saveFavorites(context, favorites + current, best)
+        }
+    }
+
+    /**
+     * Stores the favourite transpositions; for a song imported from the local song folder, also
+     * writes them into the file's header.
+     */
+    private fun saveFavorites(context: Context, favorites: List<Int>, best: Int?) {
+        val currentTab = tab.value ?: return
         val flats = useFlats.value == true
         CoroutineScope(Dispatchers.IO).launch {
-            dataAccess.updateFavoriteTranspose(currentTab.tabId, newFavorite)
+            dataAccess.updateFavoriteTransposes(currentTab.tabId, formatTranspositionList(favorites), best)
             if (currentTab.tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE) {
                 try {
-                    if (!LocalFileImporter.writeFavoriteToFile(context.applicationContext, dataAccess, currentTab.tabId, newFavorite, flats)) {
-                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its favorite transposition")
+                    if (!LocalFileImporter.writeFavoritesToFile(context.applicationContext, dataAccess, currentTab.tabId, favorites, best, flats)) {
+                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its favorite transpositions")
                     }
                 } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
-                    Log.e(TAG, "Couldn't save favorite transposition to local song file: ${ex.message}", ex)
+                    Log.e(TAG, "Couldn't save favorite transpositions to local song file: ${ex.message}", ex)
                 }
             }
         }

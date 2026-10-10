@@ -3,6 +3,11 @@ package com.gbros.tabslite.utilities
 /** Whether two transpositions sound the same, i.e. differ by whole octaves (transpose values wrap at ±12) */
 fun isSameTransposition(a: Int?, b: Int?): Boolean = a != null && b != null && Math.floorMod(a - b, 12) == 0
 
+/** Transpositions stored comma-separated (see [com.gbros.tabslite.data.tab.ITab.favoriteTransposes]) */
+fun parseTranspositionList(text: String): List<Int> = text.split(',').mapNotNull { it.trim().toIntOrNull() }
+
+fun formatTranspositionList(transpositions: List<Int>): String = transpositions.joinToString(",")
+
 /**
  * Capo fret after transposing chords written for [capo] by [transpose] half steps, keeping the
  * sounding pitch while the capo can move: transposing up lowers the capo until it's off (then the

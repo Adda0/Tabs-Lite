@@ -68,6 +68,7 @@ import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.data.tab.TabContentBlock
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.ui.theme.AppTheme
+import com.gbros.tabslite.utilities.parseTranspositionList
 import com.gbros.tabslite.utilities.KeepScreenOn
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.card.ErrorCard
@@ -265,7 +266,7 @@ fun TabScreen(
     onTransposeDownClick: () -> Unit,
     onTransposeResetClick: () -> Unit,
     onFavoriteTransposeToggle: (Context) -> Unit,
-    onTransposeToFavoriteClick: () -> Unit,
+    onTransposeToFavoriteClick: (Context, Int) -> Unit,
     onTransposeToOriginalClick: () -> Unit,
     onTextClick: (chord: String) -> Unit,
     onZoom: (zoomFactor: Float) -> Unit,
@@ -417,6 +418,7 @@ fun TabScreen(
             TabTransposeSection(
                 currentTransposition = viewState.transpose.observeAsState(0).value,
                 favoriteTransposition = viewState.favoriteTranspose.observeAsState(null).value,
+                favoriteTranspositions = viewState.favoriteTransposes.observeAsState(emptyList()).value,
                 originalTransposition = viewState.originalTranspose.observeAsState(0).value,
                 key = viewState.key.observeAsState("").value,
                 useFlats = viewState.useFlats.observeAsState(false).value,
@@ -424,7 +426,7 @@ fun TabScreen(
                 onTransposeUpClick = onTransposeUpClick,
                 onTransposeDownClick = onTransposeDownClick,
                 onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
-                onTransposeToFavoriteClick = onTransposeToFavoriteClick,
+                onTransposeToFavoriteClick = { transposition -> onTransposeToFavoriteClick(context, transposition) },
                 onTransposeToOriginalClick = onTransposeToOriginalClick
             )
 
@@ -544,6 +546,7 @@ fun TabScreen(
                 TabTransposeSection(
                     currentTransposition = viewState.transpose.observeAsState(0).value,
                     favoriteTransposition = viewState.favoriteTranspose.observeAsState(null).value,
+                    favoriteTranspositions = viewState.favoriteTransposes.observeAsState(emptyList()).value,
                     originalTransposition = viewState.originalTranspose.observeAsState(0).value,
                     key = viewState.key.observeAsState("").value,
                     useFlats = viewState.useFlats.observeAsState(false).value,
@@ -551,7 +554,7 @@ fun TabScreen(
                     onTransposeUpClick = onTransposeUpClick,
                     onTransposeDownClick = onTransposeDownClick,
                     onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
-                    onTransposeToFavoriteClick = onTransposeToFavoriteClick,
+                    onTransposeToFavoriteClick = { transposition -> onTransposeToFavoriteClick(context, transposition) },
                     onTransposeToOriginalClick = onTransposeToOriginalClick
                 )
 
@@ -733,6 +736,7 @@ private fun TabViewPreview() {
         override val songVersions: LiveData<List<ITab>>,
         override val transpose: LiveData<Int>,
         override val favoriteTranspose: LiveData<Int?>,
+        override val favoriteTransposes: LiveData<List<Int>>,
         override val originalTranspose: LiveData<Int>,
         override val content: LiveData<List<TabContentBlock>>,
         override val state: LiveData<LoadingState>,
@@ -777,6 +781,7 @@ private fun TabViewPreview() {
             songVersions = MutableLiveData(listOf()),
             transpose = MutableLiveData(tab.transpose),
             favoriteTranspose = MutableLiveData(tab.favoriteTranspose),
+            favoriteTransposes = MutableLiveData(parseTranspositionList(tab.favoriteTransposes)),
             originalTranspose = MutableLiveData(tab.originalTranspose),
             content = MutableLiveData(listOf(TabContentBlock(AnnotatedString(tab.content), tab = true))),
             state = MutableLiveData(LoadingState.Success),
@@ -853,7 +858,7 @@ private fun TabViewPreview() {
             onTransposeDownClick = { },
             onTransposeResetClick = { },
             onFavoriteTransposeToggle = { _ -> },
-            onTransposeToFavoriteClick = { },
+            onTransposeToFavoriteClick = { _, _ -> },
             onTransposeToOriginalClick = { },
             onTextClick = { },
             onChordDetailsDismiss = { },

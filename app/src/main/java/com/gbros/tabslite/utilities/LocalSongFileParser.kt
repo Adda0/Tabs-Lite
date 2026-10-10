@@ -26,7 +26,9 @@ data class LocalSongFile(
     val key: String = "",
     /** Half steps from [key] to the original recording's key, or null if not given */
     val originalTranspose: Int? = null,
-    /** Half steps from [key] to the favourite key, or null if not given */
+    /** Half steps from [key] to each favourite key, in file order */
+    val favoriteTranspositions: List<Int> = emptyList(),
+    /** The favourite marked with `*` (suits the singer's voice best), or null if none is */
     val favoriteTranspose: Int? = null,
     /** Time signature and/or speed as written, e.g. `4/4` or `4/4 (~68 BPM)` */
     val tempo: String = "",
@@ -44,7 +46,8 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`,
  * `tempo`, `rhythm` (all optional). `key` is the key the content is written in; `original_key` and
  * `favorite_key` only take effect alongside it, since they're stored as transpositions relative to
- * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. Without `original_key`,
+ * it; `favorite_transpose` (half steps, e.g. `+2`) is the keyless fallback. Both take a comma-separated
+ * list (`favorite_key: D#, E*`), `*` marking the one that suits the singer's voice best. Without `original_key`,
  * `capo` marks the original key: `key` played at that capo fret. `tempo` holds the time
  * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
  * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. Header parsing stops at the
@@ -85,6 +88,17 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
     val writtenKey = header["key"].orEmpty()
     fun transposeTo(headerKey: String): Int? =
         header[headerKey]?.takeIf { it.isNotBlank() && writtenKey.isNotBlank() }?.let { transposeBetweenKeys(writtenKey, it) }
+    // (transposition, starred) for each favourite_key / favorite_transpose entry
+    val favorites = listOfNotNull(header["favorite_key"], header["favorite_transpose"])
+        .flatMap { it.split(',') }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .mapNotNull { entry ->
+            val value = entry.trim('*', ' ')
+            val transposition = value.toIntOrNull()
+                ?: writtenKey.takeIf { it.isNotBlank() }?.let { transposeBetweenKeys(it, value) }
+            transposition?.let { it to (entry.startsWith('*') || entry.endsWith('*')) }
+        }
 
     return LocalSongFile(
         songName = songName,
@@ -97,7 +111,8 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         content = convertedBody,
         key = writtenKey,
         originalTranspose = transposeTo("original_key") ?: header["capo"]?.toIntOrNull()?.takeIf { it in 1..11 },
-        favoriteTranspose = transposeTo("favorite_key") ?: header["favorite_transpose"]?.toIntOrNull(),
+        favoriteTranspositions = favorites.map { it.first },
+        favoriteTranspose = favorites.firstOrNull { it.second }?.first,
         tempo = header["tempo"].orEmpty(),
         rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
     )

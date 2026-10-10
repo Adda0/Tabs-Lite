@@ -66,6 +66,7 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
     @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
+    @ColumnInfo(name = "favorite_transposes") override var favoriteTransposes: String = "",
     @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
     @ColumnInfo(name = "tempo") override var tempo: String = "",
     @ColumnInfo(name = "rhythm") override var rhythm: String = "",
@@ -170,6 +171,7 @@ data class TabWithDataPlaylistEntry(
         textSizeSp = tab.textSizeSp
         defaultTranspose = tab.defaultTranspose
         favoriteTranspose = tab.favoriteTranspose
+        favoriteTransposes = tab.favoriteTransposes
         originalTranspose = tab.originalTranspose
         tempo = tab.tempo
         rhythm = tab.rhythm

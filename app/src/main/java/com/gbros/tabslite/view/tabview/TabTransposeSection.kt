@@ -1,6 +1,8 @@
 package com.gbros.tabslite.view.tabview
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,11 +37,16 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.chord.Chord
 import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.isSameTransposition
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TabTransposeSection(
     currentTransposition: Int,
+    /** The favourite that suits the singer's voice best, marked with a star */
     favoriteTransposition: Int?,
+    favoriteTranspositions: List<Int>,
     originalTransposition: Int,
     key: String,
     useFlats: Boolean,
@@ -47,7 +54,8 @@ fun TabTransposeSection(
     onTransposeDownClick: () -> Unit,
     onTransposeUpClick: () -> Unit,
     onFavoriteTransposeToggle: () -> Unit,
-    onTransposeToFavoriteClick: () -> Unit,
+    /** Jumps to a favourite; on the current one, toggles it as the best */
+    onTransposeToFavoriteClick: (Int) -> Unit,
     onTransposeToOriginalClick: () -> Unit
 ) {
     // "D (+2)" when the song's key is known, else just "+2"
@@ -55,7 +63,7 @@ fun TabTransposeSection(
         val signed = if (transposition > 0) "+$transposition" else transposition.toString()
         return if (key.isBlank()) signed else "${Chord.transposeChord(key, transposition, useFlats)} ($signed)"
     }
-    val isFavorite = isSameTransposition(favoriteTransposition, currentTransposition)
+    val isFavorite = favoriteTranspositions.any { isSameTransposition(it, currentTransposition) }
 
     Column(
         modifier = Modifier
@@ -83,7 +91,7 @@ fun TabTransposeSection(
             }
             IconButton(onClick = onFavoriteTransposeToggle) {
                 Icon(
-                    imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                    imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = stringResource(
                         if (isFavorite) R.string.tab_transpose_favorite_remove_accessibility_text
                         else R.string.tab_transpose_favorite_set_accessibility_text
@@ -106,19 +114,21 @@ fun TabTransposeSection(
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Transpose up")
             }
         }
-        // jump to the original/favourite transposition; the chip matching the current one is selected
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // jump to the original/a favourite transposition; the chip matching the current one is
+        // selected, and tapping it again marks it as the best favourite (star)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = isSameTransposition(originalTransposition, currentTransposition),
                 onClick = onTransposeToOriginalClick,
                 label = { Text(stringResource(R.string.tab_transpose_original, describe(originalTransposition))) }
             )
-            if (favoriteTransposition != null) {
+            for (favorite in favoriteTranspositions) {
+                val isBest = isSameTransposition(favoriteTransposition, favorite)
                 FilterChip(
-                    selected = isFavorite,
-                    onClick = onTransposeToFavoriteClick,
-                    label = { Text(stringResource(R.string.tab_transpose_favorite, describe(favoriteTransposition))) },
-                    leadingIcon = { Icon(imageVector = Icons.Filled.Star, contentDescription = null) }
+                    selected = isSameTransposition(favorite, currentTransposition),
+                    onClick = { onTransposeToFavoriteClick(favorite) },
+                    label = { Text(stringResource(R.string.tab_transpose_favorite, describe(favorite))) },
+                    leadingIcon = { Icon(imageVector = if (isBest) Icons.Filled.Star else Icons.Filled.Favorite, contentDescription = null) }
                 )
             }
         }
@@ -128,7 +138,7 @@ fun TabTransposeSection(
 @Composable @Preview
 private fun TabTransposeSectionPreview() {
     AppTheme {
-        TabTransposeSection(currentTransposition = 2, favoriteTransposition = 2, originalTransposition = 1,
-            key = "C", useFlats = false, {}, {}, {}, {}, {}, {})
+        TabTransposeSection(currentTransposition = 2, favoriteTransposition = 2, favoriteTranspositions = listOf(2, 4),
+            originalTransposition = 1, key = "C", useFlats = false, {}, {}, {}, {}, {}, {})
     }
 }

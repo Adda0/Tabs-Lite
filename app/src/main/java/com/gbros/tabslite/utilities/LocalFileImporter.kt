@@ -96,8 +96,9 @@ object LocalFileImporter {
                         tonalityName = parsed.key,
                         originalTranspose = parsed.originalTranspose ?: 0,
                         favoriteTranspose = parsed.favoriteTranspose,
-                        // a song never played yet opens in its favourite key
-                        defaultTranspose = parsed.favoriteTranspose ?: 0,
+                        favoriteTransposes = formatTranspositionList(parsed.favoriteTranspositions),
+                        // a song never played yet opens in its best favourite key
+                        defaultTranspose = parsed.favoriteTranspose ?: parsed.favoriteTranspositions.firstOrNull() ?: 0,
                         tempo = parsed.tempo,
                         rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms)
                     )
@@ -109,8 +110,9 @@ object LocalFileImporter {
                         tab.twoColumnView = existing.twoColumnView
                         tab.textSizeSp = existing.textSizeSp
                         tab.defaultTranspose = existing.defaultTranspose
-                        if (parsed.favoriteTranspose == null) {
+                        if (parsed.favoriteTranspositions.isEmpty()) {
                             tab.favoriteTranspose = existing.favoriteTranspose
+                            tab.favoriteTransposes = existing.favoriteTransposes
                         }
                     } catch (ex: Exception) {
                         // no existing row for this tab id - nothing to preserve
@@ -140,14 +142,14 @@ object LocalFileImporter {
     }
 
     /**
-     * Writes [favoriteTranspose] into the header of the local song file behind [tabId] (or removes
-     * the favourite header when null), so the file stays the source of truth across rescans: as
-     * `favorite_key` when the file declares its `key`, else as `favorite_transpose`. No-op for tabs
-     * that didn't come from the local song folder.
+     * Writes [favorites] into the header of the local song file behind [tabId] (or removes the
+     * favourite header when empty), so the file stays the source of truth across rescans: as
+     * `favorite_key: D#, E*` when the file declares its `key`, else as `favorite_transpose: +1, +2*`,
+     * `*` marking [best]. No-op for tabs that didn't come from the local song folder.
      *
      * @return whether the file was written
      */
-    suspend fun writeFavoriteToFile(context: Context, dataAccess: DataAccess, tabId: String, favoriteTranspose: Int?, useFlats: Boolean): Boolean {
+    suspend fun writeFavoritesToFile(context: Context, dataAccess: DataAccess, tabId: String, favorites: List<Int>, best: Int?, useFlats: Boolean): Boolean {
         val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return false
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
         val files = mutableListOf<Pair<String, DocumentFile>>()
@@ -157,9 +159,13 @@ object LocalFileImporter {
         val resolver = context.contentResolver
         val rawText = resolver.openInputStream(file.uri)?.use { it.reader().readText() } ?: return false
         val writtenKey = parseLocalSongFile(rawText)?.key.orEmpty()
-        val favorite = favoriteTranspose?.let { transpose ->
-            if (writtenKey.isNotBlank()) "favorite_key" to Chord.transposeChord(writtenKey, transpose, useFlats)
-            else "favorite_transpose" to (if (transpose > 0) "+$transpose" else transpose.toString())
+        val favorite = favorites.takeIf { it.isNotEmpty() }?.let { list ->
+            val entries = list.joinToString(", ") { transpose ->
+                val entry = if (writtenKey.isNotBlank()) Chord.transposeChord(writtenKey, transpose, useFlats)
+                    else if (transpose > 0) "+$transpose" else transpose.toString()
+                if (transpose == best) "$entry*" else entry
+            }
+            (if (writtenKey.isNotBlank()) "favorite_key" else "favorite_transpose") to entries
         }
         val newText = withFavoriteHeader(rawText, favorite)
         if (newText == rawText) return true

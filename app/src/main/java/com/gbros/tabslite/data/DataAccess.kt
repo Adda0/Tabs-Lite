@@ -343,8 +343,8 @@ interface DataAccess {
     @Query("UPDATE tabs SET default_transpose = :transpose WHERE id = :tabId")
     suspend fun updateDefaultTranspose(tabId: String, transpose: Int)
 
-    @Query("UPDATE tabs SET favorite_transpose = :transpose WHERE id = :tabId")
-    suspend fun updateFavoriteTranspose(tabId: String, transpose: Int?)
+    @Query("UPDATE tabs SET favorite_transposes = :transposes, favorite_transpose = :best WHERE id = :tabId")
+    suspend fun updateFavoriteTransposes(tabId: String, transposes: String, best: Int?)
 
     //#endregion
 

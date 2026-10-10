@@ -75,8 +75,11 @@ interface ITabViewState {
      */
     val transpose: LiveData<Int>
 
-    /** The song's favourite transposition, or null if none is chosen */
+    /** The favourite transposition that suits the singer's voice best, or null if none is marked */
     val favoriteTranspose: LiveData<Int?>
+
+    /** All of the song's favourite transpositions */
+    val favoriteTransposes: LiveData<List<Int>>
 
     /** The transposition matching the original recording's key */
     val originalTranspose: LiveData<Int>

@@ -404,6 +404,7 @@ object BackendConnection {
                 result.textSizeSp = existing.textSizeSp
                 result.defaultTranspose = existing.defaultTranspose
                 result.favoriteTranspose = existing.favoriteTranspose
+                result.favoriteTransposes = existing.favoriteTransposes
                 result.originalTranspose = existing.originalTranspose
             } catch (ex: Exception) {
                 // no existing row for this tab id - nothing to preserve
