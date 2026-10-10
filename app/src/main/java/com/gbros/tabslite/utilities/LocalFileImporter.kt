@@ -24,7 +24,7 @@ object LocalFileImporter {
     const val LOCAL_FILE_ACCESS_TYPE = "local_file"
 
     private const val LOCAL_FILES_PLAYLIST_TITLE = "Local Files"
-    private val SONG_FILE_EXTENSIONS = setOf("txt")
+    private val SONG_FILE_EXTENSIONS = setOf("txt", "song")
 
     /**
      * Recursively scans [treeUri] for song files, imports/updates them in the local database, adds
