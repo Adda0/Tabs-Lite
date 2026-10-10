@@ -147,8 +147,8 @@ object LocalFileImporter {
     /**
      * Writes [favorites] into the header of the local song file behind [tabId] (or removes the
      * favourite header when empty), so the file stays the source of truth across rescans: as
-     * `favorite_key: D# (capo 1), E (capo 2)*` when the file declares its `key`, else as
-     * `favorite_transpose: +1 (capo 1), +2 (capo 2)*`. No-op for tabs that didn't come from the
+     * `favorite_key: D@1, D@2*` (chord shapes @ capo) when the file declares its `key`, else as
+     * `favorite_transpose: 0@1, 0@2*`. No-op for tabs that didn't come from the
      * local song folder.
      *
      * @return whether the file was written

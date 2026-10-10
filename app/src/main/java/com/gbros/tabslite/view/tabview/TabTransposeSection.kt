@@ -72,9 +72,9 @@ fun TabTransposeSection(
     // a key [steps] half steps above the written one ("E"), or "+4" when the song's key is unknown
     fun keyName(steps: Int): String =
         if (key.isBlank()) (if (steps > 0) "+$steps" else steps.toString()) else Chord.transposeChord(key, steps, useFlats)
-    // "E (capo 2)": the key it sounds in, then the capo
+    // "D@2 (E)": chord shapes @ capo as in the song file's header, then the key it sounds in
     fun describe(transposition: Int, capo: Int): String =
-        keyName(transposition + capo) + if (capo > 0) " (capo $capo)" else ""
+        if (capo > 0) "${keyName(transposition)}@$capo (${keyName(transposition + capo)})" else keyName(transposition)
     val isFavorite = favorites.any { it.sameAs(currentTransposition, currentCapo) }
 
     Column(
