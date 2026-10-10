@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +58,7 @@ fun AutoscrollFloatingActionButton(
     onValueChange: (sliderPosition: Float) -> Unit,
     onValueChangeFinished: () -> Unit,
     onButtonClick: () -> Unit,
+    onResetClick: () -> Unit,
     alignment: Alignment = Alignment.BottomEnd,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -119,6 +122,14 @@ fun AutoscrollFloatingActionButton(
                 )
             }
 
+            // back to the top and paused, so the next play starts the song over (handy after finding the right speed)
+            SmallFloatingActionButton(
+                onClick = onResetClick,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Icon(imageVector = Icons.Default.Refresh, contentDescription = stringResource(R.string.autoscroll_reset_accessibility_text))
+            }
+
             FloatingActionButton(
                 onClick = onButtonClick,
                 interactionSource = interactionSource
@@ -145,6 +156,7 @@ private fun AutoscrollFloatingActionButtonPreview() {
             paused = false,
             onValueChange = {},
             onButtonClick = {},
+            onResetClick = {},
             onValueChangeFinished = {}
         )
     }

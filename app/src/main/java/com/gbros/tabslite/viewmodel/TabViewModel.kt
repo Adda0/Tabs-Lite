@@ -666,6 +666,11 @@ class TabViewModel
     /**
      * Callback for when the Play/Pause button is pressed, to enabled or disable autoscroll
      */
+    /** Stops autoscroll; the screen scrolls itself back to the top */
+    fun onAutoscrollResetClick() {
+        _autoscrollPaused.postValue(true)
+    }
+
     fun onAutoscrollButtonClick() {
         _autoscrollPaused.postValue(autoscrollPaused.value == false)  // toggle the pause state of autoscroll
     }

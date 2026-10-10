@@ -51,6 +51,7 @@
     <string name="generic_action_drag_to_reorder">Drag to reorder</string>
     <string name="generic_action_play">Play</string>
     <string name="generic_action_pause">Pause</string>
+    <string name="autoscroll_reset_accessibility_text" translation_description="Accessibility text for the button that stops autoscroll and jumps back to the top of the song">Restart from the top</string>
     <string name="generic_action_share">Share</string>
     <string name="generic_action_more">More</string>
     <string name="generic_action_reload">Reload</string>

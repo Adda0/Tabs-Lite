@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -73,6 +74,7 @@ import com.gbros.tabslite.view.card.ErrorCard
 import com.gbros.tabslite.view.chorddisplay.ChordModalBottomSheet
 import com.gbros.tabslite.viewmodel.TabViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
 import kotlin.math.pow
 import kotlin.math.sqrt
@@ -146,6 +148,7 @@ fun NavGraphBuilder.tabScreen(
             onZoom = viewModel::onZoom,
             onChordDetailsDismiss = viewModel::onChordDetailsDismiss,
             onAutoscrollButtonClick = viewModel::onAutoscrollButtonClick,
+            onAutoscrollResetClick = viewModel::onAutoscrollResetClick,
             onAutoscrollSliderValueChange = viewModel::onAutoscrollSliderValueChange,
             onAutoscrollSliderValueChangeFinished = viewModel::onAutoscrollSliderValueChangeFinished,
             onReload = viewModel::onReload,
@@ -228,6 +231,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onZoom = viewModel::onZoom,
             onChordDetailsDismiss = viewModel::onChordDetailsDismiss,
             onAutoscrollButtonClick = viewModel::onAutoscrollButtonClick,
+            onAutoscrollResetClick = viewModel::onAutoscrollResetClick,
             onAutoscrollSliderValueChange = viewModel::onAutoscrollSliderValueChange,
             onAutoscrollSliderValueChangeFinished = viewModel::onAutoscrollSliderValueChangeFinished,
             onReload = viewModel::onReload,
@@ -268,6 +272,7 @@ fun TabScreen(
     onChordDetailsDismiss: () -> Unit,
     onAutoscrollSliderValueChange: (Float) -> Unit,
     onAutoscrollButtonClick: () -> Unit,
+    onAutoscrollResetClick: () -> Unit,
     onAutoscrollSliderValueChangeFinished: () -> Unit,
     onReload: () -> Unit,
     onFavoriteButtonClick: () -> Unit,
@@ -288,6 +293,7 @@ fun TabScreen(
     val scrollState = rememberLazyListState()
     val twoColumnScrollState = rememberScrollState()
     val twoColumnAutoscroll = remember { TwoColumnAutoscroll() }
+    val coroutineScope = rememberCoroutineScope()
     // create clickable title
     val songName by viewState.songName.observeAsState("...")
     val artistName by viewState.artist.observeAsState("...")
@@ -641,6 +647,14 @@ fun TabScreen(
     AutoscrollFloatingActionButton(
         sliderValue = viewState.autoScrollSpeedSliderPosition.observeAsState(0.5f).value,
         onButtonClick = onAutoscrollButtonClick,
+        onResetClick = {
+            onAutoscrollResetClick()
+            coroutineScope.launch {
+                scrollState.scrollToItem(0)
+                twoColumnScrollState.scrollTo(0)
+            }
+            twoColumnAutoscroll.leftColumnProgress = 0f  // the next play waits through the first column again
+        },
         onValueChange = onAutoscrollSliderValueChange,
         paused = viewState.autoscrollPaused.observeAsState(false).value,
         onValueChangeFinished = onAutoscrollSliderValueChangeFinished,
@@ -837,6 +851,7 @@ private fun TabViewPreview() {
             onChordDetailsDismiss = { },
             onAutoscrollSliderValueChange = { },
             onAutoscrollButtonClick = { },
+            onAutoscrollResetClick = { },
             onAutoscrollSliderValueChangeFinished = { },
             onReload = { },
             onFavoriteButtonClick = { },
