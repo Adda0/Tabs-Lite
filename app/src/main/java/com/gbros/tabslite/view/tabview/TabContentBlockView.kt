@@ -53,7 +53,6 @@ fun TabContentBlockView(
 
     // only Android 8+ supports variable weight fonts
     val selectedContentFontFamily = if (fontStyle == FontStyle.Mono) Font(R.font.roboto_mono_regular).toFontFamily() else null
-    val selectedChordFontFamily = if (fontStyle == FontStyle.Mono) Font(R.font.roboto_mono_bold).toFontFamily() else null
 
     Column(modifier = modifier) {
         val spacerSize = if (block.tab) 4.dp else 24.dp
@@ -81,7 +80,7 @@ fun TabContentBlockView(
                     val chord = if (annotation.item.startsWith("{il}")) annotation.item.substring(4) else annotation.item
                     ChordButton(
                         text = chord,
-                        fontFamily = selectedChordFontFamily,
+                        fontFamily = selectedContentFontFamily,
                         fontSizeSp = fontSizeSp,
                     ) {
                         onChordClick(chord)
