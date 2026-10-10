@@ -37,14 +37,14 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
         var lastIndex = 0
         tagPattern.findAll(tabContent).forEach { matchResult ->
             // Process text before the match (outside [tab] block)
-            val beforeText = tabContent.substring(lastIndex, matchResult.range.first).trim()
+            val beforeText = trimBlankLines(tabContent.substring(lastIndex, matchResult.range.first))
             if (beforeText.isNotEmpty()) {
                 val beforeBlock = buildContentBlock(beforeText, chordsSet, inline = true)
                 contentBlocks.add(TabContentBlock(beforeBlock, tab = false))
             }
 
             // Process the content inside the [tab] block
-            val tabBlockContent = matchResult.groupValues[1].trim()
+            val tabBlockContent = trimBlankLines(matchResult.groupValues[1])
             if (tabBlockContent.isNotEmpty()) {
                 val tabBlock = buildContentBlock(tabBlockContent, chordsSet, inline = false)
                 contentBlocks.add(TabContentBlock(tabBlock, tab = true))
@@ -55,7 +55,7 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
 
         // Process any remaining text after the last match (outside [tab] block)
         if (lastIndex < tabContent.length) {
-            val remainingText = tabContent.substring(lastIndex).trim()
+            val remainingText = trimBlankLines(tabContent.substring(lastIndex))
             if (remainingText.isNotEmpty()) {
                 val remainingBlock = buildContentBlock(remainingText, chordsSet, inline = true)
                 contentBlocks.add(TabContentBlock(remainingBlock, tab = false))
@@ -64,6 +64,10 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
 
         return Pair(contentBlocks, chordsSet)
     }
+
+    // drops surrounding blank lines and trailing whitespace, keeping the first line's indentation,
+    // which aligns it with the chord line above (e.g. lines continuing a "1. " verse)
+    private fun trimBlankLines(text: String): String = text.trimEnd().replace(Regex("^(?:[ \\t]*\\r?\\n)+"), "")
 
     /**
      * Build an AnnotatedString block with chord annotations and hyperlinks
