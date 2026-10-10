@@ -620,15 +620,26 @@ class TabViewModel
         transpose(-1)
     }
 
-    /** Capo up a fret, chord shapes down a half step: same sounding key */
+    /** Capo up a fret, chord shapes unchanged: sounds a half step higher */
     fun onCapoUpClick() {
+        val current = capo.value ?: 0
+        if (current < MAX_CAPO) setCapo(current + 1)
+    }
+
+    fun onCapoDownClick() {
+        val current = capo.value ?: 0
+        if (current > 0) setCapo(current - 1)
+    }
+
+    /** Capo up a fret, chord shapes down a half step: same sounding key */
+    fun onCapoKeepKeyUpClick() {
         val current = capo.value ?: 0
         if (current >= MAX_CAPO) return
         setCapo(current + 1)
         transpose(-1)
     }
 
-    fun onCapoDownClick() {
+    fun onCapoKeepKeyDownClick() {
         val current = capo.value ?: 0
         if (current <= 0) return
         setCapo(current - 1)

@@ -140,10 +140,16 @@
     <string name="tab_key" translation_description="The key the song's chords are written in">Written in: %s</string>
     <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>
-    <string name="tab_transpose" translation_description="The key the song sounds in as currently played (chord shapes + capo), e.g. \u0022E\u0022, or \u0022+2\u0022 when the written key is unknown">Key: %s</string>
-    <string name="tab_capo_chord_shapes" translation_description="Capo fret the user plays with, and the chord shapes that go with it, e.g. \u0022Capo: 2 · chords as D\u0022">Capo: %1$d · chords as %2$s</string>
-    <string name="tab_capo_up_accessibility_text" translation_description="Accessibility text for the button that moves the capo up a fret, keeping the key">Capo up</string>
-    <string name="tab_capo_down_accessibility_text" translation_description="Accessibility text for the button that moves the capo down a fret, keeping the key">Capo down</string>
+    <string name="tab_transpose" translation_description="The key the song sounds in as currently played (chord shapes + capo), e.g. \u0022E\u0022, or \u0022+2\u0022 when the written key is unknown">Sounds in: %s</string>
+    <string name="tab_transpose_chords" translation_description="Chord shapes as currently shown and their distance from the written chords, e.g. \u0022D (+2)\u0022">Chords: %s</string>
+    <string name="tab_transpose_capo" translation_description="Capo fret the user plays with">Capo: %d</string>
+    <string name="tab_transpose_capo_keep_key" translation_description="Label of the buttons that move the capo and the chord shapes together, so the song keeps sounding in the same key">Capo, same key</string>
+    <string name="tab_chords_up_accessibility_text" translation_description="Accessibility text for the button that moves the chord shapes up a half step, capo unchanged">Chords up</string>
+    <string name="tab_chords_down_accessibility_text" translation_description="Accessibility text for the button that moves the chord shapes down a half step, capo unchanged">Chords down</string>
+    <string name="tab_capo_keep_key_up_accessibility_text" translation_description="Accessibility text for the button that moves the capo up a fret and the chords down, keeping the key">Capo up, same key</string>
+    <string name="tab_capo_keep_key_down_accessibility_text" translation_description="Accessibility text for the button that moves the capo down a fret and the chords up, keeping the key">Capo down, same key</string>
+    <string name="tab_capo_up_accessibility_text" translation_description="Accessibility text for the button that moves the capo up a fret, chords unchanged">Capo up</string>
+    <string name="tab_capo_down_accessibility_text" translation_description="Accessibility text for the button that moves the capo down a fret, chords unchanged">Capo down</string>
     <string name="tab_transpose_original" translation_description="Chip that plays the song in the original recording's key, e.g. \u0022Original: C# (capo 1)\u0022">Original: %s</string>
     <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that adds the current key and capo to the favorites">Add to favorite keys</string>
     <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that removes the current key and capo from the favorites">Remove from favorite keys</string>

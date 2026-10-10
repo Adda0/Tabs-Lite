@@ -58,20 +58,25 @@ fun TabTransposeSection(
     key: String,
     useFlats: Boolean,
     onTransposeResetClick: () -> Unit,
-    /** Key down: chord shapes down, same capo */
+    /** Chord shapes down/up a half step, capo unchanged: the key you hear moves */
     onTransposeDownClick: () -> Unit,
     onTransposeUpClick: () -> Unit,
-    /** Capo up/down a fret, chord shapes the other way: same sounding key */
+    /** Capo up/down a fret, chord shapes unchanged: the key you hear moves */
     onCapoUpClick: () -> Unit,
     onCapoDownClick: () -> Unit,
+    /** Capo up/down a fret, chord shapes the other way: the key you hear stays */
+    onCapoKeepKeyUpClick: () -> Unit,
+    onCapoKeepKeyDownClick: () -> Unit,
     onFavoriteTransposeToggle: () -> Unit,
     /** Plays as a favourite; on the current one, toggles it as the best */
     onTransposeToFavoriteClick: (FavoriteKey) -> Unit,
     onTransposeToOriginalClick: () -> Unit
 ) {
+    fun signed(steps: Int) = if (steps > 0) "+$steps" else steps.toString()
     // a key [steps] half steps above the written one ("E"), or "+4" when the song's key is unknown
-    fun keyName(steps: Int): String =
-        if (key.isBlank()) (if (steps > 0) "+$steps" else steps.toString()) else Chord.transposeChord(key, steps, useFlats)
+    fun keyName(steps: Int): String = if (key.isBlank()) signed(steps) else Chord.transposeChord(key, steps, useFlats)
+    // "E (+4)": a key and its distance from the written key; just "+4" when the key is unknown
+    fun keyWithSteps(steps: Int): String = if (key.isBlank()) signed(steps) else "${keyName(steps)} (${signed(steps)})"
     // "D@2 (E)": chord shapes @ capo as in the song file's header, then the key it sounds in
     fun describe(transposition: Int, capo: Int): String =
         if (capo > 0) "${keyName(transposition)}@$capo (${keyName(transposition + capo)})" else keyName(transposition)
@@ -89,7 +94,7 @@ fun TabTransposeSection(
     ) {
         Row {  // the key it sounds in
             Text(
-                text = stringResource(id = R.string.tab_transpose, keyName(currentTransposition + currentCapo)),
+                text = stringResource(id = R.string.tab_transpose, keyWithSteps(currentTransposition + currentCapo)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(vertical = 12.dp)
@@ -111,45 +116,32 @@ fun TabTransposeSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            Spacer(modifier = Modifier.weight(1f))
-            Button(  // transpose down
-                onClick = onTransposeDownClick,
-                Modifier.padding(horizontal = 8.dp)
-            ) {
-                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_remove),
-                    contentDescription = "Transpose down")
-            }
-            Button(  // transpose up
-                onClick = onTransposeUpClick,
-                Modifier.padding(horizontal = 8.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Transpose up")
-            }
         }
-        Row {  // the capo, and the chord shapes that go with it
-            Text(
-                text = stringResource(id = R.string.tab_capo_chord_shapes, currentCapo, keyName(currentTransposition)),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Button(
-                onClick = onCapoDownClick,
-                enabled = currentCapo > 0,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) {
-                Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_remove),
-                    contentDescription = stringResource(R.string.tab_capo_down_accessibility_text))
-            }
-            Button(
-                onClick = onCapoUpClick,
-                enabled = currentCapo < MAX_CAPO,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.tab_capo_up_accessibility_text))
-            }
-        }
+        StepperRow(
+            label = stringResource(R.string.tab_transpose_chords, keyWithSteps(currentTransposition)),
+            onDownClick = onTransposeDownClick,
+            onUpClick = onTransposeUpClick,
+            downDescription = stringResource(R.string.tab_chords_down_accessibility_text),
+            upDescription = stringResource(R.string.tab_chords_up_accessibility_text)
+        )
+        StepperRow(
+            label = stringResource(R.string.tab_transpose_capo, currentCapo),
+            onDownClick = onCapoDownClick,
+            onUpClick = onCapoUpClick,
+            downDescription = stringResource(R.string.tab_capo_down_accessibility_text),
+            upDescription = stringResource(R.string.tab_capo_up_accessibility_text),
+            downEnabled = currentCapo > 0,
+            upEnabled = currentCapo < MAX_CAPO
+        )
+        StepperRow(
+            label = stringResource(R.string.tab_transpose_capo_keep_key),
+            onDownClick = onCapoKeepKeyDownClick,
+            onUpClick = onCapoKeepKeyUpClick,
+            downDescription = stringResource(R.string.tab_capo_keep_key_down_accessibility_text),
+            upDescription = stringResource(R.string.tab_capo_keep_key_up_accessibility_text),
+            downEnabled = currentCapo > 0,
+            upEnabled = currentCapo < MAX_CAPO
+        )
         // jump to the original/a favourite transposition; the chip matching the current one is
         // selected, and tapping it again marks it as the best favourite (star)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -170,11 +162,39 @@ fun TabTransposeSection(
     }
 }
 
+/** A label with − and + buttons on the right */
+@Composable
+private fun StepperRow(
+    label: String,
+    onDownClick: () -> Unit,
+    onUpClick: () -> Unit,
+    downDescription: String,
+    upDescription: String,
+    downEnabled: Boolean = true,
+    upEnabled: Boolean = true
+) {
+    Row {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(vertical = 12.dp)
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Button(onClick = onDownClick, enabled = downEnabled, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_remove), contentDescription = downDescription)
+        }
+        Button(onClick = onUpClick, enabled = upEnabled, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = upDescription)
+        }
+    }
+}
+
 @Composable @Preview
 private fun TabTransposeSectionPreview() {
     AppTheme {
         TabTransposeSection(currentTransposition = 2, currentCapo = 2, writtenCapo = 0,
             favorites = listOf(FavoriteKey(2, 2, best = true), FavoriteKey(4, 0)),
-            originalTransposition = 1, key = "C", useFlats = false, {}, {}, {}, {}, {}, {}, {}, {})
+            originalTransposition = 1, key = "C", useFlats = false, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
     }
 }
