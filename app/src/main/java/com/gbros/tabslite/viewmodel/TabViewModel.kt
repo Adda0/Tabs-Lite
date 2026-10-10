@@ -36,6 +36,7 @@ import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.MAX_CAPO
+import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.view.tabview.ITabViewState
@@ -418,8 +419,9 @@ class TabViewModel
         if (t == null) return@combine ""
         val capo = t.currentCapo ?: t.capo
         val capoText = t.getCapoText(context, capo)
-        if (t.tonalityName.isBlank()) return@combine capoText
-        val soundingKey = Chord.transposeChord(t.tonalityName, (tr ?: 0) + capo, f == true)
+        val writtenKey = keyOrFirstChord(t.tonalityName, t.content)
+        if (writtenKey.isBlank()) return@combine capoText
+        val soundingKey = Chord.transposeChord(writtenKey, (tr ?: 0) + capo, f == true)
         context.getString(R.string.tab_capo_sounds_in, capoText, soundingKey)
     }
 
@@ -427,7 +429,8 @@ class TabViewModel
 
     override val writtenCapo: LiveData<Int> = tab.map { t -> t?.capo ?: 0 }
 
-    override val key: LiveData<String> = tab.map { t -> t?.tonalityName ?: "" }
+    // the written key, or the first chord's when the song doesn't name it, so keys can always be shown
+    override val key: LiveData<String> = tab.map { t -> if (t == null) "" else keyOrFirstChord(t.tonalityName, t.content) }
 
     override val tempo: LiveData<String> = tab.map { t -> t?.tempo ?: "" }
 

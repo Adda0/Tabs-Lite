@@ -49,7 +49,7 @@
     <string name="tab_capo">Capo: %s</string>
     <string name="tab_key">Chiave: %s</string>
     <string name="tab_author">Autore Accordi: %s</string>
-    <string name="tab_transpose">Trasposizione: %s</string>
+    <string name="tab_transpose">Suona in: %1$s · accordi %2$s · capo %3$d</string>
     <string name="tab_version_number">Versione %d</string>
     <string name="tab_version_abbreviation" translation_description="Shortened version number for display in places where space is limited (like in search results)">vers. %s</string>
 </resources>

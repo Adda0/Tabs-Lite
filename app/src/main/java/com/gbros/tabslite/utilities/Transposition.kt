@@ -3,6 +3,15 @@ package com.gbros.tabslite.utilities
 /** Whether two transpositions sound the same, i.e. differ by whole octaves (transpose values wrap at ±12) */
 fun isSameTransposition(a: Int?, b: Int?): Boolean = a != null && b != null && Math.floorMod(a - b, 12) == 0
 
+private val FIRST_CHORD_REGEX = Regex("\\{ch:\\W*([A-Ha-h][#b]?)(m(?!aj))?")
+
+/** [key], or when blank the key of the first chord in [content] (`{ch:Am7}` → `Am`), or blank if it has none */
+fun keyOrFirstChord(key: String, content: String): String {
+    if (key.isNotBlank()) return key
+    val match = FIRST_CHORD_REGEX.find(content) ?: return ""
+    return match.groupValues[1].replaceFirstChar { it.uppercase() } + match.groupValues[2]
+}
+
 /** The highest capo fret the capo buttons go to */
 const val MAX_CAPO = 11
 

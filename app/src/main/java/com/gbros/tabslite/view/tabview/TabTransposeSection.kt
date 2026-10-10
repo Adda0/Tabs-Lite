@@ -92,9 +92,9 @@ fun TabTransposeSection(
                     LayoutDirection.Ltr)
             ))
     ) {
-        Row {  // the key it sounds in
+        Row {  // the key it sounds in, and the chord shapes and capo that get there
             Text(
-                text = stringResource(id = R.string.tab_transpose, keyWithSteps(currentTransposition + currentCapo)),
+                text = stringResource(id = R.string.tab_transpose, keyWithSteps(currentTransposition + currentCapo), keyWithSteps(currentTransposition), currentCapo),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(vertical = 12.dp)
