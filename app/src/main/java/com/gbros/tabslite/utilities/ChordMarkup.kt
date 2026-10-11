@@ -84,6 +84,15 @@ fun convertUgChordTags(content: String): String =
     UG_CHORD_TAG_REGEX.replace(content) { matchResult -> "{ch:${matchResult.groupValues[1]}}" }
 
 /**
+ * The plain text of stored tab content: chord tags (both formats) and `[tab]` markers removed, so a
+ * word split by an inline chord (`h{ch:C}eard`) reads whole again.
+ */
+fun stripChordMarkup(content: String): String =
+    APP_CHORD_TAG_REGEX.replace(UG_CHORD_TAG_REGEX.replace(content, ""), "")
+        .replace(TAB_OPEN_TAG, "")
+        .replace(TAB_CLOSE_TAG, "")
+
+/**
  * A line can be explicitly marked as a chord line by starting and/or ending it with one of these
  * characters (mirroring the regex start-/end-of-line anchors `^`/`$`), so the line doesn't have to
  * be shape-checked by [isBareChordLine] at all - useful for the odd chord line the shape heuristic

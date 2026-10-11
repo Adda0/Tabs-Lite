@@ -3,7 +3,7 @@ package com.gbros.tabslite.view.tabsearchbar
 import androidx.lifecycle.LiveData
 import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.data.tab.ITab
-import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
+import com.gbros.tabslite.utilities.LocalSearchResult
 
 interface ITabSearchBarViewState {
     /**
@@ -12,9 +12,9 @@ interface ITabSearchBarViewState {
     val query: LiveData<String>
 
     /**
-     * A couple suggested tabs already loaded in the database
+     * Songs already stored on the device matching the query by title, artist or content
      */
-    val tabSuggestions: LiveData<List<TabWithDataPlaylistEntry>>
+    val tabSuggestions: LiveData<List<LocalSearchResult>>
 
     /**
      * The current search suggestions to be displayed

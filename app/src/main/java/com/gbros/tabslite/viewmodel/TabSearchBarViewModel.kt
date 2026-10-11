@@ -3,17 +3,26 @@ package com.gbros.tabslite.viewmodel
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.map
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
-import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
+import com.gbros.tabslite.utilities.LocalSearchResult
+import com.gbros.tabslite.utilities.LocalSongSearchIndex
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.view.tabsearchbar.ITabSearchBarViewState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -40,11 +49,21 @@ class TabSearchBarViewModel(
     override val query: MutableLiveData<String> = MutableLiveData(initialQuery)
 
     /**
-     * A couple suggested tabs already loaded in the database
+     * Songs on the device matching the query by title, artist or content. The songs are only
+     * loaded and indexed while there's a query, and re-indexed when they change.
      */
-    override val tabSuggestions: LiveData<List<TabWithDataPlaylistEntry>> = query.switchMap { currentQuery ->
-        dataAccess.findMatchingSongs(currentQuery).map { a -> a }
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val tabSuggestions: LiveData<List<LocalSearchResult>> = query.asFlow()
+        .map { it.isNotBlank() }
+        .distinctUntilChanged()
+        .flatMapLatest { searching ->
+            if (!searching) flowOf(listOf())
+            else dataAccess.getDownloadedTabs()
+                .map { tabs -> LocalSongSearchIndex(tabs) }
+                .combine(query.asFlow()) { index, currentQuery -> index.search(currentQuery) }
+        }
+        .flowOn(Dispatchers.Default)
+        .asLiveData()
 
     /**
      * The current search suggestions to be displayed

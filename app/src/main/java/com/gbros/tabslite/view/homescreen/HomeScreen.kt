@@ -70,6 +70,7 @@ import com.gbros.tabslite.data.ThemeSelection
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.ui.theme.AppTheme
+import com.gbros.tabslite.utilities.LocalSearchResult
 import com.gbros.tabslite.view.playlists.PlaylistsSortBy
 import com.gbros.tabslite.view.songlist.ISongListViewState
 import com.gbros.tabslite.view.songlist.SongListView
@@ -517,7 +518,7 @@ private class SongListViewStateForTest(
 private class TabSearchBarViewStateForTest(
     override val query: LiveData<String>,
     override val searchSuggestions: LiveData<List<String>>,
-    override val tabSuggestions: LiveData<List<TabWithDataPlaylistEntry>>,
+    override val tabSuggestions: LiveData<List<LocalSearchResult>>,
     override val loadingState: LiveData<LoadingState>
 ) : ITabSearchBarViewState
 
