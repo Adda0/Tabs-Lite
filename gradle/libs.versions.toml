@@ -32,7 +32,6 @@ workRuntime = "2.11.1"
 chrynanChords = "2.4.1"
 composeExtendedGestures = "3.1"
 uiText = "1.10.3"
-sentry = "6.1.0"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
@@ -84,4 +83,3 @@ kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", versio
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 navigationSafeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-sentry = { id = "io.sentry.android.gradle", version.ref = "sentry" }
