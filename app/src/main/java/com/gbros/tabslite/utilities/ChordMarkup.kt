@@ -327,7 +327,7 @@ fun mergeChordOnlyLines(content: String): String {
         val line = lines[i]
         val nextLine = lines.getOrNull(i + 1)
         val nextLineBody = nextLine?.removeSuffix(TAB_CLOSE_TAG)
-        if (isChordOnlyLine(line) && nextLineBody != null && APP_CHORD_TAG_REGEX.replace(nextLineBody, "").isNotBlank()) {
+        if (isChordOnlyLine(line) && nextLineBody != null && isUntaggedLyricLine(nextLineBody)) {
             result.add(mergeChordLineIntoLyricLine(line, nextLine!!))
             i += 2
         } else {
@@ -337,6 +337,13 @@ fun mergeChordOnlyLines(content: String): String {
     }
     return result.joinToString("\n")
 }
+
+/**
+ * A line a chord line can merge into: lyrics without chords of their own. A line that has its
+ * chords inline already (`{ch:G}There {ch:D}was`) keeps the chord line above it as a line of its own,
+ * since merging would insert into the middle of its tags.
+ */
+private fun isUntaggedLyricLine(line: String): Boolean = line.isNotBlank() && !APP_CHORD_TAG_REGEX.containsMatchIn(line)
 
 /**
  * Merges a chord line that ends in a parenthesized aside - `{ch:G}  {ch:D}   (R: + {ch:D})` - into
@@ -354,7 +361,7 @@ fun mergeAnnotatedChordLines(content: String): String {
         val split = splitTaggedAnnotation(line)
         val nextLine = lines.getOrNull(i + 1)
         val nextLineBody = nextLine?.removeSuffix(TAB_CLOSE_TAG)
-        if (split != null && nextLineBody != null && APP_CHORD_TAG_REGEX.replace(nextLineBody, "").isNotBlank()) {
+        if (split != null && nextLineBody != null && isUntaggedLyricLine(nextLineBody)) {
             val (chords, annotation) = split
             result.add(appendAnnotation(mergeChordLineIntoLyricLine(chords, nextLine), annotation, writtenColumn = displayWidth(chords)))
             i += 2
