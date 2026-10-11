@@ -20,8 +20,10 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.FilterChip
+import com.gbros.tabslite.utilities.CapoSuggestion
+import com.gbros.tabslite.utilities.ChordDifficulty
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -70,6 +72,8 @@ fun TabTransposeSection(
     onFavoriteTransposeToggle: () -> Unit,
     /** Plays as a favourite; on the current one, toggles it as the best */
     onTransposeToFavoriteClick: (FavoriteKey) -> Unit,
+    capoSuggestions: List<CapoSuggestion>,
+    onCapoSuggestionClick: (CapoSuggestion) -> Unit,
     onTransposeToOriginalClick: () -> Unit
 ) {
     fun signed(steps: Int) = if (steps > 0) "+$steps" else steps.toString()
@@ -159,6 +163,22 @@ fun TabTransposeSection(
                 )
             }
         }
+        if (capoSuggestions.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (suggestion in capoSuggestions) {
+                    val difficultyLabel = stringResource(when (suggestion.level) {
+                        ChordDifficulty.Easy -> R.string.tab_capo_suggestions_difficulty_easy
+                        ChordDifficulty.Medium -> R.string.tab_capo_suggestions_difficulty_medium
+                        ChordDifficulty.Hard -> R.string.tab_capo_suggestions_difficulty_hard
+                    })
+                    FilterChip(
+                        selected = suggestion.transpose == currentTransposition && suggestion.capo == currentCapo,
+                        onClick = { onCapoSuggestionClick(suggestion) },
+                        label = { Text("${describe(suggestion.transpose, suggestion.capo)} ($difficultyLabel)") }
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -193,8 +213,26 @@ private fun StepperRow(
 @Composable @Preview
 private fun TabTransposeSectionPreview() {
     AppTheme {
-        TabTransposeSection(currentTransposition = 2, currentCapo = 2, writtenCapo = 0,
+        TabTransposeSection(
+            currentTransposition = 2,
+            currentCapo = 2,
+            writtenCapo = 0,
             favorites = listOf(FavoriteKey(2, 2, best = true), FavoriteKey(4, 0)),
-            originalTransposition = 1, key = "C", useFlats = false, {}, {}, {}, {}, {}, {}, {}, {}, {}, {})
+            originalTransposition = 1,
+            key = "C",
+            useFlats = false,
+            onTransposeResetClick = {},
+            onTransposeDownClick = {},
+            onTransposeUpClick = {},
+            onCapoUpClick = {},
+            onCapoDownClick = {},
+            onCapoKeepKeyUpClick = {},
+            onCapoKeepKeyDownClick = {},
+            onFavoriteTransposeToggle = {},
+            onTransposeToFavoriteClick = {},
+            capoSuggestions = emptyList(),
+            onCapoSuggestionClick = {},
+            onTransposeToOriginalClick = {}
+        )
     }
 }

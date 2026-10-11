@@ -160,6 +160,9 @@
     <string name="tab_capo_up_accessibility_text" translation_description="Accessibility text for the button that moves the capo up a fret, chords unchanged">Capo up</string>
     <string name="tab_capo_down_accessibility_text" translation_description="Accessibility text for the button that moves the capo down a fret, chords unchanged">Capo down</string>
     <string name="tab_transpose_original" translation_description="Chip that plays the song in the original recording's key, e.g. \u0022Original: C# (capo 1)\u0022">Original: %s</string>
+    <string name="tab_capo_suggestions_difficulty_easy" translation_description="Label for easy capo/chord suggestions">Easy</string>
+    <string name="tab_capo_suggestions_difficulty_medium" translation_description="Label for medium capo/chord suggestions">Medium</string>
+    <string name="tab_capo_suggestions_difficulty_hard" translation_description="Label for hard capo/chord suggestions">Hard</string>
     <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that adds the current key and capo to the favorites">Add to favorite keys</string>
     <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that removes the current key and capo from the favorites">Remove from favorite keys</string>
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>

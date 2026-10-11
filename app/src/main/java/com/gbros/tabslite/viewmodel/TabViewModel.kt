@@ -39,8 +39,11 @@ import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
-import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.parseFavoriteKeys
+import com.gbros.tabslite.utilities.formatFavoriteKeys
+import com.gbros.tabslite.utilities.CapoSuggestion
+import com.gbros.tabslite.utilities.countChords
+import com.gbros.tabslite.utilities.suggestCapos
 import com.gbros.tabslite.utilities.SongSources
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
@@ -455,6 +458,14 @@ class TabViewModel
 
     override val favoriteKeys: LiveData<List<FavoriteKey>> = tab.map { t -> parseFavoriteKeys(t?.favoriteTransposes.orEmpty(), t?.capo ?: 0) }
 
+    override val capoSuggestions: LiveData<List<CapoSuggestion>> = tab.combine(transpose, capo) { t, tr, cp ->
+        if (t == null) return@combine emptyList()
+        val writtenChords = countChords(t.content)
+        if (writtenChords.isEmpty()) return@combine emptyList()
+        val soundingSteps = (tr ?: 0) + (cp ?: 0)
+        suggestCapos(writtenChords, soundingSteps, { chord, steps -> Chord.transposeChord(chord, steps, false) }, Chord::lookupName)
+    }
+
     override val originalTranspose: LiveData<Int> = tab.map { t -> t?.originalTranspose ?: 0 }
 
     override val fontSizeSp: LiveData<Float> = tab.combine(userAdjustedFontSize) { t, override ->
@@ -688,6 +699,10 @@ class TabViewModel
     /** The original key, with the capo as written */
     fun onTransposeToOriginalClick() {
         playAs(originalTranspose.value ?: 0, tab.value?.capo ?: 0)
+    }
+    /** Applies a capo suggestion (plays as the suggested shapes and capo) */
+    fun onCapoSuggestionClick(suggestion: CapoSuggestion) {
+        playAs(suggestion.transpose, suggestion.capo)
     }
 
     /**

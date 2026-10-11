@@ -86,6 +86,8 @@ interface ITabViewState {
 
     /** The song's favourite ways to play it (chord shapes + capo), one possibly marked best */
     val favoriteKeys: LiveData<List<com.gbros.tabslite.utilities.FavoriteKey>>
+    /** Ranked ways to play the song in its current sounding key, easiest first */
+    val capoSuggestions: LiveData<List<com.gbros.tabslite.utilities.CapoSuggestion>>
 
     /** The transposition matching the original recording's key */
     val originalTranspose: LiveData<Int>

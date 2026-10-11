@@ -69,6 +69,7 @@ import com.gbros.tabslite.data.tab.TabContentBlock
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.FavoriteKey
+import com.gbros.tabslite.utilities.CapoSuggestion
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.KeepScreenOn
 import com.gbros.tabslite.utilities.TAG
@@ -149,6 +150,7 @@ fun NavGraphBuilder.tabScreen(
             onTransposeResetClick = viewModel::onTransposeResetClick,
             onFavoriteTransposeToggle = viewModel::onFavoriteTransposeToggle,
             onTransposeToFavoriteClick = viewModel::onTransposeToFavoriteClick,
+            onCapoSuggestionClick = viewModel::onCapoSuggestionClick,
             onTransposeToOriginalClick = viewModel::onTransposeToOriginalClick,
             onTextClick = viewModel::onChordClick,
             onZoom = viewModel::onZoom,
@@ -236,6 +238,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onCapoKeepKeyUpClick = viewModel::onCapoKeepKeyUpClick,
             onCapoKeepKeyDownClick = viewModel::onCapoKeepKeyDownClick,
             onTransposeResetClick = viewModel::onTransposeResetClick,
+            onCapoSuggestionClick = viewModel::onCapoSuggestionClick,
             onFavoriteTransposeToggle = viewModel::onFavoriteTransposeToggle,
             onTransposeToFavoriteClick = viewModel::onTransposeToFavoriteClick,
             onTransposeToOriginalClick = viewModel::onTransposeToOriginalClick,
@@ -284,6 +287,7 @@ fun TabScreen(
     onTransposeResetClick: () -> Unit,
     onFavoriteTransposeToggle: (Context) -> Unit,
     onTransposeToFavoriteClick: (Context, FavoriteKey) -> Unit,
+    onCapoSuggestionClick: (CapoSuggestion) -> Unit,
     onTransposeToOriginalClick: () -> Unit,
     onTextClick: (chord: String) -> Unit,
     onZoom: (zoomFactor: Float) -> Unit,
@@ -464,6 +468,8 @@ fun TabScreen(
                     onCapoKeepKeyDownClick = onCapoKeepKeyDownClick,
                     onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
                     onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
+                    capoSuggestions = viewState.capoSuggestions.observeAsState(emptyList()).value,
+                    onCapoSuggestionClick = { suggestion -> onCapoSuggestionClick(suggestion) },
                     onTransposeToOriginalClick = onTransposeToOriginalClick
                 )
             }
@@ -598,6 +604,8 @@ fun TabScreen(
                         onCapoDownClick = onCapoDownClick,
                         onCapoKeepKeyUpClick = onCapoKeepKeyUpClick,
                         onCapoKeepKeyDownClick = onCapoKeepKeyDownClick,
+                        capoSuggestions = viewState.capoSuggestions.observeAsState(emptyList()).value,
+                        onCapoSuggestionClick = { suggestion -> onCapoSuggestionClick(suggestion) },
                         onFavoriteTransposeToggle = { onFavoriteTransposeToggle(context) },
                         onTransposeToFavoriteClick = { favorite -> onTransposeToFavoriteClick(context, favorite) },
                         onTransposeToOriginalClick = onTransposeToOriginalClick
@@ -778,6 +786,7 @@ private fun TabViewPreview() {
         override val capo: LiveData<Int>,
         override val writtenCapo: LiveData<Int>,
         override val favoriteKeys: LiveData<List<FavoriteKey>>,
+        override val capoSuggestions: LiveData<List<CapoSuggestion>>,
         override val originalTranspose: LiveData<Int>,
         override val content: LiveData<List<TabContentBlock>>,
         override val state: LiveData<LoadingState>,
@@ -824,6 +833,7 @@ private fun TabViewPreview() {
             songVersions = MutableLiveData(listOf()),
             transpose = MutableLiveData(tab.transpose),
             capo = MutableLiveData(tab.currentCapo ?: tab.capo),
+            capoSuggestions = MutableLiveData(emptyList()),
             writtenCapo = MutableLiveData(tab.capo),
             favoriteKeys = MutableLiveData(parseFavoriteKeys(tab.favoriteTransposes, tab.capo)),
             originalTranspose = MutableLiveData(tab.originalTranspose),
@@ -902,6 +912,7 @@ private fun TabViewPreview() {
             onTransposeUpClick = { },
             onTransposeDownClick = { },
             onCapoUpClick = { },
+            onCapoSuggestionClick = { _ -> },
             onCapoDownClick = { },
             onCapoKeepKeyUpClick = { },
             onCapoKeepKeyDownClick = { },
