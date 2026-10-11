@@ -27,6 +27,9 @@ interface ITabViewState {
      */
     val isPlaylistEntry: LiveData<Boolean>
 
+    /** Whether the song can be saved as a new local song file: it isn't one already */
+    val canSaveAsLocalFile: LiveData<Boolean>
+
     val playlistTitle: LiveData<String>
 
     val playlistNextSongButtonEnabled: LiveData<Boolean>

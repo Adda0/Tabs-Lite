@@ -83,7 +83,7 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onTextSizeIncreaseClick: () -> Unit = {},
                  onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
                  onEditTabClick: () -> Unit,
-                 /** Saves the song into the local song folder; null hides the action (songs that aren't from a songbook site) */
+                 /** Saves the song into the local song folder; null hides the action (songs that are local files already) */
                  onSaveAsLocalFileClick: (() -> Unit)? = null,
 ) {
     val currentContext = LocalContext.current

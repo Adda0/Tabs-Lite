@@ -406,6 +406,8 @@ class TabViewModel
      */
     override val isPlaylistEntry: LiveData<Boolean> = tab.map { t -> t is TabWithDataPlaylistEntry && t.playlistId > 0 }
 
+    override val canSaveAsLocalFile: LiveData<Boolean> = tab.map { t -> t != null && t.tabAccessType != LocalFileImporter.LOCAL_FILE_ACCESS_TYPE }
+
     override val playlistTitle: LiveData<String> = tab.map { t ->
         if (t is TabWithDataPlaylistEntry && t.playlistTitle != null) t.playlistTitle!! else ""
     }

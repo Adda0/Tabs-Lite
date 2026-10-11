@@ -209,7 +209,7 @@ object LocalFileImporter {
             tab.tonalityName.takeIf { it.isNotBlank() }?.let { "key: $it" },
             tab.capo.takeIf { it > 0 }?.let { "capo: $it" },
             tab.tempo.takeIf { it.isNotBlank() }?.let { "tempo: $it" },
-            SongSources.pageUrl(tab.tabId)?.let { "version_description: $it" },
+            "version_description: " + (SongSources.pageUrl(tab.tabId) ?: "ultimate-guitar.com tab ${tab.tabId}, version ${tab.version}"),
         )
         val text = header.joinToString("\n") + "\n\n" + toChordSheet(tab.content).trim('\n') + "\n"
         // octet-stream: with text/plain, document providers append .txt to the name

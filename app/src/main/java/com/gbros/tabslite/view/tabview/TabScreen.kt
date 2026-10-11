@@ -71,7 +71,6 @@ import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.KeepScreenOn
-import com.gbros.tabslite.utilities.SongSources
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.card.ErrorCard
 import com.gbros.tabslite.view.chorddisplay.ChordModalBottomSheet
@@ -349,8 +348,7 @@ fun TabScreen(
     val twoColumnView by viewState.twoColumnView.observeAsState(false)
     val fontSizeSp = viewState.fontSizeSp.observeAsState(FALLBACK_FONT_SIZE_SP).value
     val fontStyle = viewState.fontStylePreference.observeAsState(FontStyle.Modern).value
-    // only songs downloaded from a songbook site have no file of their own yet
-    val saveAsLocalFile: (() -> Unit)? = if (tabId?.let { SongSources.sourceOf(it) } != null) {
+    val saveAsLocalFile: (() -> Unit)? = if (viewState.canSaveAsLocalFile.observeAsState(false).value) {
         { onSaveAsLocalFileClick(context) }
     } else null
 
@@ -764,6 +762,7 @@ private fun TabViewPreview() {
         override val songName: LiveData<String>,
         override val isFavorite: LiveData<Boolean>,
         override val isPlaylistEntry: LiveData<Boolean>,
+        override val canSaveAsLocalFile: LiveData<Boolean>,
         override val playlistTitle: LiveData<String>,
         override val playlistNextSongButtonEnabled: LiveData<Boolean>,
         override val playlistPreviousSongButtonEnabled: LiveData<Boolean>,
@@ -811,6 +810,7 @@ private fun TabViewPreview() {
             songName = MutableLiveData(tab.songName),
             isFavorite = MutableLiveData(true),
             isPlaylistEntry = MutableLiveData(false),
+            canSaveAsLocalFile = MutableLiveData(true),
             playlistTitle = MutableLiveData("none"),
             playlistNextSongButtonEnabled = MutableLiveData(false),
             playlistPreviousSongButtonEnabled = MutableLiveData(false),
