@@ -12,14 +12,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.gbros.tabslite.R
 import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.view.ratingicon.RatingIcon
+import com.gbros.tabslite.view.taborigin.tabVersionLabel
 
 @Composable
 fun SongVersionListItem(song: ITab, onClick: () -> Unit){
@@ -35,7 +34,7 @@ fun SongVersionListItem(song: ITab, onClick: () -> Unit){
                 .padding(all = 5.dp)
         ){
             Text(
-                text = stringResource(R.string.tab_version_number, song.version),
+                text = tabVersionLabel(song),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .weight(1f)

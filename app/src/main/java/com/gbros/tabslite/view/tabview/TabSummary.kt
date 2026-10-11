@@ -39,6 +39,7 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.ui.theme.AppTheme
+import com.gbros.tabslite.view.taborigin.tabVersionLabel
 import com.gbros.tabslite.view.ratingicon.ProportionallyFilledStar
 import java.util.Locale
 
@@ -51,6 +52,7 @@ fun TabSummary(
     key: String,
     author: String,
     version: Int,
+    tabId: String,
     songVersions: List<ITab>,
     onNavigateToTabById: (String) -> Unit,
     tempo: String = "",
@@ -109,7 +111,7 @@ fun TabSummary(
                     .padding(start = 8.dp)
             ) {
                 TextField(
-                    value = "Version $version",
+                    value = songVersions.firstOrNull { it.tabId == tabId }?.let { tabVersionLabel(it) } ?: "Version $version",
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = versionDropdownExpanded) },
@@ -126,7 +128,7 @@ fun TabSummary(
                                 Row (
                                     modifier = Modifier.height(24.dp)
                                 ) {
-                                    Text(stringResource(R.string.tab_version_number, selectionOption.version))
+                                    Text(tabVersionLabel(selectionOption))
                                     if (selectionOption.votes > 0) {
                                         Spacer(Modifier.weight(1f))
                                         val numStars = String.format(Locale.getDefault(), "%.1f", selectionOption.rating)
@@ -187,6 +189,7 @@ private fun TabSummaryPreview() {
             key = "C",
             author = "Joe Blow",
             version = 1,
+            tabId = tab.tabId,
             songVersions = listOf(tab),
             tempo = "4/4",
             rhythm = "         | 1 & | 2 & | 3 & | 4 &\nverse: 8 | d - | d - | D - | d u\nr: 4     | D - | D U | D U | D U",

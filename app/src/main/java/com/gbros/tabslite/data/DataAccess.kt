@@ -89,10 +89,17 @@ interface DataAccess {
     @Query("SELECT EXISTS(SELECT 1 FROM tabs WHERE id = :tabId AND content != '' LIMIT 1)")
     suspend fun existsWithContent(tabId: String): Boolean
 
-    @Query("SELECT *, 0 as transpose FROM tabs WHERE song_id = :songId")
-    fun getTabsBySongId(songId: String): LiveData<List<Tab>>
+    /**
+     * Every version of the song [songId]: its own tabs, and any other tab - from a songbook site,
+     * a local file, another Ultimate Guitar song entry - with the same song name and artist
+     */
+    @Query("""SELECT *, 0 as transpose FROM tabs WHERE song_id = :songId OR EXISTS (
+        SELECT 1 FROM tabs AS song WHERE song.song_id = :songId
+            AND lower(trim(song.song_name)) = lower(trim(tabs.song_name))
+            AND lower(trim(song.artist_name)) = lower(trim(tabs.artist_name)))""")
+    fun getSongVersions(songId: String): LiveData<List<Tab>>
 
-    @Query("SELECT *, 0 as transpose FROM tabs WHERE song_name = :songName AND (:allowPending OR status == 'approved')")
+    @Query("SELECT *, 0 as transpose FROM tabs WHERE song_name = :songName COLLATE NOCASE AND (:allowPending OR status == 'approved')")
     fun getTabsBySongName(songName: String, allowPending: Boolean = false): Flow<List<Tab>>
 
     @Query("SELECT *, 0 as transpose FROM tabs WHERE song_id = :songId LIMIT 1")

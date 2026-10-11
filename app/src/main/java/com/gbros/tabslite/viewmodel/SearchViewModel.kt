@@ -9,6 +9,7 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.Search
 import com.gbros.tabslite.data.tab.ITab
+import com.gbros.tabslite.data.tab.SongSearchResult
 import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.searchresultsonglist.ISearchViewState
@@ -47,7 +48,8 @@ class SearchViewModel
     //#region view state
 
     /**
-     * The search results returned by this query
+     * The search results returned by this query, one row per song: results of the same song name
+     * and artist from different sources are merged (see [SongSearchResult])
      */
     override val results: MutableLiveData<List<ITab>> = MutableLiveData(listOf())
 
@@ -76,6 +78,15 @@ class SearchViewModel
 
     private val exactMatches = dataAccess.getTabsBySongName(query, allowPending)
 
+    /** Every result row as found, before rows of the same song are merged into [results] */
+    private val unmergedResults = mutableListOf<ITab>()
+
+    private fun addResults(newResults: List<ITab>) = synchronized(unmergedResults) {
+        unmergedResults.addAll(newResults)
+        // the exact name matches are re-emitted whenever the stored tabs change; a tab counts once
+        results.postValue(SongSearchResult.merge(unmergedResults.distinctBy { it.tabId }))
+    }
+
     //#endregion
 
     //#region public data
@@ -99,11 +110,8 @@ class SearchViewModel
             val fetchSearchResultsJob = CoroutineScope(Dispatchers.IO).async {
                 searchState.postValue(LoadingState.Loading)
                 val newSearchResults = searchSession.fetchNextSearchResults()
-                val currentResults = results.value
                 if (newSearchResults.isNotEmpty()) {
-                    val updatedResults = currentResults?.toMutableList() ?: mutableListOf()
-                    updatedResults.addAll(newSearchResults)
-                    results.postValue(updatedResults.distinct())
+                    addResults(newSearchResults)
                 } else {
                     allResultsLoaded.postValue(true)
                 }
@@ -157,8 +165,7 @@ class SearchViewModel
         viewModelScope.launch {
             exactMatches.collect {
                 if (it.isNotEmpty()) {
-                    val previousResults = results.value?.toMutableList() ?: mutableListOf()
-                    results.postValue((previousResults + it).distinct())
+                    addResults(it)
                 }
             }
         }

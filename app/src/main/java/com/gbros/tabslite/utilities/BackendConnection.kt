@@ -371,7 +371,7 @@ object BackendConnection {
 
     /**
      * Gets tab based on tabId. Loads tab from internet and caches the result automatically in the
-     * app database.
+     * app database. A song from one of the [SongSource] songbook sites is downloaded from its site.
      *
      * @param tabId The ID of the tab to load
      * @param dataAccess The database instance to load a tab from (or into)
@@ -382,6 +382,9 @@ object BackendConnection {
         tabAccessType: String = "public"
     ): TabDataType = withContext(Dispatchers.IO) {
         Log.v(TAG, "Loading tab $tabId.")
+        if (SongSources.sourceOf(tabId) != null) {
+            return@withContext fetchSongbookTab(tabId, dataAccess)
+        }
         val rawTabId = tabId.replace("7567-", "") // ultimate guitar's api can't handle prefixed ids
         val url = "https://api.ultimate-guitar.com/api/v1/tab/info?tab_id=$rawTabId&tab_access_type=$tabAccessType"
 
@@ -395,29 +398,61 @@ object BackendConnection {
 
         val result = requestResponse.getTabFull()
         if (result.content.isNotBlank()) {
-            // preserve this tab's remembered local settings (two-column view, text size, fallback,
-            // favourite and original transpose) across a re-fetch from the internet, since they're
-            // local-only and the API knows nothing of them
-            try {
-                val existing = dataAccess.getTabInstance(tabId)
-                result.twoColumnView = existing.twoColumnView
-                result.textSizeSp = existing.textSizeSp
-                result.defaultTranspose = existing.defaultTranspose
-                result.favoriteTranspose = existing.favoriteTranspose
-                result.favoriteTransposes = existing.favoriteTransposes
-                result.currentCapo = existing.currentCapo
-                result.originalTranspose = existing.originalTranspose
-            } catch (ex: Exception) {
-                // no existing row for this tab id - nothing to preserve
-            }
-            dataAccess.upsert(result)
-            Log.v(TAG, "Successfully inserted tab ${result.songName} (${result.tabId})")
+            storeFetchedTab(result, dataAccess)
         } else {
             val message = "Tab $tabId fetch completed successfully but had no content! This shouldn't happen. Might be a pro tab?"
             Log.e(TAG, message)
             throw TabFetchException(message)
         }
         result
+    }
+
+    /**
+     * Downloads the song stored under [tabId] from its songbook site (see [SongSources]), storing
+     * every other version of it on the same page along with it
+     */
+    private suspend fun fetchSongbookTab(tabId: String, dataAccess: DataAccess): TabDataType {
+        val versions = try {
+            SongSources.download(tabId)
+        } catch (ex: FileNotFoundException) {
+            throw NotFoundException("Song $tabId not found on its site: ${ex.message}")
+        } catch (ex: SongPageException) {
+            throw TabFetchException("Song $tabId could not be read from its site", ex)
+        } catch (ex: IOException) {
+            throw NoInternetException("Could not download song $tabId. ${ex.message}", ex)
+        }
+        val tabs = versions.map { version ->
+            TabDataType(tabId = version.song.tabId, songId = version.song.copy(version = 0).tabId,
+                songName = version.songName, artistName = version.artistName, type = "Chords",
+                // numbered only among several versions on one page
+                version = if (version.versionCount > 1) version.song.version + 1 else 0,
+                versionsCount = 2 * version.versionCount, contributorUserName = version.song.source.siteName,
+                tonalityName = version.key, capo = version.capo, tempo = version.tempo, content = version.content)
+        }
+        tabs.forEach { storeFetchedTab(it, dataAccess) }
+        return tabs.firstOrNull { it.tabId == tabId } ?: throw NotFoundException("Song $tabId not found on its site: the page has ${tabs.size} versions")
+    }
+
+    /**
+     * Stores a freshly fetched tab, keeping its remembered local settings (two-column view, text
+     * size, fallback, favourite and original transpose) across the re-fetch, since they're
+     * local-only and the source knows nothing of them
+     */
+    private suspend fun storeFetchedTab(result: TabDataType, dataAccess: DataAccess) {
+        try {
+            val existing = dataAccess.getTabInstance(result.tabId)
+            result.twoColumnView = existing.twoColumnView
+            result.textSizeSp = existing.textSizeSp
+            result.defaultTranspose = existing.defaultTranspose
+            result.favoriteTranspose = existing.favoriteTranspose
+            result.favoriteTransposes = existing.favoriteTransposes
+            result.currentCapo = existing.currentCapo
+            result.originalTranspose = existing.originalTranspose
+        } catch (ex: Exception) {
+            // no existing row for this tab id - nothing to preserve
+        }
+        dataAccess.upsert(result)
+        Log.v(TAG, "Successfully inserted tab ${result.songName} (${result.tabId})")
     }
 
     /**

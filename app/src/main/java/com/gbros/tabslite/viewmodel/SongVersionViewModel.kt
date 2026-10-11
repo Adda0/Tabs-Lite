@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.tab.ITab
+import com.gbros.tabslite.data.tab.sortedAsVersions
 import com.gbros.tabslite.view.songversionlist.ISongVersionViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -32,7 +33,7 @@ class SongVersionViewModel
     /**
      * The versions of the selected song to be displayed
      */
-    override val songVersions: LiveData<List<ITab>> = dataAccess.getTabsBySongId(songId).map { tabList -> tabList }
+    override val songVersions: LiveData<List<ITab>> = dataAccess.getSongVersions(songId).map { tabList -> tabList.sortedAsVersions() }
 
     /**
      * The search query to be displayed in the search bar

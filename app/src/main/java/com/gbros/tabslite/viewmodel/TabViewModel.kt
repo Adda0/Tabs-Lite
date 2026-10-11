@@ -29,6 +29,7 @@ import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.data.tab.TabContentBlock
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
+import com.gbros.tabslite.data.tab.sortedAsVersions
 import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.LocalFileImporter
@@ -39,6 +40,7 @@ import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.parseFavoriteKeys
+import com.gbros.tabslite.utilities.SongSources
 import com.gbros.tabslite.view.tabview.ITabViewState
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -393,7 +395,7 @@ class TabViewModel
 
     override val version: LiveData<Int> = tab.map { t -> t?.version ?: 0 }
 
-    override val songVersions: LiveData<List<ITab>> = tab.switchMap { t -> if(t == null) MutableLiveData(listOf()) else dataAccess.getTabsBySongId(t.songId).map { t -> t } }
+    override val songVersions: LiveData<List<ITab>> = tab.switchMap { t -> if(t == null) MutableLiveData(listOf()) else dataAccess.getSongVersions(t.songId).map { versions -> versions.sortedAsVersions() } }
 
     override val isFavorite: LiveData<Boolean> = if (entryId != null) dataAccess.playlistEntryExistsInFavorites(entryId) else if (providedTabId != null) dataAccess.tabExistsInFavoritesLive(providedTabId) else MutableLiveData(false)
 
@@ -552,7 +554,7 @@ class TabViewModel
 
     override val autoscrollDelay: LiveData<Float> = autoScrollSpeedSliderPosition.map { sliderPosition -> mapAutoscrollSliderToScrollDelay(sliderPosition) }
 
-    override val shareUrl: LiveData<String> = tab.map { t -> "https://tabslite.com/tab/${t?.tabId}" }
+    override val shareUrl: LiveData<String> = tab.map { t -> t?.tabId?.let { SongSources.pageUrl(it) } ?: "https://tabslite.com/tab/${t?.tabId}" }
 
     override fun getShareTitle(context: Context): LiveData<String> = tab.map { t -> t?.let { String.format(format = context.getString(R.string.tab_title), t.songName, it.artistName) } ?: "" }
 

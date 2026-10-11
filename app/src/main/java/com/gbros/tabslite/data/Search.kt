@@ -3,8 +3,15 @@ package com.gbros.tabslite.data
 import android.util.Log
 import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.Tab
+import com.gbros.tabslite.data.tab.TabDataType
 import com.gbros.tabslite.utilities.BackendConnection
+import com.gbros.tabslite.utilities.SongSource
+import com.gbros.tabslite.utilities.SongSources
 import com.gbros.tabslite.utilities.TAG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 /**
  * Represents a search session with one search query.  Gets search results and provides a method to
@@ -45,6 +52,10 @@ class Search(
      * this up).  Only performs one search at a time; multiple calls to this function will load multiple
      * pages of search results.
      *
+     * The first page of a title search also lists the matching songs of the [SongSource] songbook
+     * sites, ahead of Ultimate Guitar's. A site that fails to answer is left out; Ultimate Guitar's
+     * own failure, or its Did You Mean, only stands when none of the sites found anything.
+     *
      * @param [page] The page of results to fetch
      * @param [query] The query to search for
      * @param [artistId] (Optional) Filter results by artist ID
@@ -53,14 +64,29 @@ class Search(
      *
      * @throws [SearchDidYouMeanException] if no results, but there's a suggested query
      */
-    private suspend fun getSearchResults(page: Int, query: String, artistId: String?): List<ITab> {
+    private suspend fun getSearchResults(page: Int, query: String, artistId: String?): List<ITab> = coroutineScope {
         Log.d(TAG, "starting search '$query' page $page artist $artistId")
-        val searchResult = BackendConnection.search(query, artistId, page)  // always search the next page that hasn't been loaded yet
+        val songbookSearches = if (page == 1 && artistId.isNullOrBlank()) {
+            SongSource.entries.map { source -> async(Dispatchers.IO) { searchSongbook(source, query) } }
+        } else listOf()
+        val searchResult = try {
+            BackendConnection.search(query, artistId, page)  // always search the next page that hasn't been loaded yet
+        } catch (ex: Exception) {
+            if (songbookSearches.awaitAll().all { it.isEmpty() }) throw ex
+            Log.w(TAG, "Ultimate Guitar search for $query failed; showing songbook results only", ex)
+            null
+        }
+        val songbookTabs = songbookSearches.awaitAll().flatten().map { tab ->
+            // a song already downloaded is listed as stored, with the number of versions its page turned out to hold
+            dataAccess.insert(tab)  // ignored if already stored, so a downloaded song keeps its content
+            dataAccess.getTabInstance(tab.tabId)
+        }
 
-        return if (!searchResult.didYouMean.isNullOrBlank()) {
-            throw SearchDidYouMeanException(searchResult.didYouMean!!)
-        } else if (searchResult.getSongs().isEmpty()) {
-            listOf()  // all search results have been fetched
+        val didYouMean = searchResult?.didYouMean
+        if (!didYouMean.isNullOrBlank() && songbookTabs.isEmpty()) {
+            throw SearchDidYouMeanException(didYouMean)
+        } else if (searchResult == null || !didYouMean.isNullOrBlank() || searchResult.getSongs().isEmpty()) {
+            Tab.fromTabDataType(songbookTabs)  // all Ultimate Guitar search results have been fetched
         } else {
             // add this data to the database so we can display the individual song versions without fully loading all of them
             for (tab in searchResult.getAllTabs()) {
@@ -68,8 +94,20 @@ class Search(
             }
 
             Log.d(TAG, "Successful search for $query page $page.  Results: ${searchResult.getSongs().size}")
-            Tab.fromTabDataType(searchResult.getSongs())
+            Tab.fromTabDataType(songbookTabs + searchResult.getSongs())
         }
+    }
+
+    /** The songs on [source] matching [query], as tabs to download when opened; empty if the site fails */
+    private fun searchSongbook(source: SongSource, query: String): List<TabDataType> = try {
+        SongSources.search(source, query).map { hit ->
+            // versions of the same song from other sources join it by name and artist
+            TabDataType(tabId = hit.song.tabId, songId = hit.song.tabId, songName = hit.songName, artistName = hit.artistName,
+                type = "Chords", versionsCount = 2, contributorUserName = source.siteName)
+        }
+    } catch (ex: Exception) {
+        Log.w(TAG, "Search for $query on ${source.siteName} failed", ex)
+        listOf()
     }
 
     //#endregion

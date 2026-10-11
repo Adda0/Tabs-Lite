@@ -141,6 +141,7 @@
     <string name="tab_key" translation_description="The key the song's chords are written in">Written in: %s</string>
     <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>
+    <string name="tab_origin_local_file" translation_description="Where a song comes from, shown in search results and version lists for a song imported from a local file (other songs show the name of the website they come from)">Local file</string>
     <string name="tab_transpose" translation_description="The key the song sounds in as currently played (chord shapes + capo), e.g. \u0022Sounds in: E (+4) · chords D (+2) · capo 2\u0022">Sounds in: %1$s · chords %2$s · capo %3$d</string>
     <string name="tab_transpose_chords" translation_description="Chord shapes as currently shown and their distance from the written chords, e.g. \u0022D (+2)\u0022">Chords: %s</string>
     <string name="tab_transpose_capo" translation_description="Capo fret the user plays with">Capo: %d</string>

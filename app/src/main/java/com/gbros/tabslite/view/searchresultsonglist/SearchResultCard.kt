@@ -10,12 +10,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gbros.tabslite.R
 import com.gbros.tabslite.data.tab.ITab
+import com.gbros.tabslite.data.tab.SongSearchResult
+import com.gbros.tabslite.data.tab.origin
+import com.gbros.tabslite.view.taborigin.tabOriginLabel
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.ui.theme.AppTheme
 
@@ -46,9 +50,18 @@ fun SearchResultCard(song: ITab, onClick: () -> Unit){
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Text(
-                text = pluralStringResource(id = R.plurals.num_song_versions, song.versionsCount / 2, song.versionsCount / 2)
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                val versionCount = (song as? SongSearchResult)?.versionCount ?: (song.versionsCount / 2)
+                Text(
+                    text = pluralStringResource(id = R.plurals.num_song_versions, versionCount, versionCount)
+                )
+                // where the song's versions come from
+                Text(
+                    text = ((song as? SongSearchResult)?.origins ?: listOf(song.origin)).map { tabOriginLabel(it) }.joinToString(", "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
