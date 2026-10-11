@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -77,6 +78,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onChordsPinnedToggled: (pinChords: Boolean) -> Unit = {},
                  detailsHidden: Boolean = false,
                  onDetailsHiddenToggled: (hidden: Boolean) -> Unit = {},
+                 sectionReferencesExpanded: Boolean = true,
+                 onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit = {},
                  twoColumnView: Boolean = false,
                  onTwoColumnViewToggled: (Boolean) -> Unit = {},
                  onTextSizeDecreaseClick: () -> Unit = {},
@@ -211,6 +214,11 @@ fun TabTopAppBar(isFavorite: Boolean,
                         showMenu = false
                         onReloadClick()
                     }
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.tab_expand_section_references)) },
+                    trailingIcon = { Checkbox(checked = sectionReferencesExpanded, onCheckedChange = null) },
+                    onClick = { onSectionReferencesExpandedToggled(!sectionReferencesExpanded) }
                 )
                 DropdownMenuItem(
                     text = {

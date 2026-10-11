@@ -176,6 +176,9 @@ interface ITabViewState {
      */
     val detailsHidden: LiveData<Boolean>
 
+    /** Whether a later bare section label (`R:`) shows that section's lyrics and chords again */
+    val sectionReferencesExpanded: LiveData<Boolean>
+
     /**
      * Map of chord names to their first chord variation for pinned display
      */

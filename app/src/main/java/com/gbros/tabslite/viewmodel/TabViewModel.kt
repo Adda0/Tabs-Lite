@@ -43,6 +43,7 @@ import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
+import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -402,6 +403,14 @@ class TabViewModel
 
     override val detailsHidden: LiveData<Boolean> = dataAccess.getLivePreference(Preference.HIDE_TAB_DETAILS).map { p -> p?.value?.toBoolean() == true }
 
+    override val sectionReferencesExpanded: LiveData<Boolean> = dataAccess.getLivePreference(Preference.EXPAND_SECTION_REFERENCES).map { p -> p?.value?.toBoolean() ?: true }
+
+    // tab content as displayed, before transposition: repeated sections written out where referenced
+    private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded) { t, expand ->
+        val content = t?.content ?: ""
+        if (expand != false) expandSectionReferences(content) else content
+    }
+
     override val songName: LiveData<String> = tab.map { t -> t?.songName ?: "" }
 
     override val version: LiveData<Int> = tab.map { t -> t?.version ?: 0 }
@@ -481,8 +490,8 @@ class TabViewModel
     override val twoColumnView: LiveData<Boolean> = tab.map { t -> t?.twoColumnView ?: false }
 
     // tab content after transposition and useFlats
-    private val transposedContentString: LiveData<String> = tab.combine(transpose, useFlats) { t, tr, f ->
-        val currentDbContent = t?.content ?: ""
+    private val transposedContentString: LiveData<String> = displayedContentString.combine(transpose, useFlats) { c, tr, f ->
+        val currentDbContent = c ?: ""
         val currentTranspose = tr ?: 0
         val useFlats = f == true
 
@@ -952,6 +961,12 @@ class TabViewModel
     fun onDetailsHiddenToggled(hidden: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.HIDE_TAB_DETAILS, hidden.toString()))
+        }
+    }
+
+    fun onSectionReferencesExpandedToggled(expanded: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.EXPAND_SECTION_REFERENCES, expanded.toString()))
         }
     }
 

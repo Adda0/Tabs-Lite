@@ -92,5 +92,11 @@ data class Preference(
          */
         const val HIDE_TAB_DETAILS: String = "HIDE_TAB_DETAILS"
 
+        /**
+         * The preference name for whether a later bare section label (`R:`, `R: 2x`) shows that
+         * section's lyrics and chords again; on unless set
+         */
+        const val EXPAND_SECTION_REFERENCES: String = "EXPAND_SECTION_REFERENCES"
+
     }
 }
