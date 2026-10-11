@@ -27,10 +27,11 @@ private val APP_CHORD_TAG_REGEX = Regex("\\{ch:([^}]*)\\}")
  * isolation - the "does the *entire* line consist of only such tokens" check in [isBareChordLine]
  * is what actually keeps false positives out of ordinary lyric lines.
  *
- * Matched against the token *after* [stripChordDecorations] removes any `()[]{}\` for the purposes
- * of recognizing it as chord-shaped - those are allowed anywhere in the raw token, including
- * nested/mid-chord (e.g. `Am(7)`, `(D)`, `{D}`, `(\Dm(7))`), since personal notation like this is
- * common (e.g. marking an optional chord change, or a single strum instead of the full chord).
+ * Matched against the token *after* [stripChordDecorations] removes any `()[]{}<>\` for the
+ * purposes of recognizing it as chord-shaped - those are allowed anywhere in the raw token,
+ * including nested/mid-chord (e.g. `Am(7)`, `(D)`, `{D}`, `<D>`, `(\Dm(7))`), since personal
+ * notation like this is common (e.g. marking an optional chord change, a single strum instead
+ * of the full chord, or grouping chords played over one repeated pattern).
  * `/` is kept as-is (not stripped) since it's meaningful on its own (the bass note of a slash chord).
  *
  * Recognizing a decorated token as a chord is one thing; keeping the decoration in what's actually
@@ -40,13 +41,13 @@ private val CHORD_TOKEN_REGEX = Regex(
     "^[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
 )
 
-private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}\\\\]"
+private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}<>\\\\]"
 private val CHORD_DECORATION_REGEX = Regex(CHORD_DECORATION_CHAR_CLASS)
 private val LEADING_CHORD_DECORATION_REGEX = Regex("^$CHORD_DECORATION_CHAR_CLASS+")
 private val TAG_INCOMPATIBLE_CHARS_REGEX = Regex("[{}]")
 
 /**
- * Removes any `()[]{}\` a chord token was written with, wherever they sit in it - `(D)` -> `D`,
+ * Removes any `()[]{}<>\` a chord token was written with, wherever they sit in it - `(D)` -> `D`,
  * `(\Dm(7))` -> `Dm7` - leaving the chord name itself. Used both to decide whether a token is
  * chord-shaped at all, and to build the name a chord is looked up by (see [Chord.lookupName]),
  * since decoration is the writer's own annotation and means nothing to the chord database.
@@ -67,7 +68,7 @@ fun splitChordDecorationPrefix(chordName: String): Pair<String, String> {
 }
 
 /**
- * Keeps a chord token's own notation (parens, square brackets, backslash) intact for display -
+ * Keeps a chord token's own notation (parens, square/angle brackets, backslash) intact for display -
  * e.g. "Am(7)" is shown as "Am(7)", not cleaned up to "Am7" - since that punctuation is often
  * meaningful to whoever wrote the file (an optional chord change, a single strum, etc.), not just
  * decorative noise. The one exception is a literal `{` or `}`: the app's `{ch:...}` tag format is
@@ -107,15 +108,21 @@ private const val LEADING_CHORD_LINE_MARKER = "^"
 private const val TRAILING_CHORD_LINE_MARKER = "$"
 
 /**
- * Converts any line made up entirely of bare chord names (no tags at all - the standard way chord
- * sheets are hand-written, chords on their own line above the lyrics they apply to) into the app's
+ * Converts any line made up of bare chord names (no tags at all - the standard way chord sheets
+ * are hand-written, chords on their own line above the lyrics they apply to) into the app's
  * `{ch:C}` tagged format, preserving each token's column position so [mergeChordOnlyLines] can
  * merge it into the following lyric line exactly as it would a tagged chord-only line. Each
  * chord's own notation is kept as typed (see [sanitizeChordNameForTag]).
  *
+ * Besides the chords themselves, a chord line may carry the notation chord sheets are written
+ * with - bar lines, repeat brackets, repeat counts ([splitChordToken]) - and may end in a
+ * parenthesized aside ([splitTrailingAnnotation]); all of that stays plain text, only the chord
+ * names in it are tagged.
+ *
  * A line starting with [LEADING_CHORD_LINE_MARKER] and/or ending with [TRAILING_CHORD_LINE_MARKER]
- * is always treated as a chord line (the marker(s) are stripped before conversion); otherwise a line
- * is only treated as a chord line if every token on it is chord-shaped, per [isBareChordLine].
+ * is always treated as a chord line (the marker(s) are stripped before conversion, and every token
+ * on it is taken for a chord); otherwise a line is only treated as a chord line if it looks like
+ * one, per [isBareChordLine].
  */
 fun convertBareChordLines(content: String): String {
     return content.split("\n").joinToString("\n") { line ->
@@ -126,11 +133,13 @@ fun convertBareChordLines(content: String): String {
         val hasTrailingMarker = trimmedEnd.endsWith(TRAILING_CHORD_LINE_MARKER)
         val body = if (hasTrailingMarker) trimmedEnd.removeSuffix(TRAILING_CHORD_LINE_MARKER) else afterLeadingMarker
 
+        val annotation = if (hasLeadingMarker || hasTrailingMarker) null else splitTrailingAnnotation(line)
         if (hasLeadingMarker || hasTrailingMarker) {
             Regex("\\S+").replace(body) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
         } else if (isBareChordLine(line)) {
-            val label = SECTION_LABEL_REGEX.find(line)?.value.orEmpty()
-            label + Regex("\\S+").replace(line.substring(label.length)) { matchResult -> "{ch:${sanitizeChordNameForTag(matchResult.value)}}" }
+            tagChordLine(line)
+        } else if (annotation != null) {
+            tagChordLine(annotation.first) + tagAnnotation(annotation.second)
         } else {
             line
         }
@@ -143,15 +152,119 @@ fun convertBareChordLines(content: String): String {
  */
 private val SECTION_LABEL_REGEX = Regex("^\\s*[A-Z][0-9]*:\\s+")
 
-private fun isBareChordLine(line: String): Boolean {
-    val tokens = line.replaceFirst(SECTION_LABEL_REGEX, "").trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
-    return tokens.isNotEmpty() && tokens.all { CHORD_TOKEN_REGEX.matches(stripChordDecorations(it)) }
+/** How many times the run of chords it follows is played, e.g. `2x`, `3×`, `x4` */
+private val REPEAT_COUNT_REGEX = Regex("[0-9]{1,2}[xX×]|[xX×][0-9]{1,2}")
+
+/**
+ * Bar lines and the brackets enclosing a repeated run of chords (`[: Em D :] 3x`), written either
+ * on their own or against the chord they open/close (`[:Em`, `D:]`). They name no chord, so they
+ * stay plain text - tagging one would make a chord button out of a bar line.
+ */
+private val LEADING_CHORD_LINE_NOTATION = listOf("[:", "|:", "|")
+private val TRAILING_CHORD_LINE_NOTATION = listOf(":]", ":|", "|")
+
+/** A chord-line token split into the notation it's written against and the chord name between it */
+private data class ChordLineToken(val prefix: String, val core: String, val suffix: String) {
+    val isChord: Boolean get() = core.isNotEmpty() && CHORD_TOKEN_REGEX.matches(stripChordDecorations(core))
+
+    /** Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`) */
+    val isNotation: Boolean get() = core.isEmpty() || REPEAT_COUNT_REGEX.matches(stripChordDecorations(core))
 }
 
-/** A section label followed only by chord tags, e.g. `O: {ch:D} {ch:A}` - an instrumental part with no lyrics */
-private fun isLabelledChordOnlyLine(line: String): Boolean {
-    val label = SECTION_LABEL_REGEX.find(line) ?: return false
-    return isChordOnlyLine(line.substring(label.value.length))
+/**
+ * Splits [token] into the bar lines/repeat brackets it's written against and the chord name
+ * between them, e.g. `[:Em` -> `[:` + `Em`. With [peelUnbalancedParens], parens that can't be the
+ * chord's own decoration because the token never closes them are peeled off too: in `([Dm C] Dm))`
+ * they group the annotation the chords sit in, so only `[Dm`, `C]` and `Dm` are chords.
+ */
+private fun splitChordToken(token: String, peelUnbalancedParens: Boolean = false): ChordLineToken {
+    var start = 0
+    var end = token.length
+    var peeled = true
+    while (peeled && start < end) {
+        peeled = false
+        LEADING_CHORD_LINE_NOTATION.firstOrNull { token.startsWith(it, start) }?.let { start += it.length; peeled = true }
+        if (start >= end) break
+        TRAILING_CHORD_LINE_NOTATION.firstOrNull { token.substring(start, end).endsWith(it) }?.let { end -= it.length; peeled = true }
+        if (peelUnbalancedParens && start < end) {
+            val core = token.substring(start, end)
+            val unclosed = core.count { it == '(' } - core.count { it == ')' }
+            if (unclosed > 0 && core.startsWith("(")) { start++; peeled = true }
+            else if (unclosed < 0 && core.endsWith(")")) { end--; peeled = true }
+        }
+    }
+    return ChordLineToken(token.substring(0, start), token.substring(start, end), token.substring(end))
+}
+
+/** [token] with its chord name tagged, keeping the notation around it as text; unchanged if it names no chord */
+private fun tagChordToken(token: String, peelUnbalancedParens: Boolean = false): String {
+    val split = splitChordToken(token, peelUnbalancedParens)
+    if (!split.isChord) return token
+    return split.prefix + "{ch:${sanitizeChordNameForTag(split.core)}}" + split.suffix
+}
+
+/** [line] with every chord name on it tagged, keeping its section label and notation as text */
+private fun tagChordLine(line: String): String {
+    val label = SECTION_LABEL_REGEX.find(line)?.value.orEmpty()
+    return label + Regex("\\S+").replace(line.substring(label.length)) { tagChordToken(it.value) }
+}
+
+/** [annotation] with every chord name in it tagged, keeping the prose and the grouping parens as text */
+private fun tagAnnotation(annotation: String): String =
+    Regex("\\S+").replace(annotation) { tagChordToken(it.value, peelUnbalancedParens = true) }
+
+/**
+ * Whether [line] is a line of chords: every token on it is either a chord or the notation chord
+ * lines are written with ([splitChordToken]), and at least one of them is a chord - a line of bar
+ * lines and repeat counts alone (`R: 2x`) says nothing about which chords to play.
+ */
+private fun isBareChordLine(line: String): Boolean {
+    val tokens = line.replaceFirst(SECTION_LABEL_REGEX, "").trim().split(Regex("\\s+"))
+        .filter { it.isNotEmpty() }
+        .map { splitChordToken(it) }
+    return tokens.any { it.isChord } && tokens.all { it.isChord || it.isNotation }
+}
+
+/**
+ * Splits a chord line that ends in an aside addressed to another section - `G  D  A  D   (R: + D)`
+ * - into its chords and that aside, or null if [line] isn't one. The aside is the writer's own note
+ * about the line (here: sung as the refrain, an extra D is played at this spot) rather than a chord
+ * above a syllable, so it stays text and is moved behind the lyrics when the chords are merged
+ * into them (see [mergeAnnotatedChordLines]); the chords named in it are tagged like any other,
+ * since they have to transpose with the song.
+ *
+ * It has to open a token of its own with a section label and close at the end of the line, so
+ * neither a chord's own parens (`Am(7)`, `(D)`) nor an alternative chord (`D (/C)`) is mistaken
+ * for one.
+ */
+private fun splitTrailingAnnotation(line: String): Pair<String, String>? =
+    splitAtAnnotation(line) { isBareChordLine(it) }
+
+/** [splitTrailingAnnotation] for a line whose chords are already tagged, e.g. `{ch:G} {ch:D}  (R: + {ch:D})` */
+private fun splitTaggedAnnotation(line: String): Pair<String, String>? =
+    splitAtAnnotation(line) { isChordOnlyLine(it) }
+
+private inline fun splitAtAnnotation(line: String, chordsBefore: (String) -> Boolean): Pair<String, String>? {
+    if (!line.trimEnd().endsWith(")")) return null
+    for (index in line.indices) {
+        if (line[index] != '(' || (index > 0 && !line[index - 1].isWhitespace())) continue
+        if (!SECTION_LABEL_REGEX.containsMatchIn(line.substring(index + 1))) continue
+        val chords = line.substring(0, index)
+        if (chordsBefore(chords)) return chords to line.substring(index)
+    }
+    return null
+}
+
+/**
+ * A line with no lyrics of its own: chord tags, at most a section label, and the notation chord
+ * lines carry (`I: {ch:Em} 8x`, `{ch:G} | {ch:D} :]`). There's nothing for its chords to float
+ * above, so they render inline, on the line itself.
+ */
+private fun isChordNotationOnlyLine(line: String): Boolean {
+    val body = line.removePrefix(TAB_OPEN_TAG).replaceFirst(SECTION_LABEL_REGEX, "")
+    if (!APP_CHORD_TAG_REGEX.containsMatchIn(body)) return false
+    return APP_CHORD_TAG_REGEX.replace(body, " ").trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        .all { splitChordToken(it).isNotation }
 }
 
 private fun isChordOnlyLine(line: String): Boolean {
@@ -182,6 +295,46 @@ fun mergeChordOnlyLines(content: String): String {
         }
     }
     return result.joinToString("\n")
+}
+
+/**
+ * Merges a chord line that ends in a parenthesized aside - `{ch:G}  {ch:D}   (R: + {ch:D})` - into
+ * the lyric line below it the way [mergeChordOnlyLines] merges a plain one, with the aside moved
+ * behind the lyrics: it's a note about the whole line, not a chord belonging above one syllable,
+ * and inserting its text at its own column would break the lyrics apart. It keeps the column it
+ * was written at where the lyrics end before it, so it stays where the writer put it.
+ */
+fun mergeAnnotatedChordLines(content: String): String {
+    val lines = content.split("\n")
+    val result = mutableListOf<String>()
+    var i = 0
+    while (i < lines.size) {
+        val line = lines[i]
+        val split = splitTaggedAnnotation(line)
+        val nextLine = lines.getOrNull(i + 1)
+        val nextLineBody = nextLine?.removeSuffix(TAB_CLOSE_TAG)
+        if (split != null && nextLineBody != null && APP_CHORD_TAG_REGEX.replace(nextLineBody, "").isNotBlank()) {
+            val (chords, annotation) = split
+            result.add(appendAnnotation(mergeChordLineIntoLyricLine(chords, nextLine), annotation, writtenColumn = displayWidth(chords)))
+            i += 2
+        } else {
+            result.add(line)
+            i++
+        }
+    }
+    return result.joinToString("\n")
+}
+
+/** The width [content] takes on screen: chord tags count as the bare chord name they wrap */
+private fun displayWidth(content: String): Int = APP_CHORD_TAG_REGEX.replace(content) { it.groupValues[1] }.length
+
+/** Appends [annotation] behind the lyrics of [mergedLine], at [writtenColumn] if they end before it */
+private fun appendAnnotation(mergedLine: String, annotation: String, writtenColumn: Int): String {
+    val tabSuffix = if (mergedLine.endsWith(TAB_CLOSE_TAG)) TAB_CLOSE_TAG else ""
+    val body = mergedLine.removeSuffix(TAB_CLOSE_TAG).trimEnd()
+    val lyricWidth = APP_CHORD_TAG_REGEX.replace(body, "").length
+    val gap = if (writtenColumn > lyricWidth) " ".repeat(writtenColumn - lyricWidth) else "  "
+    return body + gap + annotation.trim() + tabSuffix
 }
 
 /**
@@ -221,12 +374,12 @@ private fun mergeChordLineIntoLyricLine(chordLine: String, lyricLine: String): S
  * Wraps any line that has a `{ch:C}` chord annotation but isn't already inside a `[tab]...[/tab]`
  * block, in its own such block - so hand-written local song files render with the same "chords
  * floating above the lyrics" styling as fetched tabs, without the user needing to type [tab] tags.
- * A labelled chord-only line (`I: Em Em`) has no lyrics to float above, so it stays unwrapped and
- * its chords render inline, on the line itself.
+ * A line with no lyrics of its own (`I: Em Em`, `[: Em D :] 3x`) has nothing to float above, so it
+ * stays unwrapped and its chords render inline, on the line itself.
  */
 fun wrapUnwrappedChordLines(content: String): String {
     return content.split("\n").joinToString("\n") { line ->
-        if (!line.startsWith(TAB_OPEN_TAG) && APP_CHORD_TAG_REGEX.containsMatchIn(line) && !isLabelledChordOnlyLine(line)) {
+        if (!line.startsWith(TAB_OPEN_TAG) && APP_CHORD_TAG_REGEX.containsMatchIn(line) && !isChordNotationOnlyLine(line)) {
             "$TAB_OPEN_TAG$line$TAB_CLOSE_TAG"
         } else {
             line

@@ -8,10 +8,12 @@ package com.gbros.tabslite.utilities
  * - Ultimate Guitar's raw wire format (`[ch]C[/ch]` on its own line above the lyric line)
  * - a hand-written chord sheet, chords on their own line above the lyrics (e.g. `Em7   G   Dsus4`
  *   above `Today is gonna be the day...`), the most natural way to type one by hand. A chord line
- *   is normally recognized by shape (every token on it looks chord-like), with no annotation needed
- *   at all, but it can also be marked explicitly with a leading `^` and/or trailing `$` (mirroring
- *   the regex line anchors) to force a line the shape heuristic would otherwise miss - `$` is the
- *   one to prefer when alignment matters, since it costs no column, unlike `^`
+ *   is normally recognized by shape (every token on it is a chord, or the notation chord sheets
+ *   are written with: bar lines, repeat brackets and counts like `[: Em D :] 3x`, and a closing
+ *   aside addressed to another section like `(R: + D)`), with no annotation needed at all, but it
+ *   can also be marked explicitly with a leading `^` and/or trailing `$` (mirroring the regex line
+ *   anchors) to force a line the shape heuristic would otherwise miss - `$` is the one to prefer
+ *   when alignment matters, since it costs no column, unlike `^`
  */
 data class LocalSongFile(
     val songName: String,
@@ -84,7 +86,7 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
     }
 
     val rawBody = lines.drop(bodyStartIndex).joinToString("\n")
-    val convertedBody = wrapUnwrappedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(rawBody))))
+    val convertedBody = wrapUnwrappedChordLines(mergeAnnotatedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(rawBody)))))
     val writtenKey = header["key"].orEmpty()
     val writtenCapo = header["capo"]?.toIntOrNull() ?: 0
     // half steps from the written key to a key, or a signed number of them
