@@ -14,6 +14,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
@@ -30,6 +31,8 @@ import com.gbros.tabslite.data.playlist.Playlist.Companion.TOP_TABS_PLAYLIST_ID
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.SearchSnippet
+import com.gbros.tabslite.utilities.languageLabel
+import com.gbros.tabslite.utilities.parseTags
 
 @Composable
 fun SuggestedTab(
@@ -64,6 +67,19 @@ fun SuggestedTab(
                         maxLines = 1
                     )
 
+                    languageLabel(tab.language)?.let { language ->
+                        Text(
+                            text = language,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .align(Alignment.CenterVertically)
+                        )
+                    }
+
                     Spacer(modifier = Modifier.weight(1f, fill=true))
 
                     Text(
@@ -81,6 +97,16 @@ fun SuggestedTab(
                             append(snippet.text)
                             snippet.highlights.forEach { addStyle(SpanStyle(fontWeight = FontWeight.Bold), it.first, it.last + 1) }
                         },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
+                    )
+                }
+                val tags = parseTags(tab.tags)
+                if (tags.isNotEmpty()) {
+                    Text(
+                        text = tags.joinToString(" ") { "#$it" },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         overflow = TextOverflow.Ellipsis,

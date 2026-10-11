@@ -21,49 +21,96 @@ data class SearchSnippet(val text: String, val highlights: List<IntRange>)
 data class LocalSearchResult(val tab: TabWithDataPlaylistEntry, val snippet: SearchSnippet? = null)
 
 /**
- * Full text search over the songs stored on the device: title, artist and content, ignoring case,
- * diacritics (`prisel` finds `přišel`), punctuation and chord markup. Every query word has to occur
- * somewhere in the song, as a part of any word. Title/artist matches are listed first, then songs
- * containing the query as a phrase, then songs containing all its words; within each group, the
- * order of [tabs] is kept and only the first version of each song is listed. A `#tag` word lists
- * only songs with that tag (`_` for a space in it: `#na_tabor`); a query of tags alone lists all of them.
+ * Full text search over the songs stored on the device, ignoring case, diacritics (`prisel`
+ * finds `přišel`), punctuation and chord markup. Filter specifiers (`#tag`, `@artist`,
+ * `=song name`, `lang:cz`) gate which songs are searched at all - each takes a run of non-space
+ * characters, or `"anything with spaces"` (`_` for a space in an unquoted value, e.g. `#na_tabor`)
+ * - and the rest of the query matches fuzzily: the song name first, then the artist, then the
+ * content (the query as a whole phrase beats single words, whose letters found in order in any
+ * word beat nothing). A result of an earlier group outranks any of a later one, a better match
+ * within a group outranking a worse one. Only the first version of each song is listed.
  */
 class LocalSongSearchIndex(tabs: List<TabWithDataPlaylistEntry>) {
-    private class Entry(val tab: TabWithDataPlaylistEntry, val heading: String, val text: String)
+    private class Entry(val tab: TabWithDataPlaylistEntry, val name: String, val artist: String, val heading: String, val text: String)
+
+    /** A match of [entry]: [group] 0 by song name, 1 by artist, 2 by content (lower outranks), [score] within the group */
+    private class Ranked(val group: Int, val score: Double, val entry: Entry, val snippet: SearchSnippet?)
 
     private val entries = tabs.map { tab ->
-        Entry(tab, foldForSearch("${tab.songName} ${tab.artistName}"), foldForSearch(stripChordMarkup(tab.content)))
+        val name = foldForSearch(tab.songName)
+        val artist = foldForSearch(tab.artistName)
+        Entry(tab, name, artist, "$name $artist", foldForSearch(stripChordMarkup(tab.content)))
     }
 
     fun search(query: String): List<LocalSearchResult> {
-        val tags = TAG_WORD.findAll(query).map { tagKey(it.groupValues[1]) }.filter { it.isNotEmpty() }.toList()
-        val text = TAG_WORD.replace(query, " ")
+        val tags = mutableListOf<String>()
+        val nameFilters = mutableListOf<String>()
+        val artistFilters = mutableListOf<String>()
+        val languageFilters = mutableListOf<String>()
+        for (match in FILTER_TOKEN.findAll(query)) {
+            val value = match.groupValues[2].ifEmpty { match.groupValues[3] }
+            when (match.groupValues[1]) {
+                "#" -> tagKey(value).takeUnless { it.isEmpty() }?.let(tags::add)
+                "@" -> foldForSearch(value).takeUnless { it.isEmpty() }?.let(artistFilters::add)
+                "=" -> foldForSearch(value).takeUnless { it.isEmpty() }?.let(nameFilters::add)
+                "lang:" -> value.trim().lowercase().takeUnless { it.isEmpty() }?.let(languageFilters::add)
+            }
+        }
+        val text = FILTER_TOKEN.replace(query, " ")
         val phrase = foldForSearch(text)
-        if (phrase.isEmpty() && tags.isEmpty()) return listOf()
+        if (phrase.isEmpty() && tags.isEmpty() && nameFilters.isEmpty() && artistFilters.isEmpty() && languageFilters.isEmpty()) return listOf()
         val words = phrase.split(' ').distinct()
         val id = text.trim()
 
         return entries.mapNotNull { entry ->
             if (!hasAllTags(entry.tab.tags, tags)) return@mapNotNull null
-            val rank = when {
-                phrase.isEmpty() -> 0
-                entry.tab.tabId == id || words.all { entry.heading.contains(it) } -> 0
-                entry.text.contains(phrase) -> 1
-                words.all { entry.heading.contains(it) || entry.text.contains(it) } -> 2
-                else -> return@mapNotNull null
-            }
-            rank to entry
+            if (nameFilters.any { !filterMatches(entry.name, it) }) return@mapNotNull null
+            if (artistFilters.any { !filterMatches(entry.artist, it) }) return@mapNotNull null
+            if (languageFilters.any { it != entry.tab.language }) return@mapNotNull null
+            if (phrase.isEmpty()) return@mapNotNull Ranked(0, 0.0, entry, null)
+            if (entry.tab.tabId == id) return@mapNotNull Ranked(0, 2.0, entry, null)
+            val nameScore = matchScore(entry.name, words, phrase)
+            if (nameScore > 0.0) return@mapNotNull Ranked(0, nameScore, entry, null)
+            val artistScore = matchScore(entry.artist, words, phrase)
+            if (artistScore > 0.0) return@mapNotNull Ranked(1, artistScore, entry, null)
+            if (words.all { entry.heading.contains(it) }) return@mapNotNull Ranked(1, matchScore(entry.heading, words, phrase), entry, null)
+            val textScore = matchScore(entry.text, words, phrase)
+            if (textScore > 0.0) return@mapNotNull Ranked(2, textScore, entry, findSnippet(entry.tab.content, phrase, words))
+            null
         }
-            .sortedBy { (rank, _) -> rank }  // stable: keeps the given order within a rank
-            .distinctBy { (_, entry) -> entry.tab.songId }
+            .sortedWith(compareBy<Ranked> { it.group }.thenByDescending { it.score })  // stable: keeps the given order within a score
+            .distinctBy { it.entry.tab.songId }
             .take(MAX_RESULTS)
-            .map { (rank, entry) ->
-                LocalSearchResult(entry.tab, if (rank == 0) null else findSnippet(entry.tab.content, phrase, words))
-            }
+            .map { LocalSearchResult(it.entry.tab, it.snippet) }
     }
 }
 
-private val TAG_WORD = Regex("(?<!\\S)#(\\S+)")
+/** A filter word: `#tag`, `@artist`, `=song name` or `lang:cz`, its value `\S+` or `"with spaces"` */
+private val FILTER_TOKEN = Regex("""(?<!\S)([@#=]|lang:)\s*(?:"([^"]*)"|(\S+))""")
+
+/** A specifier's value matches a folded [text] when its whole phrase or all its words occur in it */
+private fun filterMatches(text: String, filter: String): Boolean =
+    text.contains(filter) || filter.split(' ').all { text.contains(it) }
+
+/** Every character of [word] occurs in some single word of folded [text], in order, from the same first letter (`tday` in `today`, not `man` in `komendianti`) */
+private fun fuzzyWordMatch(text: String, word: String): Boolean =
+    word.length > 1 && text.split(' ').any { candidate ->
+        if (candidate.first() != word.first()) return@any false
+        var i = 0
+        for (c in candidate) {
+            if (i == word.length) break
+            if (c == word[i]) i++
+        }
+        i == word.length
+    }
+
+/** How well a folded [text] matches the folded [phrase]/[words]: the whole phrase found beats (2.0) single words (their matched share), none matches nothing (0.0) */
+private fun matchScore(text: String, words: List<String>, phrase: String): Double {
+    if (text.isBlank()) return 0.0
+    if (text.contains(phrase)) return 2.0
+    val matched = words.count { text.contains(it) || fuzzyWordMatch(text, it) }
+    return matched.toDouble() / words.size
+}
 
 /**
  * The content line matching most of [words] (a line containing the whole [phrase] beats any
