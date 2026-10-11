@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material.icons.filled.ViewColumn
 import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.DropdownMenu
@@ -81,7 +82,9 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onTextSizeDecreaseClick: () -> Unit = {},
                  onTextSizeIncreaseClick: () -> Unit = {},
                  onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
-                 onEditTabClick: () -> Unit
+                 onEditTabClick: () -> Unit,
+                 /** Saves the song into the local song folder; null hides the action (songs that aren't from a songbook site) */
+                 onSaveAsLocalFileClick: (() -> Unit)? = null,
 ) {
     val currentContext = LocalContext.current
 
@@ -231,6 +234,23 @@ fun TabTopAppBar(isFavorite: Boolean,
                         exportDataFilePickerActivityLauncher.launch(exportFileIntent)
                     }
                 )
+                if (onSaveAsLocalFileClick != null) {
+                    DropdownMenuItem(
+                        text = {
+                            Row {
+                                Icon(
+                                    imageVector = Icons.Default.Save,
+                                    contentDescription = stringResource(R.string.action_save_as_local_file),
+                                )
+                                Text(text = stringResource(R.string.action_save_as_local_file), modifier = Modifier.padding(top = 2.dp, start = 4.dp))
+                            }
+                        },
+                        onClick = {
+                            showMenu = false
+                            onSaveAsLocalFileClick()
+                        }
+                    )
+                }
                 DropdownMenuItem(
                     text = {
                         Row {

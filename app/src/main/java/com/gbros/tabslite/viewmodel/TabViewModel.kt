@@ -2,6 +2,7 @@ package com.gbros.tabslite.viewmodel
 
 import android.content.ContentResolver
 import android.content.Context
+import android.widget.Toast
 import android.content.res.Resources.NotFoundException
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -51,6 +52,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // font size constraints, measured in sp
 private const val MIN_FONT_SIZE_SP = 6f
@@ -580,6 +582,23 @@ class TabViewModel
             if (ex != null) {
                 Log.e(TAG, "Unexpected error during playlist export: ${ex.message}")
             }
+        }
+    }
+
+    /** Saves the song as a new file in the local song folder, telling the user where it went */
+    fun onSaveAsLocalFileClick(context: Context) {
+        val currentTab = tab.value ?: return
+        val appContext = context.applicationContext
+        CoroutineScope(Dispatchers.IO).launch {
+            val message = try {
+                LocalFileImporter.saveAsSongFile(appContext, dataAccess, currentTab)
+                    ?.let { fileName -> appContext.getString(R.string.message_saved_as_local_file, fileName) }
+                    ?: appContext.getString(R.string.message_save_as_local_file_no_folder)
+            } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
+                Log.e(TAG, "Couldn't save tab ${currentTab.tabId} as a local song file: ${ex.message}", ex)
+                appContext.getString(R.string.message_save_as_local_file_failed)
+            }
+            withContext(Dispatchers.Main) { Toast.makeText(appContext, message, Toast.LENGTH_LONG).show() }
         }
     }
 

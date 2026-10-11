@@ -59,6 +59,7 @@
     <string name="generic_action_menu">Menu</string>
     <string name="generic_action_copy">Copy</string>
     <string name="generic_action_export_to_pdf">Export to PDF</string>
+    <string name="action_save_as_local_file" translation_description="Menu action that saves a song downloaded from a songbook website as a new file in the local song folder">Save as local song file</string>
     <string name="generic_action_clear">Clear</string>
     <string name="generic_action_preview">Preview</string>
     <string name="generic_action_continue">Continue</string>
@@ -96,6 +97,9 @@
     <string name="message_tab_playlist_entry_not_found" translation_description="Error message when loading the selected tab (in a playlist) from the internet returns a NOT FOUND result. This shouldn\'t happen, so the user is directed to report the issue to the developer.">Playlist entry not found. Please report this issue to the developer.</string>
     <string name="message_tab_unavailable_for_legal_reasons" translation_description="Error message shown when a tab is unavailable for legal reasons (e.g. a copyright takedown). It may still appear in search results, but the tab itself is not available.">This tab has been taken down and is no longer available. This may occur when the copyright holder requests that it be removed.</string>
     <string name="message_playlist_import_export_unexpected_error" translation_description="Error message shown when an import or export operation failed">Unexpected error importing/exporting playlists. Please report this to the developer.</string>
+    <string name="message_saved_as_local_file" translation_description="Shown after a downloaded song was saved as a file in the local song folder; the argument is the file name">Saved to the local song folder as %1$s</string>
+    <string name="message_save_as_local_file_no_folder" translation_description="Shown when saving a song as a local file is impossible because no local song folder was chosen yet">Choose a local song folder on the home screen first</string>
+    <string name="message_save_as_local_file_failed" translation_description="Shown when writing a song into the local song folder failed">Couldn\'t write the song file to the local song folder</string>
     <string name="message_playlist_import_delayed_internet_access" translation_description="Informational message shown when playlists have been imported but no internet connection is available to complete the download. The full operation will be completed the next time the app starts up while connected to the internet.">No internet connection. Playlist tabs have been added, but won\'t be downloaded until next time you restart the app with internet access.</string>
     <string name="message_search_no_internet" translation_description="Error message shown when a search is attempted with no internet connection">You\'re not connected to the internet.</string>
     <string name="message_search_timeout" translation_description="Error message shown when a search times out prior to completion">Timeout while waiting for search results.</string>

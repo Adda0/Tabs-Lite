@@ -71,6 +71,7 @@ import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.KeepScreenOn
+import com.gbros.tabslite.utilities.SongSources
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.card.ErrorCard
 import com.gbros.tabslite.view.chorddisplay.ChordModalBottomSheet
@@ -170,7 +171,8 @@ fun NavGraphBuilder.tabScreen(
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
             onTextSizeDecreaseClick = viewModel::onTextSizeDecreaseClick,
-            onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick
+            onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick,
+            onSaveAsLocalFileClick = viewModel::onSaveAsLocalFileClick
         )
     }
 }
@@ -258,7 +260,8 @@ fun NavGraphBuilder.playlistEntryScreen(
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
             onTextSizeDecreaseClick = viewModel::onTextSizeDecreaseClick,
-            onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick
+            onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick,
+            onSaveAsLocalFileClick = viewModel::onSaveAsLocalFileClick
         )
     }
 }
@@ -303,7 +306,8 @@ fun TabScreen(
     onEditTabClick: (songId: String, tabId: String) -> Unit,
     onTwoColumnViewToggled: (Boolean) -> Unit,
     onTextSizeDecreaseClick: () -> Unit,
-    onTextSizeIncreaseClick: () -> Unit
+    onTextSizeIncreaseClick: () -> Unit,
+    onSaveAsLocalFileClick: (Context) -> Unit = {}
 ) {
     val context = LocalContext.current
     // handle autoscroll
@@ -345,6 +349,10 @@ fun TabScreen(
     val twoColumnView by viewState.twoColumnView.observeAsState(false)
     val fontSizeSp = viewState.fontSizeSp.observeAsState(FALLBACK_FONT_SIZE_SP).value
     val fontStyle = viewState.fontStylePreference.observeAsState(FontStyle.Modern).value
+    // only songs downloaded from a songbook site have no file of their own yet
+    val saveAsLocalFile: (() -> Unit)? = if (tabId?.let { SongSources.sourceOf(it) } != null) {
+        { onSaveAsLocalFileClick(context) }
+    } else null
 
     KeepScreenOn()
 
@@ -402,7 +410,8 @@ fun TabScreen(
                     } else {
                         Log.w(TAG, "onEditTabClick called with null songId or tabId: ${viewState.songId.value}, ${viewState.tabId.value}")
                     }
-                }
+                },
+                onSaveAsLocalFileClick = saveAsLocalFile
             )
 
             if (!detailsHidden) {
@@ -537,7 +546,8 @@ fun TabScreen(
                         } else {
                             Log.w(TAG, "onEditTabClick called with null songId or tabId: ${viewState.songId.value}, ${viewState.tabId.value}")
                         }
-                    }
+                    },
+                    onSaveAsLocalFileClick = saveAsLocalFile
                 )
 
                 if (!detailsHidden) {

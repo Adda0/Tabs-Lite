@@ -435,6 +435,43 @@ fun wrapUnwrappedChordLines(content: String): String {
 fun convertChordSheet(content: String): String =
     wrapUnwrappedChordLines(mergeAnnotatedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(content)))))
 
+/**
+ * [content] in the app's internal format written back as a plain chord sheet, the notation local
+ * song files use: each chord name on a line of its own above the lyric it was tagged into, at the
+ * same column; a line with no lyrics of its own (`R: G D`, `[: Em D :] 3x`) keeps its chords inline.
+ * [convertChordSheet] reads the result back to the same chords.
+ */
+fun toChordSheet(content: String): String =
+    convertUgChordTags(content).replace("\r\n", "\n").split("\n").flatMap { rawLine ->
+        val line = rawLine.replace(TAB_OPEN_TAG, "").replace(TAB_CLOSE_TAG, "")
+        val chords = APP_CHORD_TAG_REGEX.findAll(line).toList()
+        if (chords.isEmpty()) return@flatMap listOf(line.trimEnd())
+        if (isChordNotationOnlyLine(line) || splitTaggedAnnotation(line) != null) {
+            val inline = APP_CHORD_TAG_REGEX.replace(line) { it.groupValues[1] }.trimEnd()
+            if (APP_CHORD_TAG_REGEX.findAll(convertBareChordLines(inline)).map { it.groupValues[1] }.toList() == chords.map { it.groupValues[1] }) {
+                return@flatMap listOf(inline)
+            }  // else: a chord not read by shape (`H,`); written above its notation like above lyrics
+        }
+        val lyrics = StringBuilder()
+        val chordLine = StringBuilder()
+        var lastEnd = 0
+        for (chord in chords) {
+            lyrics.append(line, lastEnd, chord.range.first)
+            // chords closer than their names are wide drift right, one space apart
+            val column = maxOf(lyrics.length, if (chordLine.isEmpty()) 0 else chordLine.length + 1)
+            chordLine.append(" ".repeat(column - chordLine.length)).append(chord.groupValues[1])
+            lastEnd = chord.range.last + 1
+        }
+        lyrics.append(line, lastEnd, line.length)
+        listOfNotNull(markedIfUnrecognized(chordLine.toString(), chords), lyrics.toString().trimEnd().ifBlank { null })
+    }.joinToString("\n")
+
+/** [chordLine] with a [TRAILING_CHORD_LINE_MARKER] if reading it back by shape would miss any of [chords] (`stop`, `E♭`) */
+private fun markedIfUnrecognized(chordLine: String, chords: List<MatchResult>): String {
+    val readBack = APP_CHORD_TAG_REGEX.findAll(convertBareChordLines(chordLine)).map { it.groupValues[1] }.toList()
+    return if (readBack == chords.map { it.groupValues[1] }) chordLine else "$chordLine $TRAILING_CHORD_LINE_MARKER"
+}
+
 /** [name], known to be a chord (e.g. marked as one by the page it comes from), as a chord tag */
 fun chordTag(name: String): String = "{ch:${sanitizeChordNameForTag(name)}}"
 

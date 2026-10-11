@@ -14,7 +14,9 @@ import com.gbros.tabslite.data.chord.Chord
 import com.gbros.tabslite.data.chord.ChordVariation
 import com.gbros.tabslite.data.chord.Instrument
 import com.gbros.tabslite.data.playlist.Playlist
+import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.TabDataType
+import java.text.Normalizer
 import java.util.UUID
 
 /**
@@ -186,6 +188,43 @@ object LocalFileImporter {
         resolver.openOutputStream(file.uri, "wt")?.use { it.writer().use { writer -> writer.write(newText) } } ?: return false
         return true
     }
+
+    /**
+     * Writes [tab] as a new song file (header, then its chords above the lyrics) into the local
+     * song folder, named `song_name-artist.song` like the others (`-2`, `-3`... if taken), and
+     * re-imports the folder so it shows up as a local version.
+     *
+     * @return the new file's name, or null if no local song folder was chosen yet
+     */
+    suspend fun saveAsSongFile(context: Context, dataAccess: DataAccess, tab: ITab): String? {
+        val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return null
+        val root = DocumentFile.fromTreeUri(context, treeUri) ?: return null
+        val baseName = "${fileNameSlug(tab.songName)}-${fileNameSlug(tab.artistName)}"
+        val fileName = generateSequence(1) { it + 1 }
+            .map { n -> if (n == 1) "$baseName.song" else "$baseName-$n.song" }
+            .first { root.findFile(it) == null }
+        val header = listOfNotNull(
+            "song_name: ${tab.songName}",
+            "artist_name: ${tab.artistName}",
+            tab.tonalityName.takeIf { it.isNotBlank() }?.let { "key: $it" },
+            tab.capo.takeIf { it > 0 }?.let { "capo: $it" },
+            tab.tempo.takeIf { it.isNotBlank() }?.let { "tempo: $it" },
+            SongSources.pageUrl(tab.tabId)?.let { "version_description: $it" },
+        )
+        val text = header.joinToString("\n") + "\n\n" + toChordSheet(tab.content).trim('\n') + "\n"
+        // octet-stream: with text/plain, document providers append .txt to the name
+        val file = root.createFile("application/octet-stream", fileName)
+            ?: throw IllegalStateException("Couldn't create $fileName in the local song folder")
+        context.contentResolver.openOutputStream(file.uri, "wt")?.use { it.writer().use { writer -> writer.write(text) } }
+            ?: throw IllegalStateException("Couldn't write $fileName")
+        importFromFolder(treeUri, context, dataAccess) { }
+        return file.name ?: fileName
+    }
+
+    /** [text] as file names in the song folder spell it: ASCII lowercase, words joined by `_` */
+    private fun fileNameSlug(text: String): String =
+        Normalizer.normalize(text, Normalizer.Form.NFD).replace(Regex("\\p{M}+"), "").lowercase()
+            .replace(Regex("[^a-z0-9]+"), "_").trim('_').ifEmpty { "song" }
 
     // deterministic per file path, so re-importing the same file updates its tab in place
     private fun tabIdFor(relativePath: String) = UUID.nameUUIDFromBytes("tab:$relativePath".toByteArray()).toString()
