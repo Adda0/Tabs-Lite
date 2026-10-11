@@ -444,7 +444,7 @@ fun TabScreen(
             if (!detailsHidden) {
                 Text(  // Tab title
                     text = titleBuilder,
-                    style = MaterialTheme.typography.headlineMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
@@ -590,7 +590,7 @@ fun TabScreen(
                 if (!detailsHidden) {
                     Text(  // Tab title
                         text = titleBuilder,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         overflow = TextOverflow.Ellipsis,
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,

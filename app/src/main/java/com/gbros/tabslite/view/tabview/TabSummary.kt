@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.res.stringResource
@@ -79,41 +80,30 @@ fun TabSummary(
             )
             .fillMaxWidth(),
     ) {
-        Row (
-            modifier = Modifier
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+        // everything short on one wrapping line next to the versions dropdown
+        val metaParts = buildList {
+            if (difficulty.isNotBlank()) add(stringResource(id = R.string.tab_difficulty, difficulty))
+            if (tuning.isNotBlank()) add(stringResource(id = R.string.tab_tuning, tuning))
+            if (capo.isNotBlank()) add(stringResource(id = R.string.tab_capo, capo))
+            if (key.isNotBlank()) add(stringResource(id = R.string.tab_key, key))
+            if (tempo.isNotBlank()) add(stringResource(id = R.string.tab_tempo, tempo))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column {
-                Text(
-                    text = stringResource(id = R.string.tab_difficulty, difficulty),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = stringResource(id = R.string.tab_tuning, tuning),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = stringResource(id = R.string.tab_capo, capo),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = stringResource(id = R.string.tab_key, key),
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                if (tempo.isNotBlank()) {
-                    Text(
-                        text = stringResource(id = R.string.tab_tempo, tempo),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
+            Text(
+                text = metaParts.joinToString("  ·  "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f)
+            )
             // versions dropdown to switch versions of this song
             ExposedDropdownMenuBox(
                 expanded = versionDropdownExpanded,
                 onExpandedChange = { versionDropdownExpanded = !versionDropdownExpanded },
                 modifier = Modifier
-                    .width(200.dp)
+                    .width(170.dp)
                     .padding(start = 8.dp)
             ) {
                 TextField(
@@ -154,26 +144,31 @@ fun TabSummary(
             }
         }
 
-        // author can be long so don't size the version dropdown based on this content
-        Text(
-            text = stringResource(id = R.string.tab_author, author),
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (author.isNotBlank()) {
+                Text(
+                    text = stringResource(id = R.string.tab_author, author),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+            }
+            for (tag in tags) {
+                AssistChip(onClick = { onTagClick(tag) }, label = { Text("#$tag") })
+            }
+        }
         if (rhythm.isNotBlank()) {
             // monospaced so the strums line up under the beat header
             Text(
                 text = rhythm,
                 fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = 4.dp)
             )
-        }
-        if (tags.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (tag in tags) {
-                    AssistChip(onClick = { onTagClick(tag) }, label = { Text("#$tag") })
-                }
-            }
         }
     }
 }

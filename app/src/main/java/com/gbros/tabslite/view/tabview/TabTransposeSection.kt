@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -13,13 +12,13 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.FilterChip
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -28,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -96,21 +96,23 @@ fun TabTransposeSection(
                     LayoutDirection.Ltr)
             ))
     ) {
-        Row {  // the key it sounds in, and the chord shapes and capo that get there
+        Row(verticalAlignment = Alignment.CenterVertically) {  // the key it sounds in, and the chord shapes and capo that get there
             Text(
                 text = stringResource(id = R.string.tab_transpose, keyWithSteps(currentTransposition + currentCapo), keyWithSteps(currentTransposition), currentCapo),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 4.dp)
             )
             IconButton(  // reset transpose
                 onClick = onTransposeResetClick,
-                modifier = Modifier
+                modifier = Modifier.size(32.dp)
             ) {
                 Icon(imageVector = Icons.Default.Clear, contentDescription = "Reset Transposition",
                     tint = MaterialTheme.colorScheme.primary)
             }
-            IconButton(onClick = onFavoriteTransposeToggle) {
+            IconButton(onClick = onFavoriteTransposeToggle, modifier = Modifier.size(32.dp)) {
                 Icon(
                     imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = stringResource(
@@ -121,34 +123,42 @@ fun TabTransposeSection(
                 )
             }
         }
-        StepperRow(
-            label = stringResource(R.string.tab_transpose_chords, keyWithSteps(currentTransposition)),
-            onDownClick = onTransposeDownClick,
-            onUpClick = onTransposeUpClick,
-            downDescription = stringResource(R.string.tab_chords_down_accessibility_text),
-            upDescription = stringResource(R.string.tab_chords_up_accessibility_text)
-        )
-        StepperRow(
-            label = stringResource(R.string.tab_transpose_capo, currentCapo),
-            onDownClick = onCapoDownClick,
-            onUpClick = onCapoUpClick,
-            downDescription = stringResource(R.string.tab_capo_down_accessibility_text),
-            upDescription = stringResource(R.string.tab_capo_up_accessibility_text),
-            downEnabled = currentCapo > 0,
-            upEnabled = currentCapo < MAX_CAPO
-        )
-        StepperRow(
-            label = stringResource(R.string.tab_transpose_capo_keep_key),
-            onDownClick = onCapoKeepKeyDownClick,
-            onUpClick = onCapoKeepKeyUpClick,
-            downDescription = stringResource(R.string.tab_capo_keep_key_down_accessibility_text),
-            upDescription = stringResource(R.string.tab_capo_keep_key_up_accessibility_text),
-            downEnabled = currentCapo > 0,
-            upEnabled = currentCapo < MAX_CAPO
-        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Stepper(
+                label = stringResource(R.string.tab_transpose_chords, keyWithSteps(currentTransposition)),
+                onDownClick = onTransposeDownClick,
+                onUpClick = onTransposeUpClick,
+                downDescription = stringResource(R.string.tab_chords_down_accessibility_text),
+                upDescription = stringResource(R.string.tab_chords_up_accessibility_text)
+            )
+            Stepper(
+                label = stringResource(R.string.tab_transpose_capo, currentCapo),
+                onDownClick = onCapoDownClick,
+                onUpClick = onCapoUpClick,
+                downDescription = stringResource(R.string.tab_capo_down_accessibility_text),
+                upDescription = stringResource(R.string.tab_capo_up_accessibility_text),
+                downEnabled = currentCapo > 0,
+                upEnabled = currentCapo < MAX_CAPO
+            )
+            Stepper(
+                label = stringResource(R.string.tab_transpose_capo_keep_key),
+                onDownClick = onCapoKeepKeyDownClick,
+                onUpClick = onCapoKeepKeyUpClick,
+                downDescription = stringResource(R.string.tab_capo_keep_key_down_accessibility_text),
+                upDescription = stringResource(R.string.tab_capo_keep_key_up_accessibility_text),
+                downEnabled = currentCapo > 0,
+                upEnabled = currentCapo < MAX_CAPO
+            )
+        }
         // jump to the original/a favourite transposition; the chip matching the current one is
         // selected, and tapping it again marks it as the best favourite (star)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
             FilterChip(
                 selected = isSameTransposition(originalTransposition, currentTransposition) && writtenCapo == currentCapo,
                 onClick = onTransposeToOriginalClick,
@@ -162,29 +172,25 @@ fun TabTransposeSection(
                     leadingIcon = { Icon(imageVector = if (favorite.best) Icons.Filled.Star else Icons.Filled.Favorite, contentDescription = null) }
                 )
             }
-        }
-        if (capoSuggestions.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (suggestion in capoSuggestions) {
-                    val difficultyLabel = stringResource(when (suggestion.level) {
-                        ChordDifficulty.Easy -> R.string.tab_capo_suggestions_difficulty_easy
-                        ChordDifficulty.Medium -> R.string.tab_capo_suggestions_difficulty_medium
-                        ChordDifficulty.Hard -> R.string.tab_capo_suggestions_difficulty_hard
-                    })
-                    FilterChip(
-                        selected = suggestion.transpose == currentTransposition && suggestion.capo == currentCapo,
-                        onClick = { onCapoSuggestionClick(suggestion) },
-                        label = { Text("${describe(suggestion.transpose, suggestion.capo)} ($difficultyLabel)") }
-                    )
-                }
+            for (suggestion in capoSuggestions) {
+                val difficultyLabel = stringResource(when (suggestion.level) {
+                    ChordDifficulty.Easy -> R.string.tab_capo_suggestions_difficulty_easy
+                    ChordDifficulty.Medium -> R.string.tab_capo_suggestions_difficulty_medium
+                    ChordDifficulty.Hard -> R.string.tab_capo_suggestions_difficulty_hard
+                })
+                FilterChip(
+                    selected = suggestion.transpose == currentTransposition && suggestion.capo == currentCapo,
+                    onClick = { onCapoSuggestionClick(suggestion) },
+                    label = { Text("${describe(suggestion.transpose, suggestion.capo)} ($difficultyLabel)") }
+                )
             }
         }
     }
 }
 
-/** A label with − and + buttons on the right */
+/** A label with − and + buttons next to it */
 @Composable
-private fun StepperRow(
+private fun Stepper(
     label: String,
     onDownClick: () -> Unit,
     onUpClick: () -> Unit,
@@ -193,18 +199,16 @@ private fun StepperRow(
     downEnabled: Boolean = true,
     upEnabled: Boolean = true
 ) {
-    Row {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(vertical = 12.dp)
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = onDownClick, enabled = downEnabled, modifier = Modifier.padding(horizontal = 8.dp)) {
+        IconButton(onClick = onDownClick, enabled = downEnabled, modifier = Modifier.padding(start = 4.dp).size(32.dp)) {
             Icon(imageVector = ImageVector.vectorResource(id = R.drawable.ic_remove), contentDescription = downDescription)
         }
-        Button(onClick = onUpClick, enabled = upEnabled, modifier = Modifier.padding(horizontal = 8.dp)) {
+        IconButton(onClick = onUpClick, enabled = upEnabled, modifier = Modifier.size(32.dp)) {
             Icon(imageVector = Icons.Default.Add, contentDescription = upDescription)
         }
     }
