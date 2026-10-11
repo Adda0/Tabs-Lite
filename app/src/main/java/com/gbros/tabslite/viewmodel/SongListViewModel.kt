@@ -45,6 +45,8 @@ class SongListViewModel(
 
     override val lastPlayed: LiveData<Map<String, Long>> = dataAccess.getLastPlayed().map { plays -> plays.associate { it.tabId to it.lastPlayed } }
 
+    override val playCounts: LiveData<Map<String, Int>> = dataAccess.getPlayCounts().map { plays -> plays.associate { it.tabId to it.playCount } }
+
     override val tags: LiveData<List<String>> = tabs.map { list -> allTags(list.map { it.tags }) }
 
     override val selectedTags: LiveData<Set<String>> = dataAccess.getLivePreference(Preference.TAG_FILTER).map { p ->
@@ -58,8 +60,9 @@ class SongListViewModel(
     /**
      * The tabs to display in this song list
      */
-    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = filteredTabs.combine(sortBy, lastPlayed) { playlistTabs, currentSortBy, plays ->
+    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = filteredTabs.combine(sortBy, lastPlayed, playCounts) { playlistTabs, currentSortBy, plays, counts ->
         val lastPlayed = plays.orEmpty()
+        val playCounts = counts.orEmpty()
         when(currentSortBy) {
             SortBy.Name -> playlistTabs?.sortedBy { it.songName } ?: listOf()
             SortBy.Popularity -> playlistTabs?.sortedByDescending { it.votes } ?: listOf()
@@ -67,6 +70,7 @@ class SongListViewModel(
             SortBy.DateAdded -> playlistTabs?.sortedByDescending { it.dateAdded } ?: listOf()
             SortBy.LastPlayed -> playlistTabs?.sortedByDescending { lastPlayed[it.tabId] ?: 0 } ?: listOf()
             SortBy.NotPlayedRecently -> playlistTabs?.sortedBy { lastPlayed[it.tabId] ?: 0 } ?: listOf()
+            SortBy.MostPlayed -> playlistTabs?.sortedByDescending { playCounts[it.tabId] ?: 0 } ?: listOf()
             null -> playlistTabs ?: listOf()
         }
     }

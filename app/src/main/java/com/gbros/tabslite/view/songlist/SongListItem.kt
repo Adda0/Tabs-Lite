@@ -24,6 +24,8 @@ import com.gbros.tabslite.ui.theme.AppTheme
 fun SongListItem(
     modifier: Modifier = Modifier,
     song: ITab,
+    /** How many times the song was played since install; null when never played */
+    playCount: Int? = null,
 ) {
     Card {
         Row(
@@ -53,6 +55,12 @@ fun SongListItem(
                         song.version
                     )
                 )
+                if (playCount != null) {
+                    Text(
+                        text = String.format(stringResource(id = R.string.tab_play_count), playCount),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
     }

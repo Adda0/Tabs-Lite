@@ -20,6 +20,11 @@ interface ISongListViewState {
     val lastPlayed: LiveData<Map<String, Long>>
 
     /**
+     * How many times each song was played since the app was installed, by tab ID
+     */
+    val playCounts: LiveData<Map<String, Int>>
+
+    /**
      * The tags of the songs in this list, before filtering
      */
     val tags: LiveData<List<String>>

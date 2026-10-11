@@ -88,6 +88,7 @@ fun SongListView(
             }
         } else {
             val lastPlayed = viewState.lastPlayed.observeAsState(mapOf()).value
+            val playCounts = viewState.playCounts.observeAsState(mapOf()).value
             Box {
                 LazyColumn(
                     verticalArrangement = verticalArrangement,
@@ -109,6 +110,7 @@ fun SongListView(
                                 }
                             },
                             song = song,
+                            playCount = playCounts[song.tabId],
                         )
                     }
                     item {
@@ -159,6 +161,7 @@ private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
     override val sortBy: LiveData<SortBy>,
     override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf()),
+    override val playCounts: LiveData<Map<String, Int>> = MutableLiveData(mapOf()),
     override val tags: LiveData<List<String>> = MutableLiveData(listOf()),
     override val selectedTags: LiveData<Set<String>> = MutableLiveData(setOf())
 ) : ISongListViewState

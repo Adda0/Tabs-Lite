@@ -572,6 +572,7 @@ private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
     override val sortBy: LiveData<SortBy>,
     override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf()),
+    override val playCounts: LiveData<Map<String, Int>> = MutableLiveData(mapOf()),
     override val tags: LiveData<List<String>> = MutableLiveData(listOf()),
     override val selectedTags: LiveData<Set<String>> = MutableLiveData(setOf())
 ) : ISongListViewState

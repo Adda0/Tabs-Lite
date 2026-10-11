@@ -18,3 +18,9 @@ data class LastPlayed(
     @ColumnInfo(name = "tab_id") val tabId: String,
     @ColumnInfo(name = "last_played") val lastPlayed: Long
 )
+
+/** How many times a song was played since the app was installed */
+data class PlayCount(
+    @ColumnInfo(name = "tab_id") val tabId: String,
+    @ColumnInfo(name = "play_count") val playCount: Int
+)

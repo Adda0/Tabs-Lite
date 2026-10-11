@@ -433,6 +433,10 @@ interface DataAccess {
     @Query("SELECT tab_id, MAX(played_at) AS last_played FROM play_history GROUP BY tab_id")
     fun getLastPlayed(): LiveData<List<LastPlayed>>
 
+    /** How many times each song was played since install; every play remains counted forever */
+    @Query("SELECT tab_id, COUNT(*) AS play_count FROM play_history GROUP BY tab_id")
+    fun getPlayCounts(): LiveData<List<PlayCount>>
+
     /** Songs played since [sinceMs], last played first; [TabWithDataPlaylistEntry.dateAdded] is when */
     @Query("""
         SELECT tabs.*, tabs.id AS tab_id, -1 AS entry_id, 0 AS playlist_id, NULL AS next_entry_id, NULL AS prev_entry_id,

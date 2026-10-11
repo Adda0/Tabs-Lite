@@ -39,6 +39,29 @@ fun <T1, T2, T3, R> LiveData<T1>.combine(
 }
 
 /**
+ * Combine multiple livedata sources into a new livedata source
+ */
+fun <T1, T2, T3, T4, R> LiveData<T1>.combine(
+    liveData2: LiveData<T2>,
+    liveData3: LiveData<T3>,
+    liveData4: LiveData<T4>,
+    combineFn: (value1: T1?, value2: T2?, value3: T3?, value4: T4?) -> R
+): LiveData<R> = MediatorLiveData<R>().apply {
+    addSource(this@combine) {
+        value = combineFn(it, liveData2.value, liveData3.value, liveData4.value)
+    }
+    addSource(liveData2) {
+        value = combineFn(this@combine.value, it, liveData3.value, liveData4.value)
+    }
+    addSource(liveData3) {
+        value = combineFn(this@combine.value, liveData2.value, it, liveData4.value)
+    }
+    addSource(liveData4) {
+        value = combineFn(this@combine.value, liveData2.value, liveData3.value, it)
+    }
+}
+
+/**
  * Combines an arbitrary number of LiveData sources into a new LiveData source.
  * The resulting LiveData will emit a list of all the values from the source LiveData objects.
  *
