@@ -1,13 +1,19 @@
 package com.gbros.tabslite.viewmodel
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
+import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.playlist.IDataPlaylistEntry
 import com.gbros.tabslite.data.playlist.Playlist
+import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
+import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.playlists.IPlaylistViewState
 import dagger.assisted.Assisted
@@ -17,6 +23,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @HiltViewModel(assistedFactory = PlaylistViewModel.PlaylistViewModelFactory::class)
 class PlaylistViewModel
@@ -121,6 +128,44 @@ class PlaylistViewModel
     fun titleChanged(newTitle: String) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.updateTitle(playlistId = playlistId, newTitle = newTitle)
+        }
+    }
+
+
+    //#endregion
+
+    //#region save all as local files
+
+    val saveAllAsLocalFilesInProgress: LiveData<Boolean> = MutableLiveData(false)
+
+    fun onSaveAllAsLocalFilesClick(context: Context) {
+        val currentSongs = songs.value ?: return
+        if (currentSongs.isEmpty()) return
+        (saveAllAsLocalFilesInProgress as MutableLiveData).value = true
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                Tab.fetchAllEmptyPlaylistTabsFromInternet(dataAccess, playlistId) { }
+                // the list was read before fetching: take the content just downloaded
+                val songsWithContent = currentSongs.onEach { song ->
+                    if (song.content.isBlank()) song.content = runCatching { dataAccess.getTabInstance(song.tabId).content }.getOrDefault("")
+                }
+                val result = LocalFileImporter.saveAllAsSongFiles(context.applicationContext, dataAccess, songsWithContent)
+                val message = when {
+                    result == null -> context.getString(R.string.message_save_as_local_file_no_folder)
+                    result.failed > 0 && result.saved == 0 && result.skipped == 0 -> context.getString(R.string.message_save_all_as_local_failed, result.failed)
+                    else -> context.getString(R.string.message_save_all_as_local_files, result.saved, result.skipped, result.failed)
+                }
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context.applicationContext, message, Toast.LENGTH_LONG).show()
+                    (saveAllAsLocalFilesInProgress as MutableLiveData).value = false
+                }
+            } catch (ex: Exception) {
+                Log.e(TAG, "Couldn't save all playlist songs as local files: ${ex.message}", ex)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context.applicationContext, context.getString(R.string.message_save_as_local_file_failed), Toast.LENGTH_LONG).show()
+                    (saveAllAsLocalFilesInProgress as MutableLiveData).value = false
+                }
+            }
         }
     }
 

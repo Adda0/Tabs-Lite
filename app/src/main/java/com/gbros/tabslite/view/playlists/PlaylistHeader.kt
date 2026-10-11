@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,9 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.gbros.tabslite.R
 import com.gbros.tabslite.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +39,9 @@ fun PlaylistHeader(
     titleChanged: (title: String) -> Unit,
     descriptionChanged: (description: String) -> Unit,
     navigateBack: () -> Unit,
-    deletePlaylist: () -> Unit
+    deletePlaylist: () -> Unit,
+    saveAllAsLocalFiles: (() -> Unit)? = null,
+    saveAllInProgress: LiveData<Boolean> = MutableLiveData(false)
 ) {
     var titleToDisplay: String by remember(key1 = title.observeAsState().value) { mutableStateOf(title.value ?: "") }
     var descriptionToDisplay: String by remember(key1 = description.observeAsState().value) { mutableStateOf(description.value ?: "") }
@@ -67,6 +74,20 @@ fun PlaylistHeader(
                 }
             },
             actions = {
+                var menuExpanded by remember { mutableStateOf(false) }
+                val inProgress = saveAllInProgress.observeAsState(false).value
+                val context = LocalContext.current
+                IconButton(onClick = { menuExpanded = !menuExpanded }, enabled = !inProgress) {
+                    Icon(Icons.Default.MoreVert, context.getString(R.string.generic_action_more))
+                }
+                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                    if (saveAllAsLocalFiles != null) {
+                        DropdownMenuItem(
+                            text = { Text(context.getString(R.string.menu_save_all_as_local_files)) },
+                            onClick = { menuExpanded = false; saveAllAsLocalFiles() }
+                        )
+                    }
+                }
                 IconButton(onClick = deletePlaylist) {
                     Icon(Icons.Default.Delete, "Delete")
                 }

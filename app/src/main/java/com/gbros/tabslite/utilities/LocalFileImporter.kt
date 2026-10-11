@@ -199,7 +199,45 @@ object LocalFileImporter {
     suspend fun saveAsSongFile(context: Context, dataAccess: DataAccess, tab: ITab): String? {
         val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return null
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return null
+        val fileName = writeSongFile(context, root, tab, skipIfExists = false)!!
+        importFromFolder(treeUri, context, dataAccess) { }
+        return fileName
+    }
+
+    data class SaveAllResult(val saved: Int, val skipped: Int, val failed: Int)
+
+    /**
+     * Writes each of [tabs] that isn't a local file yet as a song file like [saveAsSongFile] does,
+     * skipping songs whose `song_name-artist.song` already exists instead of numbering a copy,
+     * then re-imports the folder once.
+     *
+     * @return the counts, or null if no local song folder was chosen yet
+     */
+    suspend fun saveAllAsSongFiles(context: Context, dataAccess: DataAccess, tabs: List<ITab>): SaveAllResult? {
+        val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return null
+        val root = DocumentFile.fromTreeUri(context, treeUri) ?: return null
+        var saved = 0; var skipped = 0; var failed = 0
+        for (tab in tabs.filter { it.tabAccessType != LOCAL_FILE_ACCESS_TYPE }) {
+            try {
+                if (tab.content.isBlank()) failed++
+                else if (writeSongFile(context, root, tab, skipIfExists = true) == null) skipped++
+                else saved++
+            } catch (ex: Exception) {
+                Log.e(TAG, "Couldn't save tab ${tab.tabId} as a local song file: ${ex.message}", ex)
+                failed++
+            }
+        }
+        if (saved > 0) importFromFolder(treeUri, context, dataAccess) { }
+        return SaveAllResult(saved, skipped, failed)
+    }
+
+    /**
+     * Writes [tab] into [root]; when its name is taken, numbers it (`-2`, `-3`...) or, with
+     * [skipIfExists], returns null instead.
+     */
+    private fun writeSongFile(context: Context, root: DocumentFile, tab: ITab, skipIfExists: Boolean): String? {
         val baseName = "${fileNameSlug(tab.songName)}-${fileNameSlug(tab.artistName)}"
+        if (skipIfExists && root.findFile("$baseName.song") != null) return null
         val fileName = generateSequence(1) { it + 1 }
             .map { n -> if (n == 1) "$baseName.song" else "$baseName-$n.song" }
             .first { root.findFile(it) == null }
@@ -217,7 +255,6 @@ object LocalFileImporter {
             ?: throw IllegalStateException("Couldn't create $fileName in the local song folder")
         context.contentResolver.openOutputStream(file.uri, "wt")?.use { it.writer().use { writer -> writer.write(text) } }
             ?: throw IllegalStateException("Couldn't write $fileName")
-        importFromFolder(treeUri, context, dataAccess) { }
         return file.name ?: fileName
     }
 

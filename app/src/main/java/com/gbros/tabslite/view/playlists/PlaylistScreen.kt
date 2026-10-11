@@ -45,6 +45,7 @@ fun NavGraphBuilder.playlistDetailScreen(
         val playlistId = navBackStackEntry.arguments!!.getInt(PLAYLIST_NAV_ARG)
         val db = AppDatabase.getInstance(LocalContext.current)
         val viewModel: PlaylistViewModel = hiltViewModel<PlaylistViewModel, PlaylistViewModel.PlaylistViewModelFactory> { factory -> factory.create(playlistId, db.dataAccess()) }
+        val context = LocalContext.current
 
         PlaylistScreen(
             viewState = viewModel,
@@ -53,6 +54,8 @@ fun NavGraphBuilder.playlistDetailScreen(
             entryMoved = viewModel::reorderPlaylistEntry,
             entryRemoved = viewModel::entryRemoved,
             playlistDeleted = viewModel::playlistDeleted,
+            saveAllAsLocalFiles = { viewModel.onSaveAllAsLocalFilesClick(context) },
+            saveAllInProgress = viewModel.saveAllAsLocalFilesInProgress,
             navigateToTabByPlaylistEntryId = onNavigateToTabByPlaylistEntryId,
             navigateBack = onNavigateBack
         )
@@ -67,6 +70,8 @@ fun PlaylistScreen(
     entryMoved: (fromIndex: Int, toIndex: Int) -> Unit,
     entryRemoved: (entry: IDataPlaylistEntry) -> Unit,
     playlistDeleted: () -> Unit,
+    saveAllAsLocalFiles: (() -> Unit)? = null,
+    saveAllInProgress: LiveData<Boolean> = MutableLiveData(false),
     navigateToTabByPlaylistEntryId: (Int) -> Unit,
     navigateBack: () -> Unit
 ) {
@@ -82,9 +87,9 @@ fun PlaylistScreen(
             titleChanged = titleChanged,
             descriptionChanged = descriptionChanged,
             navigateBack = navigateBack,
-            deletePlaylist = {
-                deletePlaylistConfirmationDialogShowing = true
-            }
+            deletePlaylist = { deletePlaylistConfirmationDialogShowing = true },
+            saveAllAsLocalFiles = saveAllAsLocalFiles,
+            saveAllInProgress = saveAllInProgress
         )
 
         PlaylistSongList(
