@@ -42,4 +42,9 @@ interface IHomeViewState {
      * The content:// tree URI of the user's chosen local song folder, or null if none has been chosen
      */
     val localImportFolderUri: LiveData<String?>
+
+    /**
+     * Whether the local song folder is rescanned on every app start
+     */
+    val rescanLocalSongsOnStart: LiveData<Boolean>
 }

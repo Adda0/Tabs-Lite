@@ -81,6 +81,12 @@ data class Preference(
         const val LOCAL_IMPORT_FOLDER_URI: String = "LOCAL_IMPORT_FOLDER_URI"
 
         /**
+         * The preference name for whether the local song folder is rescanned every time the app
+         * starts, so edits made to the song files outside the app show up without a manual rescan
+         */
+        const val RESCAN_LOCAL_SONGS_ON_START: String = "RESCAN_LOCAL_SONGS_ON_START"
+
+        /**
          * The preference name for whether the tab screen hides the song details and transpose
          * controls above the content, leaving more room while playing
          */

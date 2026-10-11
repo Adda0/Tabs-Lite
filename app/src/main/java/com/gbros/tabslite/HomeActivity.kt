@@ -1,5 +1,6 @@
 package com.gbros.tabslite
 
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -22,6 +23,7 @@ import com.gbros.tabslite.data.chord.Instrument
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.BackendConnection
+import com.gbros.tabslite.utilities.LocalFileImporter
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.playlists.PlaylistsSortBy
 import com.gbros.tabslite.view.songlist.SortBy
@@ -82,6 +84,10 @@ class HomeActivity : ComponentActivity() {
             initializeDefaultPlaylists(dataAccess)
         }
 
+        CoroutineScope(Dispatchers.IO).launch {
+            rescanLocalSongsFolderIfRequested(dataAccess)
+        }
+
         launchAndObserveEmptyTabs(dataAccess)
     }
 
@@ -100,6 +106,27 @@ class HomeActivity : ComponentActivity() {
     }
 
     /**
+     * Re-import the user's local song folder, if they asked for that to happen on every start
+     * ([Preference.RESCAN_LOCAL_SONGS_ON_START]). Song files are parsed at import time only, so
+     * without this, edits made to the files outside the app wait for a manual rescan.
+     */
+    private suspend fun rescanLocalSongsFolderIfRequested(dataAccess: DataAccess) {
+        if (dataAccess.getPreferenceValue(Preference.RESCAN_LOCAL_SONGS_ON_START)?.toBoolean() != true) return
+        val folderUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)
+        if (folderUri.isNullOrBlank()) return
+        try {
+            val imported = LocalFileImporter.importFromFolder(
+                treeUri = Uri.parse(folderUri),
+                context = applicationContext,
+                dataAccess = dataAccess
+            )
+            Log.i(TAG, "Rescanned the local song folder on start: $imported songs imported.")
+        } catch (ex: Exception) {
+            Log.e(TAG, "Rescan of the local song folder on start failed: ${ex.message}", ex)
+        }
+    }
+
+    /**
      * set default preferences if they aren't already set
      */
     private suspend fun initializeUserPreferences(dataAccess: DataAccess) {
@@ -113,6 +140,7 @@ class HomeActivity : ComponentActivity() {
         dataAccess.insert(Preference(Preference.APP_THEME, ThemeSelection.System.name))
         dataAccess.insert(Preference(Preference.PIN_CHORDS, false.toString()))
         dataAccess.insert(Preference(Preference.FONT_STYLE, FontStyle.Modern.name))
+        dataAccess.insert(Preference(Preference.RESCAN_LOCAL_SONGS_ON_START, false.toString()))
     }
 
     /**

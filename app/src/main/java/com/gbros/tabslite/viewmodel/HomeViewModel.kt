@@ -100,6 +100,12 @@ class HomeViewModel
      */
     override val localImportFolderUri: LiveData<String?> = dataAccess.getLivePreference(Preference.LOCAL_IMPORT_FOLDER_URI).map { it?.value }
 
+    /**
+     * Whether the local song folder is rescanned on every app start, so edits made to the song
+     * files outside the app show up without a manual rescan. Defaults to off.
+     */
+    override val rescanLocalSongsOnStart: LiveData<Boolean> = dataAccess.getLivePreference(Preference.RESCAN_LOCAL_SONGS_ON_START).map { it?.value?.toBoolean() == true }
+
     //#endregion
 
     //#region public data
@@ -158,6 +164,15 @@ class HomeViewModel
     fun setTextStyle(style: FontStyle) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.FONT_STYLE, style.name))
+        }
+    }
+
+    /**
+     * Set whether the local song folder is rescanned on every app start
+     */
+    fun setRescanLocalSongsOnStart(enabled: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.RESCAN_LOCAL_SONGS_ON_START, enabled.toString()))
         }
     }
 

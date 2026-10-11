@@ -30,6 +30,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -48,7 +49,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.times
 import androidx.compose.ui.window.Dialog
@@ -72,7 +75,9 @@ fun AboutDialog(
     onSwitchFontStyle: (FontStyle) -> Unit,
     hasLocalSongsFolder: Boolean = false,
     onImportLocalSongsFolderClicked: () -> Unit = {},
-    onRescanLocalSongsFolderClicked: () -> Unit = {}
+    onRescanLocalSongsFolderClicked: () -> Unit = {},
+    rescanLocalSongsOnStart: Boolean = false,
+    onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -142,7 +147,9 @@ fun AboutDialog(
                                         onNavigateToCreateTab = onNavigateToCreateTab,
                                         hasLocalSongsFolder = hasLocalSongsFolder,
                                         onImportLocalSongsFolderClicked = onImportLocalSongsFolderClicked,
-                                        onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked
+                                        onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked,
+                                        rescanLocalSongsOnStart = rescanLocalSongsOnStart,
+                                        onRescanLocalSongsOnStartChanged = onRescanLocalSongsOnStartChanged
                                     )
 
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -183,7 +190,9 @@ fun AboutDialog(
                             onNavigateToCreateTab = onNavigateToCreateTab,
                             hasLocalSongsFolder = hasLocalSongsFolder,
                             onImportLocalSongsFolderClicked = onImportLocalSongsFolderClicked,
-                            onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked
+                            onRescanLocalSongsFolderClicked = onRescanLocalSongsFolderClicked,
+                            rescanLocalSongsOnStart = rescanLocalSongsOnStart,
+                            onRescanLocalSongsOnStartChanged = onRescanLocalSongsOnStartChanged
                         )
                         ReviewDonateButtons()
                     }
@@ -435,6 +444,8 @@ private fun ImportExportActionsCard(
     hasLocalSongsFolder: Boolean = false,
     onImportLocalSongsFolderClicked: () -> Unit = {},
     onRescanLocalSongsFolderClicked: () -> Unit = {},
+    rescanLocalSongsOnStart: Boolean = false,
+    onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {},
     compact: Boolean = false
 ) {
     val rowPadding = if (compact) 4.dp else 8.dp
@@ -502,6 +513,13 @@ private fun ImportExportActionsCard(
                         style = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
                     )
                 }
+                RescanOnStartRow(
+                    checked = rescanLocalSongsOnStart,
+                    onCheckedChange = onRescanLocalSongsOnStartChanged,
+                    rowPadding = rowPadding,
+                    iconPadding = iconPadding,
+                    textStyle = if (compact) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium
+                )
             }
             TextButton(onClick = onNavigateToCreateTab) {
                 Text(
@@ -520,7 +538,9 @@ private fun ImportExportActionsCompact(
     onNavigateToCreateTab: () -> Unit,
     hasLocalSongsFolder: Boolean = false,
     onImportLocalSongsFolderClicked: () -> Unit = {},
-    onRescanLocalSongsFolderClicked: () -> Unit = {}
+    onRescanLocalSongsFolderClicked: () -> Unit = {},
+    rescanLocalSongsOnStart: Boolean = false,
+    onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {}
 ) {
     val rowPadding = 4.dp
     val iconPadding = 4.dp
@@ -582,6 +602,13 @@ private fun ImportExportActionsCompact(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            RescanOnStartRow(
+                checked = rescanLocalSongsOnStart,
+                onCheckedChange = onRescanLocalSongsOnStartChanged,
+                rowPadding = rowPadding,
+                iconPadding = iconPadding,
+                textStyle = MaterialTheme.typography.bodySmall
+            )
         }
         TextButton(onClick = onNavigateToCreateTab) {
             Text(
@@ -589,6 +616,37 @@ private fun ImportExportActionsCompact(
                 style = MaterialTheme.typography.bodySmall
             )
         }
+    }
+}
+
+/** Toggle for rescanning the local song folder on every app start */
+@Composable
+private fun RescanOnStartRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    rowPadding: Dp,
+    iconPadding: Dp,
+    textStyle: TextStyle
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(all = rowPadding)
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+    ) {
+        Text(
+            modifier = Modifier
+                .padding(all = iconPadding)
+                .weight(1f),
+            text = stringResource(id = R.string.app_setting_rescan_local_songs_on_start),
+            style = textStyle
+        )
+        Switch(
+            modifier = Modifier.padding(horizontal = iconPadding),
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 

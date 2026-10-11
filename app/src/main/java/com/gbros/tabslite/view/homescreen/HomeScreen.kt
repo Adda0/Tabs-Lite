@@ -115,6 +115,7 @@ fun NavGraphBuilder.homeScreen(
             onImportPlaylists = viewModel::importPlaylists,
             onImportLocalSongsFolder = viewModel::importLocalSongsFolder,
             onRescanLocalSongsFolder = viewModel::rescanLocalSongsFolder,
+            onRescanLocalSongsOnStartChange = viewModel::setRescanLocalSongsOnStart,
             onCreatePlaylist = viewModel::createPlaylist,
             onThemeSelectionChange = viewModel::setAppTheme,
             onFontStyleSelectionChange = viewModel::setTextStyle,
@@ -143,6 +144,7 @@ fun HomeScreen(
     onImportPlaylists: (sourceFile: Uri, contentResolver: ContentResolver) -> Unit,
     onImportLocalSongsFolder: (folderUri: Uri, context: Context) -> Unit,
     onRescanLocalSongsFolder: (context: Context) -> Unit,
+    onRescanLocalSongsOnStartChange: (enabled: Boolean) -> Unit,
     onCreatePlaylist: (title: String, description: String) -> Unit,
     onThemeSelectionChange: (ThemeSelection) -> Unit,
     onFontStyleSelectionChange: (FontStyle) -> Unit,
@@ -222,6 +224,8 @@ fun HomeScreen(
                 showAboutDialog = false
                 onRescanLocalSongsFolder(context)
             },
+            rescanLocalSongsOnStart = viewState.rescanLocalSongsOnStart.observeAsState(false).value,
+            onRescanLocalSongsOnStartChanged = onRescanLocalSongsOnStartChange,
             onSwitchThemeMode = onThemeSelectionChange,
             onNavigateToCreateTab = onNavigateToCreateTab,
             onSwitchFontStyle = onFontStyleSelectionChange
@@ -457,7 +461,8 @@ private fun HomeScreenPreview() {
         playlistsSortBy = MutableLiveData(PlaylistsSortBy.Name),
         selectedAppTheme = MutableLiveData(ThemeSelection.System),
         selectedFontStyle = MutableLiveData(FontStyle.Modern),
-        localImportFolderUri = MutableLiveData(null)
+        localImportFolderUri = MutableLiveData(null),
+        rescanLocalSongsOnStart = MutableLiveData(false)
     )
 
     val songListState = SongListViewStateForTest(
@@ -489,6 +494,7 @@ private fun HomeScreenPreview() {
             onImportPlaylists = {_,_->},
             onImportLocalSongsFolder = {_,_->},
             onRescanLocalSongsFolder = {_->},
+            onRescanLocalSongsOnStartChange = {},
             onCreatePlaylist = {_,_->},
             onThemeSelectionChange = {},
             onFontStyleSelectionChange = {},
@@ -507,7 +513,8 @@ private class HomeViewStateForTest(
     override val playlistsSortBy: LiveData<PlaylistsSortBy>,
     override val selectedAppTheme: LiveData<ThemeSelection>,
     override val selectedFontStyle: LiveData<FontStyle>,
-    override val localImportFolderUri: LiveData<String?>
+    override val localImportFolderUri: LiveData<String?>,
+    override val rescanLocalSongsOnStart: LiveData<Boolean>
 ) : IHomeViewState
 
 private class SongListViewStateForTest(
