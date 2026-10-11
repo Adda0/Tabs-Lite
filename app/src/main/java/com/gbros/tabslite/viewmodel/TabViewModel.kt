@@ -44,6 +44,7 @@ import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.expandSectionReferences
+import com.gbros.tabslite.utilities.addChordHints
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -405,10 +406,15 @@ class TabViewModel
 
     override val sectionReferencesExpanded: LiveData<Boolean> = dataAccess.getLivePreference(Preference.EXPAND_SECTION_REFERENCES).map { p -> p?.value?.toBoolean() ?: true }
 
-    // tab content as displayed, before transposition: repeated sections written out where referenced
-    private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded) { t, expand ->
-        val content = t?.content ?: ""
-        if (expand != false) expandSectionReferences(content) else content
+    override val chordHintsShown: LiveData<Boolean> = dataAccess.getLivePreference(Preference.CHORD_HINTS).map { p -> p?.value?.toBoolean() == true }
+
+    // tab content as displayed, before transposition: repeated sections written out where referenced,
+    // chord hints on sections written without chords
+    private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded, chordHintsShown) { t, expand, hints ->
+        var content = t?.content ?: ""
+        if (expand != false) content = expandSectionReferences(content)
+        if (hints == true) content = addChordHints(content)
+        content
     }
 
     override val songName: LiveData<String> = tab.map { t -> t?.songName ?: "" }
@@ -967,6 +973,12 @@ class TabViewModel
     fun onSectionReferencesExpandedToggled(expanded: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.EXPAND_SECTION_REFERENCES, expanded.toString()))
+        }
+    }
+
+    fun onChordHintsToggled(shown: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.CHORD_HINTS, shown.toString()))
         }
     }
 

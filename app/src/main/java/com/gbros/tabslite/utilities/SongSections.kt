@@ -80,3 +80,44 @@ private fun blankLabel(line: String): String {
     val match = SECTION_LABEL.find(body) ?: return line // label behind a chord tag: leave as written
     return prefix + body.replaceRange(match.range, " ".repeat(match.value.length))
 }
+
+/**
+ * Chord hints: a later verse or chorus written without chords gets the chords of the first section
+ * of its kind that has them - the n-th lyric line those of the n-th lyric line there, at the same
+ * columns. Only a hint: the lyrics differ, so the chords land roughly where the original had them.
+ */
+fun addChordHints(content: String): String {
+    val lines = content.split("\n").toMutableList()
+    val sources = mutableMapOf<String, List<String>>() // section key -> its lyric lines with chords
+    for (section in findSections(lines)) {
+        val lyricLines = (section.start until section.end).filter { hasLyrics(lines[it]) }
+        val withChords = (section.start until section.end).any { CHORD_TAG.containsMatchIn(lines[it]) }
+        val source = sources[section.key]
+        if (source == null) {
+            if (withChords && lyricLines.any { CHORD_TAG.containsMatchIn(lines[it]) }) sources[section.key] = lyricLines.map { lines[it] }
+        } else if (!withChords) {
+            lyricLines.zip(source).forEach { (target, from) -> lines[target] = withChordsOf(from, lines[target]) }
+        }
+    }
+    return lines.joinToString("\n")
+}
+
+/** [target] (a line without chords) with the chord tags of [source] at the columns they're displayed at there */
+private fun withChordsOf(source: String, target: String): String {
+    val sourceBody = source.removePrefix(TAB_OPEN).removeSuffix(TAB_CLOSE)
+    val chords = mutableListOf<Pair<Int, String>>() // display column -> tag
+    var removed = 0
+    for (tag in CHORD_TAG.findAll(sourceBody)) {
+        chords.add(tag.range.first - removed to tag.value)
+        removed += tag.value.length
+    }
+    if (chords.isEmpty()) return target
+
+    val body = StringBuilder(target.removePrefix(TAB_OPEN).removeSuffix(TAB_CLOSE).trimEnd())
+    // insert from the right so earlier columns stay valid; chords past the end are padded out to their column
+    for ((column, tag) in chords.asReversed()) {
+        while (body.length < column) body.append(' ')
+        body.insert(column, tag)
+    }
+    return if (source.startsWith(TAB_OPEN)) TAB_OPEN + body + TAB_CLOSE else body.toString()
+}

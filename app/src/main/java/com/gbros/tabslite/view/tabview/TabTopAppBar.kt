@@ -80,6 +80,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onDetailsHiddenToggled: (hidden: Boolean) -> Unit = {},
                  sectionReferencesExpanded: Boolean = true,
                  onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit = {},
+                 chordHintsShown: Boolean = false,
+                 onChordHintsToggled: (shown: Boolean) -> Unit = {},
                  twoColumnView: Boolean = false,
                  onTwoColumnViewToggled: (Boolean) -> Unit = {},
                  onTextSizeDecreaseClick: () -> Unit = {},
@@ -219,6 +221,11 @@ fun TabTopAppBar(isFavorite: Boolean,
                     text = { Text(text = stringResource(R.string.tab_expand_section_references)) },
                     trailingIcon = { Checkbox(checked = sectionReferencesExpanded, onCheckedChange = null) },
                     onClick = { onSectionReferencesExpandedToggled(!sectionReferencesExpanded) }
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.tab_chord_hints)) },
+                    trailingIcon = { Checkbox(checked = chordHintsShown, onCheckedChange = null) },
+                    onClick = { onChordHintsToggled(!chordHintsShown) }
                 )
                 DropdownMenuItem(
                     text = {

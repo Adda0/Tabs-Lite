@@ -179,6 +179,9 @@ interface ITabViewState {
     /** Whether a later bare section label (`R:`) shows that section's lyrics and chords again */
     val sectionReferencesExpanded: LiveData<Boolean>
 
+    /** Whether verses and choruses written without chords show those of the first one of their kind */
+    val chordHintsShown: LiveData<Boolean>
+
     /**
      * Map of chord names to their first chord variation for pinned display
      */

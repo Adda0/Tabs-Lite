@@ -98,5 +98,11 @@ data class Preference(
          */
         const val EXPAND_SECTION_REFERENCES: String = "EXPAND_SECTION_REFERENCES"
 
+        /**
+         * The preference name for whether verses and choruses written without chords show the chords
+         * of the first one of their kind as hints
+         */
+        const val CHORD_HINTS: String = "CHORD_HINTS"
+
     }
 }
