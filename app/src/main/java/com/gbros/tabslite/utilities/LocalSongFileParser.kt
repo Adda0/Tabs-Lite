@@ -86,7 +86,7 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
     }
 
     val rawBody = lines.drop(bodyStartIndex).joinToString("\n")
-    val convertedBody = wrapUnwrappedChordLines(mergeAnnotatedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(rawBody)))))
+    val convertedBody = convertChordSheet(rawBody)
     val writtenKey = header["key"].orEmpty()
     val writtenCapo = header["capo"]?.toIntOrNull() ?: 0
     // half steps from the written key to a key, or a signed number of them

@@ -427,3 +427,94 @@ fun wrapUnwrappedChordLines(content: String): String {
         }
     }
 }
+
+/**
+ * A chord sheet in any of the notations [convertBareChordLines] and [convertUgChordTags] read,
+ * converted to the app's internal format.
+ */
+fun convertChordSheet(content: String): String =
+    wrapUnwrappedChordLines(mergeAnnotatedChordLines(mergeChordOnlyLines(convertBareChordLines(convertUgChordTags(content)))))
+
+/** [name], known to be a chord (e.g. marked as one by the page it comes from), as a chord tag */
+fun chordTag(name: String): String = "{ch:${sanitizeChordNameForTag(name)}}"
+
+/** A song read from ChordPro: its content in the app's internal format, and the metadata it states */
+data class ChordProSong(
+    val content: String,
+    val title: String = "",
+    val artist: String = "",
+    val key: String = "",
+    val capo: Int = 0,
+    val tempo: String = "",
+)
+
+private val CHORDPRO_DIRECTIVE_REGEX = Regex("^\\s*\\{\\s*([A-Za-z_]+)\\s*(?::\\s*(.*?))?\\s*\\}\\s*$")
+private val CHORDPRO_CHORD_REGEX = Regex("\\[([^\\[\\]]*)\\]")
+
+/** Directives that only describe the song; they are read where useful and never shown */
+private val CHORDPRO_METADATA_DIRECTIVES = setOf(
+    "title", "t", "subtitle", "st", "artist", "key", "capo", "tempo", "time", "duration", "year",
+    "album", "composer", "lyricist", "arranger", "copyright", "meta", "sorttitle", "new_page", "np",
+    "column_break", "colb", "columns", "col",
+)
+
+/**
+ * Converts a ChordPro song (`[Am]` chords inline in the lyrics, `{directive: value}` lines) into the
+ * app's internal format. Sections open with the label this app's songs are written with - `1.` for
+ * `{start_of_verse: 1}`, `R:` for a chorus, `B:` for a bridge - put in front of their first line;
+ * comments become plain text lines and tab sections are kept verbatim. Brackets hold chords by
+ * definition, so any bracketed token but notation (`[x2]`, `[|]`) is tagged, even one not spelled
+ * the way [isChordName] expects (`[Cmi#]`).
+ */
+fun convertChordPro(chordPro: String): ChordProSong {
+    val metadata = mutableMapOf<String, String>()
+    val lines = mutableListOf<String>()
+    var pendingLabel: String? = null
+    var inTab = false
+
+    for (line in chordPro.replace("\r\n", "\n").replace("\r", "\n").split("\n")) {
+        val directive = CHORDPRO_DIRECTIVE_REGEX.matchEntire(line)
+        if (directive == null) {
+            val body = if (inTab) line else CHORDPRO_CHORD_REGEX.replace(line) { chord ->
+                Regex("\\S+").replace(chord.groupValues[1].trim()) { token ->
+                    val tagged = tagChordToken(token.value)
+                    if (tagged != token.value || splitChordToken(token.value).isNotation) tagged else chordTag(token.value)
+                }
+            }
+            val label = pendingLabel?.takeIf { body.isNotBlank() }
+            if (label != null) pendingLabel = null
+            lines.add(if (label != null) "$label ${body.trimStart()}" else body)
+            continue
+        }
+
+        val name = directive.groupValues[1].lowercase()
+        val value = directive.groupValues[2].trim()
+        when (name) {
+            "start_of_verse", "sov" -> pendingLabel = value.takeIf { it.isNotEmpty() }?.let { sectionLabel(it, ".") }
+            "start_of_chorus", "soc" -> pendingLabel = sectionLabel(value.ifEmpty { "R" }, ":")
+            "start_of_bridge", "sob" -> pendingLabel = sectionLabel(value.ifEmpty { "B" }, ":")
+            "chorus" -> lines.add(sectionLabel(value.ifEmpty { "R" }, ":"))
+            "start_of_tab", "sot" -> inTab = true
+            "end_of_tab", "eot" -> inTab = false
+            "comment", "c", "comment_italic", "ci", "comment_box", "cb", "highlight" -> lines.add(value)
+            in CHORDPRO_METADATA_DIRECTIVES -> metadata.putIfAbsent(name, value)
+            else -> if (name.startsWith("end_of_") || name in setOf("eov", "eoc", "eob")) pendingLabel = null else lines.add(line)
+        }
+    }
+
+    return ChordProSong(
+        content = wrapUnwrappedChordLines(lines.joinToString("\n").trim('\n')),
+        title = metadata["title"] ?: metadata["t"].orEmpty(),
+        artist = metadata["artist"] ?: metadata["subtitle"] ?: metadata["st"].orEmpty(),
+        key = metadata["key"].orEmpty(),
+        capo = metadata["capo"]?.toIntOrNull() ?: 0,
+        tempo = listOfNotNull(metadata["time"], metadata["tempo"]?.let { "$it BPM" }).joinToString(" "),
+    )
+}
+
+/** A ChordPro section label as written in this app's songs: a bare number gets [numberSuffix] (`1.`), a name gets `:` */
+private fun sectionLabel(label: String, numberSuffix: String): String = when {
+    label.endsWith(".") || label.endsWith(":") -> label
+    label.all { it.isDigit() } -> label + numberSuffix
+    else -> "$label:"
+}
