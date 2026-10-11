@@ -73,6 +73,7 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "rhythm") override var rhythm: String = "",
     @ColumnInfo(name = "autoscroll_slider") override var autoscrollSlider: Float? = null,
     @ColumnInfo(name = "tags") override var tags: String = "",
+    @ColumnInfo(name = "language") override var language: String = "",
 
     // columns from Playlist
     @ColumnInfo(name = "user_created") var playlistUserCreated: Boolean? = true,

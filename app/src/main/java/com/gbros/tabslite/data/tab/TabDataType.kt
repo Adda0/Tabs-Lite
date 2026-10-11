@@ -60,6 +60,8 @@ data class TabDataType(
     @ColumnInfo(name = "autoscroll_slider") var autoscrollSlider: Float? = null,
     /** See [ITab.tags] */
     @ColumnInfo(name = "tags") var tags: String = "",
+    /** See [ITab.language] */
+    @ColumnInfo(name = "language") var language: String = "",
     ) {
     override fun toString() = "$songName by $artistName"
 }

@@ -75,6 +75,8 @@ interface ITab {
     var autoscrollSlider: Float?
     /** Tags from a local song file's `tags` header, comma-separated (see [com.gbros.tabslite.utilities.parseTags]), blank if none */
     var tags: String
+    /** The language of the song's words from a local song file's `language` header (`cz`, `en`), blank if none */
+    var language: String
 
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret), of this tab's capo or [capo]

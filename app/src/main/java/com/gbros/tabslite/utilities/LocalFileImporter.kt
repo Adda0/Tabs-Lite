@@ -120,7 +120,8 @@ object LocalFileImporter {
                         tempo = parsed.tempo,
                         autoscrollSlider = parsed.autoscroll,
                         rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms),
-                        tags = parsed.tags.joinToString(", ")
+                        tags = parsed.tags.joinToString(", "),
+                        language = parsed.language
                     )
                     // preserve this tab's remembered local settings (two-column view, text size,
                     // last played transpose, and an in-app favourite when the file names none)
@@ -260,6 +261,7 @@ object LocalFileImporter {
             tab.tonalityName.takeIf { it.isNotBlank() }?.let { "key: $it" },
             tab.capo.takeIf { it > 0 }?.let { "capo: $it" },
             tab.tempo.takeIf { it.isNotBlank() }?.let { "tempo: $it" },
+            tab.language.takeIf { it.isNotBlank() }?.let { "language: $it" },
             "version_description: " + (SongSources.pageUrl(tab.tabId) ?: "ultimate-guitar.com tab ${tab.tabId}, version ${tab.version}"),
         )
         val text = header.joinToString("\n") + "\n\n" + toChordSheet(tab.content).trim('\n') + "\n"
