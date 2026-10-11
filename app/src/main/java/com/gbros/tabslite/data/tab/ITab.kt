@@ -73,6 +73,8 @@ interface ITab {
     var rhythm: String
     /** This song's remembered autoscroll speed slider position (0..1), or null to use a default */
     var autoscrollSlider: Float?
+    /** Tags from a local song file's `tags` header, comma-separated (see [com.gbros.tabslite.utilities.parseTags]), blank if none */
+    var tags: String
 
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret), of this tab's capo or [capo]

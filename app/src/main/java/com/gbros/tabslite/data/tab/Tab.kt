@@ -47,7 +47,8 @@ data class Tab(
     @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
     @ColumnInfo(name = "tempo") override var tempo: String = "",
     @ColumnInfo(name = "rhythm") override var rhythm: String = "",
-    @ColumnInfo(name = "autoscroll_slider") override var autoscrollSlider: Float? = null
+    @ColumnInfo(name = "autoscroll_slider") override var autoscrollSlider: Float? = null,
+    @ColumnInfo(name = "tags") override var tags: String = ""
 ): ITab {
     //#region "static" functions
     companion object {
@@ -94,7 +95,7 @@ data class Tab(
         capo = tabFromDatabase.capo, contributorUserId = tabFromDatabase.contributorUserId, contributorUserName = tabFromDatabase.contributorUserName, content = tabFromDatabase.content,
         twoColumnView = tabFromDatabase.twoColumnView, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose,
         favoriteTranspose = tabFromDatabase.favoriteTranspose, favoriteTransposes = tabFromDatabase.favoriteTransposes, currentCapo = tabFromDatabase.currentCapo, originalTranspose = tabFromDatabase.originalTranspose,
-        tempo = tabFromDatabase.tempo, rhythm = tabFromDatabase.rhythm, autoscrollSlider = tabFromDatabase.autoscrollSlider)
+        tempo = tabFromDatabase.tempo, rhythm = tabFromDatabase.rhythm, autoscrollSlider = tabFromDatabase.autoscrollSlider, tags = tabFromDatabase.tags)
 
     //#endregion
 
@@ -164,6 +165,7 @@ data class Tab(
         tempo = tab.tempo
         rhythm = tab.rhythm
         autoscrollSlider = tab.autoscrollSlider
+        tags = tab.tags
 
         recommended = tab.recommended
     }

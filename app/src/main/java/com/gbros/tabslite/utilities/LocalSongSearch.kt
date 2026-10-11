@@ -25,7 +25,8 @@ data class LocalSearchResult(val tab: TabWithDataPlaylistEntry, val snippet: Sea
  * diacritics (`prisel` finds `přišel`), punctuation and chord markup. Every query word has to occur
  * somewhere in the song, as a part of any word. Title/artist matches are listed first, then songs
  * containing the query as a phrase, then songs containing all its words; within each group, the
- * order of [tabs] is kept and only the first version of each song is listed.
+ * order of [tabs] is kept and only the first version of each song is listed. A `#tag` word lists
+ * only songs with that tag (`_` for a space in it: `#na_tabor`); a query of tags alone lists all of them.
  */
 class LocalSongSearchIndex(tabs: List<TabWithDataPlaylistEntry>) {
     private class Entry(val tab: TabWithDataPlaylistEntry, val heading: String, val text: String)
@@ -35,13 +36,17 @@ class LocalSongSearchIndex(tabs: List<TabWithDataPlaylistEntry>) {
     }
 
     fun search(query: String): List<LocalSearchResult> {
-        val phrase = foldForSearch(query)
-        if (phrase.isEmpty()) return listOf()
+        val tags = TAG_WORD.findAll(query).map { tagKey(it.groupValues[1]) }.filter { it.isNotEmpty() }.toList()
+        val text = TAG_WORD.replace(query, " ")
+        val phrase = foldForSearch(text)
+        if (phrase.isEmpty() && tags.isEmpty()) return listOf()
         val words = phrase.split(' ').distinct()
-        val id = query.trim()
+        val id = text.trim()
 
         return entries.mapNotNull { entry ->
+            if (!hasAllTags(entry.tab.tags, tags)) return@mapNotNull null
             val rank = when {
+                phrase.isEmpty() -> 0
                 entry.tab.tabId == id || words.all { entry.heading.contains(it) } -> 0
                 entry.text.contains(phrase) -> 1
                 words.all { entry.heading.contains(it) || entry.text.contains(it) } -> 2
@@ -57,6 +62,8 @@ class LocalSongSearchIndex(tabs: List<TabWithDataPlaylistEntry>) {
             }
     }
 }
+
+private val TAG_WORD = Regex("(?<!\\S)#(\\S+)")
 
 /**
  * The content line matching most of [words] (a line containing the whole [phrase] beats any

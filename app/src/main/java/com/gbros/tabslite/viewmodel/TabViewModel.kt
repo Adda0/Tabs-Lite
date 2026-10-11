@@ -45,6 +45,7 @@ import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.addChordHints
+import com.gbros.tabslite.utilities.parseTags
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -465,6 +466,8 @@ class TabViewModel
     override val tempo: LiveData<String> = tab.map { t -> t?.tempo ?: "" }
 
     override val rhythm: LiveData<String> = tab.map { t -> t?.rhythm ?: "" }
+
+    override val tags: LiveData<List<String>> = tab.map { t -> parseTags(t?.tags.orEmpty()) }
     
     override val author: LiveData<String> = tab.map { t -> t?.contributorUserName ?: "" }
 

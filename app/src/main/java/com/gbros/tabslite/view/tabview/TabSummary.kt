@@ -3,6 +3,8 @@ package com.gbros.tabslite.view.tabview
 import android.icu.text.CompactDecimalFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -43,7 +46,7 @@ import com.gbros.tabslite.view.taborigin.tabVersionLabel
 import com.gbros.tabslite.view.ratingicon.ProportionallyFilledStar
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun TabSummary(
     difficulty: String,
@@ -56,7 +59,10 @@ fun TabSummary(
     songVersions: List<ITab>,
     onNavigateToTabById: (String) -> Unit,
     tempo: String = "",
-    rhythm: String = "") {
+    rhythm: String = "",
+    tags: List<String> = emptyList(),
+    /** Opens the song lists filtered by this tag */
+    onTagClick: (String) -> Unit = {}) {
     var versionDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -161,6 +167,13 @@ fun TabSummary(
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = 4.dp)
             )
+        }
+        if (tags.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (tag in tags) {
+                    AssistChip(onClick = { onTagClick(tag) }, label = { Text("#$tag") })
+                }
+            }
         }
     }
 }

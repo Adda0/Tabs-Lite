@@ -119,7 +119,8 @@ object LocalFileImporter {
                         currentCapo = startFavorite?.capo,
                         tempo = parsed.tempo,
                         autoscrollSlider = parsed.autoscroll,
-                        rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms)
+                        rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms),
+                        tags = parsed.tags.joinToString(", ")
                     )
                     // preserve this tab's remembered local settings (two-column view, text size,
                     // last played transpose, and an in-app favourite when the file names none)

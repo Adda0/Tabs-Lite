@@ -460,7 +460,8 @@ fun TabScreen(
                     songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
                     onNavigateToTabById = onNavigateToTabByTabId,
                     tempo = viewState.tempo.observeAsState("").value,
-                    rhythm = viewState.rhythm.observeAsState("").value
+                    rhythm = viewState.rhythm.observeAsState("").value,
+                    tags = viewState.tags.observeAsState(emptyList()).value
                 )
 
                 TabTransposeSection(
@@ -602,7 +603,8 @@ fun TabScreen(
                         songVersions = viewState.songVersions.observeAsState(listOf(Tab(tabId = "198052", version = 3))).value,
                         onNavigateToTabById = onNavigateToTabByTabId,
                         tempo = viewState.tempo.observeAsState("").value,
-                        rhythm = viewState.rhythm.observeAsState("").value
+                        rhythm = viewState.rhythm.observeAsState("").value,
+                        tags = viewState.tags.observeAsState(emptyList()).value
                     )
 
                     TabTransposeSection(
@@ -795,6 +797,7 @@ private fun TabViewPreview() {
         override val key: LiveData<String>,
         override val tempo: LiveData<String>,
         override val rhythm: LiveData<String>,
+        override val tags: LiveData<List<String>>,
         override val author: LiveData<String>,
         override val version: LiveData<Int>,
         override val songVersions: LiveData<List<ITab>>,
@@ -846,6 +849,7 @@ private fun TabViewPreview() {
             key = MutableLiveData(tab.tonalityName),
             tempo = MutableLiveData(tab.tempo),
             rhythm = MutableLiveData(tab.rhythm),
+            tags = MutableLiveData(listOf()),
             author = MutableLiveData(tab.artistName),
             version = MutableLiveData(tab.version),
             songVersions = MutableLiveData(listOf()),

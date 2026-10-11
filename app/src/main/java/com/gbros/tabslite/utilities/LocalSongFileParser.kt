@@ -36,6 +36,8 @@ data class LocalSongFile(
     val rhythms: List<RhythmReference> = emptyList(),
     /** Autoscroll speed slider position (0..1) from file header, or null if not given */
     val autoscroll: Float? = null,
+    /** Tags from the `tags` (or `tag`) header, see [parseTags] */
+    val tags: List<String> = emptyList(),
 )
 
 private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
@@ -46,7 +48,7 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * Recognized header keys (case-insensitive, `-` and `_` interchangeable, `favourite` accepted for
  * `favorite`): `song_name` and `artist_name` (required), `capo`, `tuning`, `difficulty`,
  * `song_genre`, `version_description`, `key`, `original_key`, `favorite_key`, `favorite_transpose`,
- * `tempo`, `rhythm` (all optional). `key` is the key the chords are written in and `capo` the capo
+ * `tempo`, `rhythm`, `autoscroll`, `tags` (all optional). `key` is the key the chords are written in and `capo` the capo
  * they're written for; together they sound in key + capo, the original key unless `original_key`
  * (the sounding key) says otherwise. `favorite_key` is a comma-separated list of chord shapes, each
  * optionally `@` a capo fret, a leading `*` marking the one that suits the singer's voice best:
@@ -54,7 +56,8 @@ private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
  * `favorite_key` and `original_key` need `key`; without it, `favorite_transpose` takes half steps
  * from the written chords instead of chord names (`+2@2`). `tempo` holds the time
  * signature (`4/4`, optionally with a speed: `4/4 (~68 BPM)`), which selects the group of the
- * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. Header parsing stops at the
+ * rhythms file that `rhythm` (`verse: 8, r: 4`) numbers refer to. `autoscroll` is the autoscroll
+ * slider position (0..1); `tags` a comma-separated list (`táborák, vánoční`). Header parsing stops at the
  * first line that isn't a `key: value` pair; everything from there on (after skipping a single
  * separating blank line, if present) is the tab content body.
  *
@@ -117,7 +120,8 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         favorites = favorites,
         tempo = header["tempo"].orEmpty(),
         autoscroll = header["autoscroll"]?.toFloatOrNull()?.coerceIn(0f, 1f),
-        rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
+        rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty()),
+        tags = parseTags((header["tags"] ?: header["tag"]).orEmpty())
     )
 }
 
