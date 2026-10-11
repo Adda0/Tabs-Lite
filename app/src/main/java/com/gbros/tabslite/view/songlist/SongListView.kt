@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -56,31 +60,47 @@ fun SongListView(
                 InfoCard(text = emptyListText)
             }
         } else {
-            LazyColumn(
-                verticalArrangement = verticalArrangement,
-                modifier = modifier
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(height = 6.dp))
-                    Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets(
-                        top = WindowInsets.safeDrawing.getTop(LocalDensity.current),
-                    )))
+            val lastPlayed = viewState.lastPlayed.observeAsState(mapOf()).value
+            Box {
+                LazyColumn(
+                    verticalArrangement = verticalArrangement,
+                    modifier = modifier
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(height = 6.dp))
+                        Spacer(modifier = Modifier.windowInsetsPadding(WindowInsets(
+                            top = WindowInsets.safeDrawing.getTop(LocalDensity.current),
+                        )))
+                    }
+                    items(songs.value) { song ->
+                        SongListItem(
+                            modifier = Modifier.clickable {
+                                if (navigateByPlaylistEntryId) {
+                                    navigateToTabByPlaylistEntryId(song.entryId)
+                                } else {
+                                    navigateToTabById(song.tabId)
+                                }
+                            },
+                            song = song,
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(height = 24.dp))
+                        Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.safeContent))
+                    }
                 }
-                items(songs.value) { song ->
-                    SongListItem(
-                        modifier = Modifier.clickable {
-                            if (navigateByPlaylistEntryId) {
-                                navigateToTabByPlaylistEntryId(song.entryId)
-                            } else {
-                                navigateToTabById(song.tabId)
-                            }
-                        },
-                        song = song,
-                    )
-                }
-                item {
-                    Spacer(modifier = Modifier.height(height = 24.dp))
-                    Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.safeContent))
+                SmallFloatingActionButton(
+                    onClick = {
+                        val tabId = pickRandomSong(songs.value.map { it.tabId }, lastPlayed, System.currentTimeMillis())
+                        val song = songs.value.firstOrNull { it.tabId == tabId } ?: return@SmallFloatingActionButton
+                        if (navigateByPlaylistEntryId) navigateToTabByPlaylistEntryId(song.entryId) else navigateToTabById(song.tabId)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .windowInsetsPadding(WindowInsets.safeContent)
+                        .padding(8.dp)
+                ) {
+                    Icon(Icons.Default.Shuffle, contentDescription = stringResource(R.string.action_random_song))
                 }
             }
         }
@@ -110,5 +130,6 @@ private fun SongListViewPreview(){
 
 private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
-    override val sortBy: LiveData<SortBy>
+    override val sortBy: LiveData<SortBy>,
+    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf())
 ) : ISongListViewState

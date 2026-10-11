@@ -23,6 +23,7 @@ import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.view.homescreen.IHomeViewState
 import com.gbros.tabslite.view.playlists.PlaylistsSortBy
+import com.gbros.tabslite.view.songlist.RECENTLY_PLAYED_MS
 import com.gbros.tabslite.view.songlist.SortBy
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -149,7 +150,7 @@ class HomeViewModel
      * The songs played in the last 12 hours, last played first ("Tonight" tab)
      */
     val tonightSongListViewModel = SongListViewModel(
-        tabs = dataAccess.getTabsPlayedSince(System.currentTimeMillis() - TONIGHT_MS),
+        tabs = dataAccess.getTabsPlayedSince(System.currentTimeMillis() - RECENTLY_PLAYED_MS),
         defaultSortBy = SortBy.LastPlayed,
         dataAccess = dataAccess
     )
@@ -385,6 +386,3 @@ class HomeViewModel
     //#endregion
 
 }
-
-/** How far back the "Tonight" list reaches */
-private const val TONIGHT_MS = 12 * 60 * 60 * 1000L

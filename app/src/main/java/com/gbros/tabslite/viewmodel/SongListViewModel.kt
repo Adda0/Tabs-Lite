@@ -41,11 +41,13 @@ class SongListViewModel(
         }
     } ?: backupSortBy
 
+    override val lastPlayed: LiveData<Map<String, Long>> = dataAccess.getLastPlayed().map { plays -> plays.associate { it.tabId to it.lastPlayed } }
+
     /**
      * The tabs to display in this song list
      */
-    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = tabs.combine(sortBy, dataAccess.getLastPlayed()) { playlistTabs, currentSortBy, plays ->
-        val lastPlayed = plays.orEmpty().associate { it.tabId to it.lastPlayed }
+    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = tabs.combine(sortBy, lastPlayed) { playlistTabs, currentSortBy, plays ->
+        val lastPlayed = plays.orEmpty()
         when(currentSortBy) {
             SortBy.Name -> playlistTabs?.sortedBy { it.songName } ?: listOf()
             SortBy.Popularity -> playlistTabs?.sortedByDescending { it.votes } ?: listOf()

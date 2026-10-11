@@ -13,4 +13,9 @@ interface ISongListViewState {
      * How these tabs are currently sorted
      */
     val sortBy: LiveData<SortBy>
+
+    /**
+     * When each played song was last played (epoch ms), by tab ID
+     */
+    val lastPlayed: LiveData<Map<String, Long>>
 }

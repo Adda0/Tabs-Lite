@@ -563,7 +563,8 @@ private class HomeViewStateForTest(
 
 private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
-    override val sortBy: LiveData<SortBy>
+    override val sortBy: LiveData<SortBy>,
+    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf())
 ) : ISongListViewState
 
 private class TabSearchBarViewStateForTest(

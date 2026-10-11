@@ -35,6 +35,7 @@
     <string name="title_tonight_playlist" translation_description="Title of a playlist saved from the Tonight tab; the argument is today\'s date">Tonight %1$s</string>
     <string name="action_save_tonight_as_playlist" translation_description="Button on the Tonight tab that saves its songs as a new playlist">Save as playlist</string>
     <string name="message_tonight_saved_as_playlist" translation_description="Shown after the Tonight songs were saved as a playlist; the argument is its title">Saved as playlist \"%1$s\"</string>
+    <string name="action_random_song" translation_description="Button on a song list that opens a random song from it, preferring ones not played in the last 12 hours">Random song</string>
     <string name="title_add_to_playlist_dialog" translation_description="The title of the Add To Playlist dialog">Add to playlist</string>
     <string name="title_create_playlist_dialog" translation_description="Title for the Create Playlist dialog">Create playlist</string>
     <string name="title_create_song" translation_description="Title for the Create Song screen">Create Song</string>
