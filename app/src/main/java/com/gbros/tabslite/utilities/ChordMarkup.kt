@@ -167,11 +167,41 @@ private val TRAILING_CHORD_LINE_NOTATION = listOf(":]", ":|", "|")
 
 /** A chord-line token split into the notation it's written against and the chord name between it */
 private data class ChordLineToken(val prefix: String, val core: String, val suffix: String) {
-    val isChord: Boolean get() = core.isNotEmpty() && CHORD_TOKEN_REGEX.matches(stripChordDecorations(core))
+    val isChord: Boolean get() = isChordName(core) || splitAlternative(core)?.let { (chord, alternative) ->
+        isChordName(chord) && isChordName(alternative)
+    } == true
 
     /** Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`) */
     val isNotation: Boolean get() = core.isEmpty() || REPEAT_COUNT_REGEX.matches(stripChordDecorations(core))
 }
+
+private fun isChordName(name: String): Boolean = name.isNotEmpty() && CHORD_TOKEN_REGEX.matches(stripChordDecorations(name))
+
+/**
+ * Splits a token written as a chord and the alternative to it in one go - `G\E`, `Dm(\F)`,
+ * `Dm(/F)` (play Dm, or F instead) - into the two chords, or null if it holds no such alternative.
+ *
+ * `\` and `/` mark an alternative alike; what differs is only that a `/` between two plain chord
+ * names is the bass note of a slash chord (`D/F#`), so a `/` splits a token only when written
+ * against decoration of its own (the `(` of `Dm(/F)`), while a `\`, which no chord name contains,
+ * always does. A marker opening the token (`(\Em)`, `(/C)`, `\C`, `/C`) makes the whole token the
+ * alternative, so there's nothing to split off it.
+ */
+private fun splitAlternative(core: String): Pair<String, String>? {
+    for (marker in 1 until core.length) {
+        if (core[marker] !in ALTERNATIVE_CHORD_MARKERS) continue
+        // decoration opening the alternative (the `(` of `Dm(\F)`) belongs to it, not to the chord
+        val cut = if (core[marker - 1] in ALTERNATIVE_DECORATION_OPENERS) marker - 1 else marker
+        if (cut == 0) continue
+        if (cut == marker && core[marker] != '\\') continue // a bass note, not an alternative
+        return core.substring(0, cut) to core.substring(cut)
+    }
+    return null
+}
+
+/** `\` and `/`: what follows one is an alternative to the chord, not part of its name */
+private const val ALTERNATIVE_CHORD_MARKERS = "\\/"
+private const val ALTERNATIVE_DECORATION_OPENERS = "([{<"
 
 /**
  * Splits [token] into the bar lines/repeat brackets it's written against and the chord name
@@ -198,11 +228,17 @@ private fun splitChordToken(token: String, peelUnbalancedParens: Boolean = false
     return ChordLineToken(token.substring(0, start), token.substring(start, end), token.substring(end))
 }
 
-/** [token] with its chord name tagged, keeping the notation around it as text; unchanged if it names no chord */
+/**
+ * [token] with its chord name tagged, keeping the notation around it as text; unchanged if it
+ * names no chord. A chord and the alternative written against it (`Dm(\F)`) are tagged as the two
+ * chords they are, so both can be looked up and transposed.
+ */
 private fun tagChordToken(token: String, peelUnbalancedParens: Boolean = false): String {
     val split = splitChordToken(token, peelUnbalancedParens)
     if (!split.isChord) return token
-    return split.prefix + "{ch:${sanitizeChordNameForTag(split.core)}}" + split.suffix
+    val names = splitAlternative(split.core)?.takeIf { isChordName(it.first) && isChordName(it.second) }
+        ?.toList() ?: listOf(split.core)
+    return split.prefix + names.joinToString("") { "{ch:${sanitizeChordNameForTag(it)}}" } + split.suffix
 }
 
 /** [line] with every chord name on it tagged, keeping its section label and notation as text */
