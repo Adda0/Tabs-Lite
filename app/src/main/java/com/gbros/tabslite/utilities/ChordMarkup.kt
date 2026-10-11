@@ -159,6 +159,9 @@ private val SECTION_LABEL_REGEX = Regex("^\\s*[A-Z][0-9]*:\\s+")
 /** How many times the run of chords it follows is played, e.g. `2x`, `3×`, `x4` */
 private val REPEAT_COUNT_REGEX = Regex("[0-9]{1,2}[xX×]|[xX×][0-9]{1,2}")
 
+/** A beat or more of rest on a chord line, as in `[Am - -]`: `-`, `–` or `—` */
+private val REST_REGEX = Regex("[-–—]+")
+
 /**
  * Bar lines and the brackets enclosing a repeated run of chords (`[: Em D :] 3x`), written either
  * on their own or against the chord they open/close (`[:Em`, `D:]`), and the ellipsis that carries
@@ -174,8 +177,13 @@ private data class ChordLineToken(val prefix: String, val core: String, val suff
         isChordName(chord) && isChordName(alternative)
     } == true
 
-    /** Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`), an ellipsis */
-    val isNotation: Boolean get() = core.isEmpty() || REPEAT_COUNT_REGEX.matches(stripChordDecorations(core))
+    /**
+     * Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`), an ellipsis,
+     * a rest (`-`, `–`: stop playing for a beat, as in `[Am - -]`)
+     */
+    val isNotation: Boolean get() = core.isEmpty() || stripChordDecorations(core).let {
+        REPEAT_COUNT_REGEX.matches(it) || REST_REGEX.matches(it)
+    }
 }
 
 private fun isChordName(name: String): Boolean = name.isNotEmpty() && CHORD_TOKEN_REGEX.matches(stripChordDecorations(name))
@@ -260,13 +268,18 @@ private fun tagAnnotation(annotation: String): String =
 /**
  * Whether [line] is a line of chords: every token on it is either a chord or the notation chord
  * lines are written with ([splitChordToken]), and at least one of them is a chord - a line of bar
- * lines and repeat counts alone (`R: 2x`) says nothing about which chords to play.
+ * lines and repeat counts alone (`R: 2x`) says nothing about which chords to play. A line that is
+ * one `{…}` group (`{D – D –}`, `{D - - -}`) is a strumming pattern: its D's are down strokes.
  */
 private fun isBareChordLine(line: String): Boolean {
+    if (STRUM_PATTERN_LINE_REGEX.matches(line)) return false
     val tokens = CHORD_LINE_TOKEN_REGEX.findAll(line.replaceFirst(SECTION_LABEL_REGEX, "")).map { it.value }.toList()
         .map { splitChordToken(it) }
     return tokens.any { it.isChord } && tokens.all { it.isChord || it.isNotation }
 }
+
+/** A whole line in one pair of braces with more than one token in it, e.g. `{D – D –}` */
+private val STRUM_PATTERN_LINE_REGEX = Regex("\\s*\\{[^{}]*\\s[^{}]*\\}\\s*")
 
 /**
  * Splits a chord line that ends in an aside addressed to another section - `G  D  A  D   (R: + D)`
