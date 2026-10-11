@@ -38,9 +38,11 @@ private val APP_CHORD_TAG_REGEX = Regex("\\{ch:([^}]*)\\}")
  *
  * Recognizing a decorated token as a chord is one thing; keeping the decoration in what's actually
  * *displayed* is another - see [sanitizeChordNameForTag].
+ *
+ * A root followed by nothing but repeated m's is a hum (`Hmm...`), not a chord.
  */
 private val CHORD_TOKEN_REGEX = Regex(
-    "^/?[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
+    "^(?!/?[A-H][#b]?(?i:m){2,}$)/?[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
 )
 
 private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}<>\\\\]"
@@ -159,11 +161,12 @@ private val REPEAT_COUNT_REGEX = Regex("[0-9]{1,2}[xX×]|[xX×][0-9]{1,2}")
 
 /**
  * Bar lines and the brackets enclosing a repeated run of chords (`[: Em D :] 3x`), written either
- * on their own or against the chord they open/close (`[:Em`, `D:]`). They name no chord, so they
- * stay plain text - tagging one would make a chord button out of a bar line.
+ * on their own or against the chord they open/close (`[:Em`, `D:]`), and the ellipsis that carries
+ * on the chords of the line above (`D ...`, `G...`). They name no chord, so they stay plain text -
+ * tagging one would make a chord button out of a bar line.
  */
 private val LEADING_CHORD_LINE_NOTATION = listOf("[:", "|:", "|")
-private val TRAILING_CHORD_LINE_NOTATION = listOf(":]", ":|", "|")
+private val TRAILING_CHORD_LINE_NOTATION = listOf(":]", ":|", "|", "...", "…")
 
 /** A chord-line token split into the notation it's written against and the chord name between it */
 private data class ChordLineToken(val prefix: String, val core: String, val suffix: String) {
@@ -171,7 +174,7 @@ private data class ChordLineToken(val prefix: String, val core: String, val suff
         isChordName(chord) && isChordName(alternative)
     } == true
 
-    /** Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`) */
+    /** Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`), an ellipsis */
     val isNotation: Boolean get() = core.isEmpty() || REPEAT_COUNT_REGEX.matches(stripChordDecorations(core))
 }
 
