@@ -417,11 +417,11 @@ class TabViewModel
         TabViewMode.entries.firstOrNull { it.name == p?.value } ?: TabViewMode.Normal
     }
 
-    // tab content as displayed, before transposition: repeated sections written out where referenced,
-    // chord hints on sections written without chords
+    // tab content as displayed, before transposition: repeated sections written out where referenced
+    // (with their chords only when chord hints are on), chord hints on sections written without chords
     private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded, chordHintsShown) { t, expand, hints ->
         var content = t?.content ?: ""
-        if (expand != false) content = expandSectionReferences(content)
+        if (expand != false) content = expandSectionReferences(content, includeChords = hints == true)
         if (hints == true) content = addChordHints(content)
         content
     }
