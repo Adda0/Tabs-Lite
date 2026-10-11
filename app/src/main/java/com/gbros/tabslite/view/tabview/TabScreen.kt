@@ -106,7 +106,8 @@ fun NavGraphBuilder.tabScreen(
     onNavigateBack: () -> Unit,
     onNavigateToArtistIdSongList: (artistId: String) -> Unit,
     onNavigateToTabVersionById: (id: String) -> Unit,
-    onNavigateToEditTab: (songId: String, tabId: String) -> Unit
+    onNavigateToEditTab: (songId: String, tabId: String) -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
     composable(
         route = TAB_ROUTE_TEMPLATE.format("{$TAB_NAV_ARG}"),
@@ -137,6 +138,7 @@ fun NavGraphBuilder.tabScreen(
         TabScreen(
             viewState = viewModel,
             onNavigateBack = onNavigateBack,
+            onTagClick = { tag -> viewModel.onTagClick(tag); onNavigateToHome() },
             onNavigateToTabByTabId = onNavigateToTabVersionById,
             onArtistClicked = onNavigateToArtistIdSongList,
             onPlaylistNextSongClick = viewModel::onPlaylistNextSongClick,
@@ -199,7 +201,8 @@ fun NavGraphBuilder.playlistEntryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToArtistIdSongList: (artistId: String) -> Unit,
     onNavigateToTabVersionById: (id: String) -> Unit,
-    onNavigateToEditTab: (songId: String, tabId: String) -> Unit
+    onNavigateToEditTab: (songId: String, tabId: String) -> Unit,
+    onNavigateToHome: () -> Unit
 ) {
     composable(
         route = PLAYLIST_ENTRY_ROUTE,
@@ -229,6 +232,7 @@ fun NavGraphBuilder.playlistEntryScreen(
         TabScreen(
             viewState = viewModel,
             onNavigateBack = onNavigateBack,
+            onTagClick = { tag -> viewModel.onTagClick(tag); onNavigateToHome() },
             onNavigateToTabByTabId = onNavigateToTabVersionById,
             onArtistClicked = onNavigateToArtistIdSongList,
             onPlaylistNextSongClick = viewModel::onPlaylistNextSongClick,
@@ -278,6 +282,8 @@ fun NavGraphBuilder.playlistEntryScreen(
 fun TabScreen(
     viewState: ITabViewState,
     onNavigateBack: () -> Unit,
+    /** Shows the home song lists filtered by this tag */
+    onTagClick: (tag: String) -> Unit,
     onNavigateToTabByTabId: (id: String) -> Unit,
     onArtistClicked: (artistId: String) -> Unit,
     onPlaylistNextSongClick: () -> Unit,
@@ -461,7 +467,8 @@ fun TabScreen(
                     onNavigateToTabById = onNavigateToTabByTabId,
                     tempo = viewState.tempo.observeAsState("").value,
                     rhythm = viewState.rhythm.observeAsState("").value,
-                    tags = viewState.tags.observeAsState(emptyList()).value
+                    tags = viewState.tags.observeAsState(emptyList()).value,
+                    onTagClick = onTagClick
                 )
 
                 TabTransposeSection(
@@ -604,7 +611,8 @@ fun TabScreen(
                         onNavigateToTabById = onNavigateToTabByTabId,
                         tempo = viewState.tempo.observeAsState("").value,
                         rhythm = viewState.rhythm.observeAsState("").value,
-                        tags = viewState.tags.observeAsState(emptyList()).value
+                        tags = viewState.tags.observeAsState(emptyList()).value,
+                        onTagClick = onTagClick
                     )
 
                     TabTransposeSection(
@@ -930,6 +938,7 @@ private fun TabViewPreview() {
     AppTheme {
         TabScreen(
             viewState = TabViewStateForTest(tabForTest),
+            onTagClick = { },
             onNavigateBack = { },
             onPlaylistNextSongClick = { },
             onPlaylistPreviousSongClick = { },

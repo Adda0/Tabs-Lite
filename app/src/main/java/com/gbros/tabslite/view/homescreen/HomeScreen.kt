@@ -113,6 +113,7 @@ fun NavGraphBuilder.homeScreen(
             onLocalFilesSongListSortByChange = viewModel.localFilesSongListViewModel::onSortSelectionChange,
             tonightSongListViewState = viewModel.tonightSongListViewModel,
             onSaveTonightAsPlaylist = viewModel::saveTonightAsPlaylist,
+            onTagFilterToggled = viewModel::toggleTagFilter,
             onPlaylistsSortByChange = viewModel::sortPlaylists,
             tabSearchBarViewState = viewModel.tabSearchBarViewModel,
             onTabSearchBarQueryChange = viewModel.tabSearchBarViewModel::onQueryChange,
@@ -144,6 +145,7 @@ fun HomeScreen(
     onLocalFilesSongListSortByChange: (SortBy) -> Unit,
     tonightSongListViewState: ISongListViewState,
     onSaveTonightAsPlaylist: (title: String) -> Unit,
+    onTagFilterToggled: (tagKey: String) -> Unit,
     onPlaylistsSortByChange: (PlaylistsSortBy) -> Unit,
     tabSearchBarViewState: ITabSearchBarViewState,
     onTabSearchBarQueryChange: (query: String) -> Unit,
@@ -391,6 +393,7 @@ fun HomeScreen(
                     navigateToTabById = navigateToTabByTabId,
                     navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
                     navigateByPlaylistEntryId = false,
+                    onTagToggled = onTagFilterToggled,
                 )
 
                 // Popular page
@@ -400,6 +403,7 @@ fun HomeScreen(
                     navigateToTabById = navigateToTabByTabId,
                     navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
                     navigateByPlaylistEntryId = false,  // can't navigate by playlisty entry because the playlist entries get cleared and refreshed each time the activity starts (e.g. when device is rotated or dark mode is enabled)
+                    onTagToggled = onTagFilterToggled,
                 )
 
                 // Playlists page
@@ -416,6 +420,7 @@ fun HomeScreen(
                     navigateToTabById = navigateToTabByTabId,
                     navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
                     navigateByPlaylistEntryId = true,  // open as playlist entries so next/previous song works
+                    onTagToggled = onTagFilterToggled,
                 )
 
                 // Tonight page
@@ -425,6 +430,7 @@ fun HomeScreen(
                     navigateToTabById = navigateToTabByTabId,
                     navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
                     navigateByPlaylistEntryId = false,
+                    onTagToggled = onTagFilterToggled,
                 )
             }
         }
@@ -530,6 +536,7 @@ private fun HomeScreenPreview() {
             onLocalFilesSongListSortByChange = {},
             tonightSongListViewState = songListState,
             onSaveTonightAsPlaylist = {},
+            onTagFilterToggled = {},
             onPlaylistsSortByChange = {},
             tabSearchBarViewState = tabSearchBarViewState,
             onTabSearchBarQueryChange = {},
@@ -564,7 +571,9 @@ private class HomeViewStateForTest(
 private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
     override val sortBy: LiveData<SortBy>,
-    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf())
+    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf()),
+    override val tags: LiveData<List<String>> = MutableLiveData(listOf()),
+    override val selectedTags: LiveData<Set<String>> = MutableLiveData(setOf())
 ) : ISongListViewState
 
 private class TabSearchBarViewStateForTest(

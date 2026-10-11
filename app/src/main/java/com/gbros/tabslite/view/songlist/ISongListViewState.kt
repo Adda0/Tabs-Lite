@@ -18,4 +18,14 @@ interface ISongListViewState {
      * When each played song was last played (epoch ms), by tab ID
      */
     val lastPlayed: LiveData<Map<String, Long>>
+
+    /**
+     * The tags of the songs in this list, before filtering
+     */
+    val tags: LiveData<List<String>>
+
+    /**
+     * The keys of the tags the list is filtered by (see [com.gbros.tabslite.utilities.tagKey]); a song needs them all
+     */
+    val selectedTags: LiveData<Set<String>>
 }

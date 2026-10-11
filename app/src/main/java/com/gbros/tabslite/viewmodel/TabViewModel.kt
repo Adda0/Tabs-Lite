@@ -47,6 +47,7 @@ import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.addChordHints
 import com.gbros.tabslite.utilities.parseTags
+import com.gbros.tabslite.utilities.tagKey
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -997,6 +998,13 @@ class TabViewModel
     fun onChordHintsToggled(shown: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.CHORD_HINTS, shown.toString()))
+        }
+    }
+
+    /** Filters the home song lists by just [tag] */
+    fun onTagClick(tag: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.TAG_FILTER, tagKey(tag)))
         }
     }
 

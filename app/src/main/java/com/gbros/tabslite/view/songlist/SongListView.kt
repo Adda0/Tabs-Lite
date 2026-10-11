@@ -1,7 +1,13 @@
 package com.gbros.tabslite.view.songlist
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Text
+import com.gbros.tabslite.utilities.tagKey
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -46,8 +52,29 @@ fun SongListView(
     navigateToTabById: (id: String) -> Unit,
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(4.dp),
     emptyListText: String = stringResource(id = R.string.message_empty_list),
+    /** Adds the tag with this key to the song list filter, or takes it out */
+    onTagToggled: (tagKey: String) -> Unit = {},
 ){
     Column {
+        val tags = viewState.tags.observeAsState(listOf()).value
+        val selectedTags = viewState.selectedTags.observeAsState(setOf()).value
+        if (tags.isNotEmpty() || selectedTags.isNotEmpty()) {
+            // selected first, also the ones none of these songs have, so they can be cleared
+            val chips = selectedTags.map { key -> tags.firstOrNull { tagKey(it) == key } ?: key } +
+                tags.filter { tagKey(it) !in selectedTags }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.horizontalScroll(rememberScrollState())
+            ) {
+                for (tag in chips) {
+                    FilterChip(
+                        selected = tagKey(tag) in selectedTags,
+                        onClick = { onTagToggled(tagKey(tag)) },
+                        label = { Text("#$tag") }
+                    )
+                }
+            }
+        }
         val songs = viewState.songs.observeAsState(listOf())
         if (songs.value.isEmpty()) {
             // no songs
@@ -131,5 +158,7 @@ private fun SongListViewPreview(){
 private class SongListViewStateForTest(
     override val songs: LiveData<List<TabWithDataPlaylistEntry>>,
     override val sortBy: LiveData<SortBy>,
-    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf())
+    override val lastPlayed: LiveData<Map<String, Long>> = MutableLiveData(mapOf()),
+    override val tags: LiveData<List<String>> = MutableLiveData(listOf()),
+    override val selectedTags: LiveData<Set<String>> = MutableLiveData(setOf())
 ) : ISongListViewState

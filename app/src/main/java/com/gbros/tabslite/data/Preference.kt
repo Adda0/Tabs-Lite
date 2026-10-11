@@ -104,5 +104,11 @@ data class Preference(
          */
         const val CHORD_HINTS: String = "CHORD_HINTS"
 
+        /**
+         * The preference name for the tags the home song lists are filtered by: comma-separated tag
+         * keys (see [com.gbros.tabslite.utilities.tagKey]), a song needing all of them
+         */
+        const val TAG_FILTER: String = "TAG_FILTER"
+
     }
 }

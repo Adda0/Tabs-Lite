@@ -336,6 +336,17 @@ class HomeViewModel
     }
 
     /**
+     * Adds the tag with key [tagKey] to the song lists' tag filter, or takes it out
+     */
+    fun toggleTagFilter(tagKey: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val selected = dataAccess.getPreferenceValue(Preference.TAG_FILTER).orEmpty().split(',').filter { it.isNotEmpty() }
+            val updated = if (tagKey in selected) selected - tagKey else selected + tagKey
+            dataAccess.upsert(Preference(Preference.TAG_FILTER, updated.joinToString(",")))
+        }
+    }
+
+    /**
      * Import (or re-import) songs from the given local folder into a "Local Files" playlist.
      * Persists the folder's URI so future rescans (including [rescanLocalSongsFolder]) don't need
      * the user to pick it again.

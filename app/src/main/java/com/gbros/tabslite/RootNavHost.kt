@@ -50,7 +50,8 @@ fun TabsLiteNavGraph() {
             onNavigateBack = navController::popBackStack,
             onNavigateToArtistIdSongList = navController::navigateToArtistIdSongList,
             onNavigateToTabVersionById = navController::swapToTab,
-            onNavigateToEditTab = navController::navigateToPrefilledCreateTabContent
+            onNavigateToEditTab = navController::navigateToPrefilledCreateTabContent,
+            onNavigateToHome = navController::popUpToHome
         )
 
         playlistEntryScreen (
@@ -58,7 +59,8 @@ fun TabsLiteNavGraph() {
             onNavigateBack = navController::popBackStack,
             onNavigateToArtistIdSongList = navController::navigateToArtistIdSongList,
             onNavigateToTabVersionById = navController::swapToTab,
-            onNavigateToEditTab = navController::navigateToPrefilledCreateTabContent
+            onNavigateToEditTab = navController::navigateToPrefilledCreateTabContent,
+            onNavigateToHome = navController::popUpToHome
         )
 
         playlistDetailScreen(
