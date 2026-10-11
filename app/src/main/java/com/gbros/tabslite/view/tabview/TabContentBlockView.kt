@@ -123,14 +123,15 @@ private fun MeasureScope.placeChordButtons(
 
                 val inline = chordAnnotations[i].item.startsWith("{il}")
 
-                // Determine the horizontal position, ensuring it doesn't overlap the previous button
-                val x = maxOf(boundingBox.left.toInt(), lastButtonRightEdge)
+                // Chords that fit at their column stay there, even touching the previous one (`D][G`);
+                // only one that would overlap it is pushed right, with some space so the two read apart
+                val left = boundingBox.left.toInt()
+                val x = if (left >= lastButtonRightEdge) left else lastButtonRightEdge + 16
                 val y = if (inline) boundingBox.bottom.toInt() - chordButton.height
                         else boundingBox.top.toInt() + (chordButton.height.toDouble() * 0.25).toInt()
                 chordButton.placeRelative(x, y)
 
-                // Update the right edge for the next button on this line
-                lastButtonRightEdge = x + chordButton.width + 16 // 16 is some extra space between buttons
+                lastButtonRightEdge = x + chordButton.width
             }
         }
     }
