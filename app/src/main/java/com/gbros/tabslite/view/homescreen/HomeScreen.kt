@@ -123,6 +123,7 @@ fun NavGraphBuilder.homeScreen(
             onImportLocalSongsFolder = viewModel::importLocalSongsFolder,
             onRescanLocalSongsFolder = viewModel::rescanLocalSongsFolder,
             onRescanLocalSongsOnStartChange = viewModel::setRescanLocalSongsOnStart,
+            onTwoColumnViewDefaultChange = viewModel::setTwoColumnViewDefault,
             onCreatePlaylist = viewModel::createPlaylist,
             onThemeSelectionChange = viewModel::setAppTheme,
             onFontStyleSelectionChange = viewModel::setTextStyle,
@@ -155,6 +156,7 @@ fun HomeScreen(
     onImportLocalSongsFolder: (folderUri: Uri, context: Context) -> Unit,
     onRescanLocalSongsFolder: (context: Context) -> Unit,
     onRescanLocalSongsOnStartChange: (enabled: Boolean) -> Unit,
+    onTwoColumnViewDefaultChange: (enabled: Boolean) -> Unit,
     onCreatePlaylist: (title: String, description: String) -> Unit,
     onThemeSelectionChange: (ThemeSelection) -> Unit,
     onFontStyleSelectionChange: (FontStyle) -> Unit,
@@ -236,6 +238,8 @@ fun HomeScreen(
             },
             rescanLocalSongsOnStart = viewState.rescanLocalSongsOnStart.observeAsState(false).value,
             onRescanLocalSongsOnStartChanged = onRescanLocalSongsOnStartChange,
+            twoColumnViewDefault = viewState.twoColumnViewDefault.observeAsState(false).value,
+            onTwoColumnViewDefaultChanged = onTwoColumnViewDefaultChange,
             onSwitchThemeMode = onThemeSelectionChange,
             onNavigateToCreateTab = onNavigateToCreateTab,
             onSwitchFontStyle = onFontStyleSelectionChange
@@ -546,6 +550,7 @@ private fun HomeScreenPreview() {
             onImportLocalSongsFolder = {_,_->},
             onRescanLocalSongsFolder = {_->},
             onRescanLocalSongsOnStartChange = {},
+            onTwoColumnViewDefaultChange = {},
             onCreatePlaylist = {_,_->},
             onThemeSelectionChange = {},
             onFontStyleSelectionChange = {},
@@ -565,7 +570,8 @@ private class HomeViewStateForTest(
     override val selectedAppTheme: LiveData<ThemeSelection>,
     override val selectedFontStyle: LiveData<FontStyle>,
     override val localImportFolderUri: LiveData<String?>,
-    override val rescanLocalSongsOnStart: LiveData<Boolean>
+    override val rescanLocalSongsOnStart: LiveData<Boolean>,
+    override val twoColumnViewDefault: LiveData<Boolean> = MutableLiveData(false)
 ) : IHomeViewState
 
 private class SongListViewStateForTest(

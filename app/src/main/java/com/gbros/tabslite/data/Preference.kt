@@ -71,6 +71,11 @@ data class Preference(
         const val PIN_CHORDS: String = "PIN_CHORDS"
 
         /**
+         * The preference name for whether songs that have no own choice open in two-column view
+         */
+        const val TWO_COLUMN_VIEW_DEFAULT: String = "TWO_COLUMN_VIEW_DEFAULT"
+
+        /**
          * The preference name for the font style to use
          */
         const val FONT_STYLE: String = "FONT_STYLE"

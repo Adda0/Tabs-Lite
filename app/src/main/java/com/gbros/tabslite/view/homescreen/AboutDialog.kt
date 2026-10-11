@@ -77,7 +77,9 @@ fun AboutDialog(
     onImportLocalSongsFolderClicked: () -> Unit = {},
     onRescanLocalSongsFolderClicked: () -> Unit = {},
     rescanLocalSongsOnStart: Boolean = false,
-    onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {}
+    onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {},
+    twoColumnViewDefault: Boolean = false,
+    onTwoColumnViewDefaultChanged: (Boolean) -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -159,7 +161,9 @@ fun AboutDialog(
                                         selectedTheme = selectedTheme,
                                         selectedFontStyle = selectedFontStyle,
                                         onSwitchThemeMode = onSwitchThemeMode,
-                                        onSwitchFontStyle = onSwitchFontStyle
+                                        onSwitchFontStyle = onSwitchFontStyle,
+                                        twoColumnViewDefault = twoColumnViewDefault,
+                                        onTwoColumnViewDefaultChanged = onTwoColumnViewDefaultChanged
                                     )
                                 }
                             }
@@ -181,7 +185,9 @@ fun AboutDialog(
                             selectedTheme = selectedTheme,
                             selectedFontStyle = selectedFontStyle,
                             onSwitchThemeMode = onSwitchThemeMode,
-                            onSwitchFontStyle = onSwitchFontStyle
+                            onSwitchFontStyle = onSwitchFontStyle,
+                            twoColumnViewDefault = twoColumnViewDefault,
+                            onTwoColumnViewDefaultChanged = onTwoColumnViewDefaultChanged
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         ImportExportActionsCard(
@@ -300,7 +306,9 @@ private fun ThemeFontSettingsCard(
     selectedTheme: ThemeSelection,
     selectedFontStyle: FontStyle,
     onSwitchThemeMode: (ThemeSelection) -> Unit,
-    onSwitchFontStyle: (FontStyle) -> Unit
+    onSwitchFontStyle: (FontStyle) -> Unit,
+    twoColumnViewDefault: Boolean = false,
+    onTwoColumnViewDefaultChanged: (Boolean) -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -431,6 +439,27 @@ private fun ThemeFontSettingsCard(
                         )
                     }
                 }
+            }
+
+            // two-column view by default
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .padding(all = 8.dp)
+                    .fillMaxWidth()
+                    .clickable { onTwoColumnViewDefaultChanged(!twoColumnViewDefault) }
+            ) {
+                Text(
+                    modifier = Modifier
+                        .padding(all = 8.dp)
+                        .weight(1f),
+                    text = stringResource(R.string.app_setting_two_column_view_default)
+                )
+                Switch(
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                    checked = twoColumnViewDefault,
+                    onCheckedChange = onTwoColumnViewDefaultChanged
+                )
             }
         }
     }

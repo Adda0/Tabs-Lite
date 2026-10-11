@@ -40,6 +40,8 @@ data class TabDataType(
 
     /** Whether this song's content should render in two reflowing columns instead of one */
     @ColumnInfo(name = "two_column_view") var twoColumnView: Boolean = false,
+    /** See [ITab.twoColumnViewSet] */
+    @ColumnInfo(name = "two_column_view_set") var twoColumnViewSet: Boolean = false,
     /** This song's remembered text size in sp, or null to use the app-wide default */
     @ColumnInfo(name = "text_size_sp") var textSizeSp: Float? = null,
     /** Fallback transpose value for when this tab isn't in a playlist or favorited (see [ITab.transpose]) */

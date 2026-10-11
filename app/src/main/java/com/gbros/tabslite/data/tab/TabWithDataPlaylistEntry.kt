@@ -63,6 +63,7 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "contributor_user_name") override var contributorUserName: String = "Unregistered",
     @ColumnInfo(name = "content") override var content: String = "",
     @ColumnInfo(name = "two_column_view") override var twoColumnView: Boolean = false,
+    @ColumnInfo(name = "two_column_view_set") override var twoColumnViewSet: Boolean = false,
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
     @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
@@ -172,6 +173,7 @@ data class TabWithDataPlaylistEntry(
         capo = tab.capo
         content = tab.content
         twoColumnView = tab.twoColumnView
+        twoColumnViewSet = tab.twoColumnViewSet
         textSizeSp = tab.textSizeSp
         defaultTranspose = tab.defaultTranspose
         favoriteTranspose = tab.favoriteTranspose

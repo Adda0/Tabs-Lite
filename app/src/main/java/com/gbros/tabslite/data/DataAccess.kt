@@ -342,7 +342,7 @@ interface DataAccess {
     @Query("UPDATE playlist_entry SET transpose = :transpose WHERE tab_id = :tabId")
     suspend fun updateAllEntriesTransposition(tabId: String, transpose: Int)
 
-    @Query("UPDATE tabs SET two_column_view = :enabled WHERE id = :tabId")
+    @Query("UPDATE tabs SET two_column_view = :enabled, two_column_view_set = 1 WHERE id = :tabId")
     suspend fun updateTwoColumnView(tabId: String, enabled: Boolean)
 
     @Query("UPDATE tabs SET text_size_sp = :textSizeSp WHERE id = :tabId")

@@ -107,6 +107,11 @@ class HomeViewModel
      */
     override val rescanLocalSongsOnStart: LiveData<Boolean> = dataAccess.getLivePreference(Preference.RESCAN_LOCAL_SONGS_ON_START).map { it?.value?.toBoolean() == true }
 
+    /**
+     * Whether songs that have no own two-column choice open in two-column view. Defaults to off.
+     */
+    override val twoColumnViewDefault: LiveData<Boolean> = dataAccess.getLivePreference(Preference.TWO_COLUMN_VIEW_DEFAULT).map { it?.value?.toBoolean() == true }
+
     //#endregion
 
     //#region public data
@@ -183,6 +188,15 @@ class HomeViewModel
     fun setRescanLocalSongsOnStart(enabled: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.RESCAN_LOCAL_SONGS_ON_START, enabled.toString()))
+        }
+    }
+
+    /**
+     * Set whether songs that have no own two-column choice open in two-column view
+     */
+    fun setTwoColumnViewDefault(enabled: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.TWO_COLUMN_VIEW_DEFAULT, enabled.toString()))
         }
     }
 

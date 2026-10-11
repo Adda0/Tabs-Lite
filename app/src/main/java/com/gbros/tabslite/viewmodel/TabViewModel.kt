@@ -504,7 +504,11 @@ class TabViewModel
         override ?: t?.textSizeSp ?: defaultFontSize
     }
 
-    override val twoColumnView: LiveData<Boolean> = tab.map { t -> t?.twoColumnView ?: false }
+    override val twoColumnView: LiveData<Boolean> = tab.map { t ->
+        t?.twoColumnView?.takeIf { t.twoColumnViewSet }
+    }.combine(dataAccess.getLivePreference(Preference.TWO_COLUMN_VIEW_DEFAULT).map { it?.value == "true" }) { perSong, default ->
+        perSong ?: default ?: false
+    }
 
     // tab content after transposition and useFlats
     private val transposedContentString: LiveData<String> = displayedContentString.combine(transpose, useFlats) { c, tr, f ->

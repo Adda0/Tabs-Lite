@@ -442,6 +442,7 @@ object BackendConnection {
         try {
             val existing = dataAccess.getTabInstance(result.tabId)
             result.twoColumnView = existing.twoColumnView
+            result.twoColumnViewSet = existing.twoColumnViewSet
             result.textSizeSp = existing.textSizeSp
             result.defaultTranspose = existing.defaultTranspose
             result.favoriteTranspose = existing.favoriteTranspose

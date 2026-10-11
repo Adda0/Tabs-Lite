@@ -52,6 +52,8 @@ interface ITab {
 
     /** Whether this song's content should render in two reflowing columns instead of one, remembered per-song */
     var twoColumnView: Boolean
+    /** Whether [twoColumnView] was chosen for this song itself; otherwise the app-wide default applies */
+    var twoColumnViewSet: Boolean
     /** This song's remembered text size in sp, or null to use the app-wide default, remembered per-song */
     var textSizeSp: Float?
     /**

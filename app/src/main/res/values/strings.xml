@@ -9,6 +9,7 @@
     <string name="app_action_import_local_songs_folder" translation_description="The button text to import songs from a local folder">Import songs from folder</string>
     <string name="app_action_rescan_local_songs_folder" translation_description="The button text to rescan the previously chosen local songs folder">Rescan local songs folder</string>
     <string name="app_setting_rescan_local_songs_on_start" translation_description="Label of the switch that rescans the local songs folder every time the app starts">Rescan local songs folder on start</string>
+    <string name="app_setting_two_column_view_default" translation_description="Label of the switch that makes songs without their own choice open in two-column view">Open songs in two columns by default</string>
     <string name="app_action_leave_review" translation_description="The button text to leave a review">Leave review</string>
     <string name="app_action_donate" translation_description="The button text to donate to TabsLite">Donate</string>
     <string name="app_action_search" translation_description="The placeholder text for the search bar">Search TabsLite</string>

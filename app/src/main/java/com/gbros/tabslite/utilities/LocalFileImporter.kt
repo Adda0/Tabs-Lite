@@ -129,6 +129,7 @@ object LocalFileImporter {
                     try {
                         val existing = dataAccess.getTabInstance(tabId)
                         tab.twoColumnView = existing.twoColumnView
+                        tab.twoColumnViewSet = existing.twoColumnViewSet
                         tab.textSizeSp = existing.textSizeSp
                         tab.defaultTranspose = existing.defaultTranspose
                         tab.currentCapo = existing.currentCapo

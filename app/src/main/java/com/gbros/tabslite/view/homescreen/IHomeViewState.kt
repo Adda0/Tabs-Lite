@@ -47,4 +47,9 @@ interface IHomeViewState {
      * Whether the local song folder is rescanned on every app start
      */
     val rescanLocalSongsOnStart: LiveData<Boolean>
+
+    /**
+     * Whether songs that have no own choice open in two-column view
+     */
+    val twoColumnViewDefault: LiveData<Boolean>
 }

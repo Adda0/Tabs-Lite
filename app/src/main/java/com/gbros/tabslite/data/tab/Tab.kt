@@ -39,6 +39,7 @@ data class Tab(
     @ColumnInfo(name = "content") override var content: String = "",
     @ColumnInfo(name = "transpose") override var transpose: Int? = null,
     @ColumnInfo(name = "two_column_view") override var twoColumnView: Boolean = false,
+    @ColumnInfo(name = "two_column_view_set") override var twoColumnViewSet: Boolean = false,
     @ColumnInfo(name = "text_size_sp") override var textSizeSp: Float? = null,
     @ColumnInfo(name = "default_transpose") override var defaultTranspose: Int = 0,
     @ColumnInfo(name = "favorite_transpose") override var favoriteTranspose: Int? = null,
@@ -94,7 +95,7 @@ data class Tab(
         type = tabFromDatabase.type, part = tabFromDatabase.part, version = tabFromDatabase.version, votes = tabFromDatabase.votes, rating = tabFromDatabase.rating, date = tabFromDatabase.date, status = tabFromDatabase.status, tabAccessType = tabFromDatabase.tabAccessType,
         tonalityName = tabFromDatabase.tonalityName, versionDescription = tabFromDatabase.versionDescription, recommended = tabFromDatabase.recommended, difficulty = tabFromDatabase.difficulty, tuning = tabFromDatabase.tuning,
         capo = tabFromDatabase.capo, contributorUserId = tabFromDatabase.contributorUserId, contributorUserName = tabFromDatabase.contributorUserName, content = tabFromDatabase.content,
-        twoColumnView = tabFromDatabase.twoColumnView, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose,
+        twoColumnView = tabFromDatabase.twoColumnView, twoColumnViewSet = tabFromDatabase.twoColumnViewSet, textSizeSp = tabFromDatabase.textSizeSp, defaultTranspose = tabFromDatabase.defaultTranspose,
         favoriteTranspose = tabFromDatabase.favoriteTranspose, favoriteTransposes = tabFromDatabase.favoriteTransposes, currentCapo = tabFromDatabase.currentCapo, originalTranspose = tabFromDatabase.originalTranspose,
         tempo = tabFromDatabase.tempo, rhythm = tabFromDatabase.rhythm, autoscrollSlider = tabFromDatabase.autoscrollSlider, tags = tabFromDatabase.tags,
         language = tabFromDatabase.language)
@@ -158,6 +159,7 @@ data class Tab(
         capo = tab.capo
         content = tab.content
         twoColumnView = tab.twoColumnView
+        twoColumnViewSet = tab.twoColumnViewSet
         textSizeSp = tab.textSizeSp
         defaultTranspose = tab.defaultTranspose
         favoriteTranspose = tab.favoriteTranspose
