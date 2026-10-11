@@ -71,6 +71,7 @@ data class TabWithDataPlaylistEntry(
     @ColumnInfo(name = "original_transpose") override var originalTranspose: Int = 0,
     @ColumnInfo(name = "tempo") override var tempo: String = "",
     @ColumnInfo(name = "rhythm") override var rhythm: String = "",
+    @ColumnInfo(name = "autoscroll_slider") override var autoscrollSlider: Float? = null,
 
     // columns from Playlist
     @ColumnInfo(name = "user_created") var playlistUserCreated: Boolean? = true,
@@ -177,6 +178,7 @@ data class TabWithDataPlaylistEntry(
         originalTranspose = tab.originalTranspose
         tempo = tab.tempo
         rhythm = tab.rhythm
+        autoscrollSlider = tab.autoscrollSlider
 
         recommended = tab.recommended
     }

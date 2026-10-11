@@ -158,7 +158,7 @@ fun NavGraphBuilder.tabScreen(
             onAutoscrollButtonClick = viewModel::onAutoscrollButtonClick,
             onAutoscrollResetClick = viewModel::onAutoscrollResetClick,
             onAutoscrollSliderValueChange = viewModel::onAutoscrollSliderValueChange,
-            onAutoscrollSliderValueChangeFinished = viewModel::onAutoscrollSliderValueChangeFinished,
+            onAutoscrollSliderValueChangeFinished = { context -> viewModel.onAutoscrollSliderValueChangeFinished(context) },
             onReload = viewModel::onReload,
             onFavoriteButtonClick = viewModel::onFavoriteButtonClick,
             onAddPlaylistDialogPlaylistSelected = viewModel::onAddPlaylistDialogPlaylistSelected,
@@ -248,7 +248,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onAutoscrollButtonClick = viewModel::onAutoscrollButtonClick,
             onAutoscrollResetClick = viewModel::onAutoscrollResetClick,
             onAutoscrollSliderValueChange = viewModel::onAutoscrollSliderValueChange,
-            onAutoscrollSliderValueChangeFinished = viewModel::onAutoscrollSliderValueChangeFinished,
+            onAutoscrollSliderValueChangeFinished = { context -> viewModel.onAutoscrollSliderValueChangeFinished(context) },
             onReload = viewModel::onReload,
             onFavoriteButtonClick = viewModel::onFavoriteButtonClick,
             onAddPlaylistDialogPlaylistSelected = viewModel::onAddPlaylistDialogPlaylistSelected,
@@ -295,7 +295,7 @@ fun TabScreen(
     onAutoscrollSliderValueChange: (Float) -> Unit,
     onAutoscrollButtonClick: () -> Unit,
     onAutoscrollResetClick: () -> Unit,
-    onAutoscrollSliderValueChangeFinished: () -> Unit,
+    onAutoscrollSliderValueChangeFinished: (Context) -> Unit,
     onReload: () -> Unit,
     onFavoriteButtonClick: () -> Unit,
     onAddPlaylistDialogPlaylistSelected: (Playlist) -> Unit,
@@ -711,7 +711,7 @@ fun TabScreen(
         },
         onValueChange = onAutoscrollSliderValueChange,
         paused = viewState.autoscrollPaused.observeAsState(false).value,
-        onValueChangeFinished = onAutoscrollSliderValueChangeFinished,
+        onValueChangeFinished = { onAutoscrollSliderValueChangeFinished(context) },
 
         )
 

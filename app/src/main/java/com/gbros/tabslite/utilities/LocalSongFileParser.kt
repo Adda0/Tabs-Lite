@@ -34,6 +34,8 @@ data class LocalSongFile(
     val tempo: String = "",
     /** `label: id` references into the rhythms file, see [parseRhythmReferences] */
     val rhythms: List<RhythmReference> = emptyList(),
+    /** Autoscroll speed slider position (0..1) from file header, or null if not given */
+    val autoscroll: Float? = null,
 )
 
 private val HEADER_LINE_REGEX = Regex("^\\s*([A-Za-z_-]+)\\s*:\\s*(.*)$")
@@ -114,6 +116,7 @@ fun parseLocalSongFile(rawText: String): LocalSongFile? {
         originalTranspose = originalTranspose,
         favorites = favorites,
         tempo = header["tempo"].orEmpty(),
+        autoscroll = header["autoscroll"]?.toFloatOrNull()?.coerceIn(0f, 1f),
         rhythms = parseRhythmReferences((header["rhythm"] ?: header["rhythms"]).orEmpty())
     )
 }
@@ -139,17 +142,23 @@ private val FAVORITE_HEADER_KEYS = setOf("favorite_key", "favorite_transpose")
  * favourite line, in any spelling, is replaced in place; otherwise the new line ends the header.
  * Everything else, including line endings, is left untouched.
  */
-fun withFavoriteHeader(rawText: String, favorite: Pair<String, String>?): String {
+fun withFavoriteHeader(rawText: String, favorite: Pair<String, String>?): String =
+    withHeaderLine(rawText, FAVORITE_HEADER_KEYS, favorite?.let { (key, value) -> "$key: $value" })
+
+/** Returns [rawText] with its `autoscroll` header set to slider position [value] (0..1), or removed when null; see [withFavoriteHeader] */
+fun withAutoscrollHeader(rawText: String, value: Float?): String =
+    withHeaderLine(rawText, setOf("autoscroll"), value?.let { "autoscroll: " + String.format(java.util.Locale.ROOT, "%.2f", it) })
+
+private fun withHeaderLine(rawText: String, keys: Set<String>, newLine: String?): String {
     val lineEnding = if (rawText.contains("\r\n")) "\r\n" else "\n"
     val lines = rawText.split(lineEnding).toMutableList()
     val headerEnd = lines.indexOfFirst { HEADER_LINE_REGEX.matchEntire(it) == null }.let { if (it == -1) lines.size else it }
-    val favoriteLineIndices = (0 until headerEnd).filter { index ->
-        normalizeHeaderKey(HEADER_LINE_REGEX.matchEntire(lines[index])!!.groupValues[1]) in FAVORITE_HEADER_KEYS
+    val matchingLineIndices = (0 until headerEnd).filter { index ->
+        normalizeHeaderKey(HEADER_LINE_REGEX.matchEntire(lines[index])!!.groupValues[1]) in keys
     }
 
-    val newLine = favorite?.let { (key, value) -> "$key: $value" }
-    val insertAt = favoriteLineIndices.firstOrNull() ?: headerEnd
-    favoriteLineIndices.asReversed().forEach { lines.removeAt(it) }
+    val insertAt = matchingLineIndices.firstOrNull() ?: headerEnd
+    matchingLineIndices.asReversed().forEach { lines.removeAt(it) }
     if (newLine != null) {
         lines.add(insertAt, newLine)
     }

@@ -71,6 +71,8 @@ interface ITab {
     var tempo: String
     /** The song's strumming patterns, rendered from its `rhythm` header (see [com.gbros.tabslite.utilities.formatRhythms]), blank if none */
     var rhythm: String
+    /** This song's remembered autoscroll speed slider position (0..1), or null to use a default */
+    var autoscrollSlider: Float?
 
     /**
      * Get the human-readable capo number (ordinal numbers, i.e. 2nd Fret), of this tab's capo or [capo]

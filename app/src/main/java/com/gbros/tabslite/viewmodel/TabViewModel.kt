@@ -17,6 +17,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.map
 import androidx.lifecycle.switchMap
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.viewModelScope
 import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
@@ -34,6 +36,8 @@ import com.gbros.tabslite.data.tab.sortedAsVersions
 import com.gbros.tabslite.utilities.BackendConnection
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.utilities.LocalFileImporter
+import com.gbros.tabslite.utilities.autoscrollDelayForTempo
+import com.gbros.tabslite.utilities.sliderForDelay
 import com.gbros.tabslite.utilities.combine
 import com.gbros.tabslite.utilities.isSameTransposition
 import com.gbros.tabslite.utilities.FavoriteKey
@@ -54,6 +58,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -783,9 +789,24 @@ class TabViewModel
      * autoscroll slider position to the database here rather than in [onAutoscrollSliderValueChange]
      * to prevent too many database calls
      */
-    fun onAutoscrollSliderValueChangeFinished() {
+    fun onAutoscrollSliderValueChangeFinished(context: android.content.Context) {
         CoroutineScope(Dispatchers.IO).launch {
-            dataAccess.upsert(Preference(Preference.AUTOSCROLL_DELAY, autoScrollSpeedSliderPosition.value.toString()))
+            val sliderValue = autoScrollSpeedSliderPosition.value ?: 0.5f
+            // save to global preference (the last used value)
+            dataAccess.upsert(Preference(Preference.AUTOSCROLL_DELAY, sliderValue.toString()))
+            // save to per-song column if a song is loaded
+            val currentTab = tab.value
+            if (currentTab != null) {
+                dataAccess.updateAutoscrollSlider(currentTab.tabId, sliderValue)
+                // write back to local song file if it's a local tab
+                if (currentTab.tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE) {
+                    try {
+                        LocalFileImporter.writeAutoscrollToFile(context, dataAccess, currentTab.tabId, sliderValue)
+                    } catch (ex: Exception) {
+                        Log.w(TAG, "Couldn't write autoscroll to local file for tab ${currentTab.tabId}: ${ex.message}")
+                    }
+                }
+            }
         }
     }
 
@@ -940,21 +961,26 @@ class TabViewModel
 
     init {
         // load the tab content from the database (or the internet if no cached database value)
-        val scope = CoroutineScope(Dispatchers.IO)
         load()
 
-        // set our initial autoscroll slider position to the user preference value
-        val autoscrollPreferenceJob = scope.async {
-            return@async dataAccess.getPreferenceValue(Preference.AUTOSCROLL_DELAY)?.toFloat()
-        }
-        autoscrollPreferenceJob.invokeOnCompletion { err ->
-            if (err != null) {
-                Log.e(TAG, "Couldn\'t load autoscroll user preference: ${err.message}", err)
-                _autoscrollSpeedSliderPosition.postValue(0.5f) // have a fallback value in case of exception or database errors
-            } else {
-                val result = autoscrollPreferenceJob.getCompleted()
-                _autoscrollSpeedSliderPosition.postValue(result ?: 0.5f)
+        // initial autoscroll speed: the song's own, else one estimated from its tempo, else the last used one
+        viewModelScope.launch {
+            val lastUsed = withContext(Dispatchers.IO) {
+                try {
+                    dataAccess.getPreferenceValue(Preference.AUTOSCROLL_DELAY)?.toFloat()
+                } catch (ex: Exception) {
+                    Log.e(TAG, "Couldn't load autoscroll user preference: ${ex.message}", ex)
+                    null
+                }
             }
+            _autoscrollSpeedSliderPosition.value = lastUsed ?: 0.5f
+            val loadedTab = tab.asFlow().filterNotNull().first()
+            val system = android.content.res.Resources.getSystem()
+            // a lyric line with its chords above it is about two text lines high
+            val linePx = 2.4f * (loadedTab.textSizeSp ?: defaultFontSize) * system.displayMetrics.density * system.configuration.fontScale
+            val songSpeed = loadedTab.autoscrollSlider
+                ?: autoscrollDelayForTempo(loadedTab.tempo, linePx)?.let { sliderForDelay(it, mapAutoscrollSliderToScrollDelay) }
+            if (songSpeed != null) _autoscrollSpeedSliderPosition.value = songSpeed
         }
     }
 

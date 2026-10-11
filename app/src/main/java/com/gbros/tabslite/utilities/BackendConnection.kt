@@ -448,6 +448,7 @@ object BackendConnection {
             result.favoriteTransposes = existing.favoriteTransposes
             result.currentCapo = existing.currentCapo
             result.originalTranspose = existing.originalTranspose
+            result.autoscrollSlider = existing.autoscrollSlider
         } catch (ex: Exception) {
             // no existing row for this tab id - nothing to preserve
         }

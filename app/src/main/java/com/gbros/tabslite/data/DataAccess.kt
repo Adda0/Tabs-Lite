@@ -357,6 +357,9 @@ interface DataAccess {
     @Query("UPDATE tabs SET current_capo = :capo WHERE id = :tabId")
     suspend fun updateCurrentCapo(tabId: String, capo: Int?)
 
+    @Query("UPDATE tabs SET autoscroll_slider = :slider WHERE id = :tabId")
+    suspend fun updateAutoscrollSlider(tabId: String, slider: Float)
+
     //#endregion
 
     //#region chord variation table

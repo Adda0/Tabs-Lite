@@ -56,6 +56,8 @@ data class TabDataType(
     @ColumnInfo(name = "tempo") var tempo: String = "",
     /** See [ITab.rhythm] */
     @ColumnInfo(name = "rhythm") var rhythm: String = "",
+    /** See [ITab.autoscrollSlider] */
+    @ColumnInfo(name = "autoscroll_slider") var autoscrollSlider: Float? = null,
     ) {
     override fun toString() = "$songName by $artistName"
 }

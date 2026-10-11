@@ -118,6 +118,7 @@ object LocalFileImporter {
                         defaultTranspose = startFavorite?.transpose ?: 0,
                         currentCapo = startFavorite?.capo,
                         tempo = parsed.tempo,
+                        autoscrollSlider = parsed.autoscroll,
                         rhythm = formatRhythms(parsed.rhythms, parsed.tempo, rhythms)
                     )
                     // preserve this tab's remembered local settings (two-column view, text size,
@@ -129,6 +130,7 @@ object LocalFileImporter {
                         tab.textSizeSp = existing.textSizeSp
                         tab.defaultTranspose = existing.defaultTranspose
                         tab.currentCapo = existing.currentCapo
+                        tab.autoscrollSlider = existing.autoscrollSlider ?: parsed.autoscroll
                         if (parsed.favorites.isEmpty()) {
                             tab.favoriteTranspose = existing.favoriteTranspose
                             tab.favoriteTransposes = existing.favoriteTransposes
@@ -169,7 +171,22 @@ object LocalFileImporter {
      *
      * @return whether the file was written
      */
-    suspend fun writeFavoritesToFile(context: Context, dataAccess: DataAccess, tabId: String, favorites: List<FavoriteKey>, useFlats: Boolean): Boolean {
+    suspend fun writeFavoritesToFile(context: Context, dataAccess: DataAccess, tabId: String, favorites: List<FavoriteKey>, useFlats: Boolean): Boolean =
+        rewriteSongFile(context, dataAccess, tabId) { rawText ->
+            val writtenKey = parseLocalSongFile(rawText)?.key.orEmpty()
+            val favorite = favorites.takeIf { it.isNotEmpty() }?.let { list ->
+                val entries = list.joinToString(", ") { formatFavoriteEntry(it, writtenKey, useFlats) { chord, steps, flats -> Chord.transposeChord(chord, steps, flats) } }
+                (if (writtenKey.isNotBlank()) "favorite_key" else "favorite_transpose") to entries
+            }
+            withFavoriteHeader(rawText, favorite)
+        }
+
+    /** Writes the autoscroll slider position [value] (0..1) into the `autoscroll` header of the local song file behind [tabId] */
+    suspend fun writeAutoscrollToFile(context: Context, dataAccess: DataAccess, tabId: String, value: Float): Boolean =
+        rewriteSongFile(context, dataAccess, tabId) { rawText -> withAutoscrollHeader(rawText, value) }
+
+    /** Replaces the text of the local song file behind [tabId] with [edit] of it; false if there's no such file */
+    private suspend fun rewriteSongFile(context: Context, dataAccess: DataAccess, tabId: String, edit: (String) -> String): Boolean {
         val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return false
         val root = DocumentFile.fromTreeUri(context, treeUri) ?: return false
         val files = mutableListOf<Pair<String, DocumentFile>>()
@@ -178,12 +195,7 @@ object LocalFileImporter {
 
         val resolver = context.contentResolver
         val rawText = resolver.openInputStream(file.uri)?.use { it.reader().readText() } ?: return false
-        val writtenKey = parseLocalSongFile(rawText)?.key.orEmpty()
-        val favorite = favorites.takeIf { it.isNotEmpty() }?.let { list ->
-            val entries = list.joinToString(", ") { formatFavoriteEntry(it, writtenKey, useFlats) { chord, steps, flats -> Chord.transposeChord(chord, steps, flats) } }
-            (if (writtenKey.isNotBlank()) "favorite_key" else "favorite_transpose") to entries
-        }
-        val newText = withFavoriteHeader(rawText, favorite)
+        val newText = edit(rawText)
         if (newText == rawText) return true
         resolver.openOutputStream(file.uri, "wt")?.use { it.writer().use { writer -> writer.write(newText) } } ?: return false
         return true
