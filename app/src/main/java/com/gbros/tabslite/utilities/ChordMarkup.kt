@@ -32,13 +32,15 @@ private val APP_CHORD_TAG_REGEX = Regex("\\{ch:([^}]*)\\}")
  * including nested/mid-chord (e.g. `Am(7)`, `(D)`, `{D}`, `<D>`, `(\Dm(7))`), since personal
  * notation like this is common (e.g. marking an optional chord change, a single strum instead
  * of the full chord, or grouping chords played over one repeated pattern).
- * `/` is kept as-is (not stripped) since it's meaningful on its own (the bass note of a slash chord).
+ * `/` is kept as-is (not stripped) since it's meaningful on its own: between two roots it's the
+ * bass note of a slash chord (`D/F#`), and opening a token it marks an alternative to the chord
+ * before it (`D (/C)` - play D, or C instead), which transposes and is looked up as that chord.
  *
  * Recognizing a decorated token as a chord is one thing; keeping the decoration in what's actually
  * *displayed* is another - see [sanitizeChordNameForTag].
  */
 private val CHORD_TOKEN_REGEX = Regex(
-    "^[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
+    "^/?[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
 )
 
 private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}<>\\\\]"

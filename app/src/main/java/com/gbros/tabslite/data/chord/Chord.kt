@@ -14,14 +14,15 @@ object Chord {
 
     /**
      * The name a chord is stored and fetched under: the chord name with any hand-written notation
-     * normalized away - decoration like `(D)`/`[Am]`/`(\Dm(7))` (see [stripChordDecorations]), a
-     * German/Czech `H` root rewritten as the `B` it is, and the Czech `mi` minor suffix written as
-     * the English `m` (`Hmi` -> `Bm`). The chord database and the chord API only know plain English
-     * chord names, so a chord written in personal notation has to be looked up by this name; what's
-     * *displayed* stays exactly as written (see [transposeChord]).
+     * normalized away - decoration like `(D)`/`[Am]`/`(\Dm(7))` (see [stripChordDecorations]), the
+     * leading `/` marking an alternative to the chord before it (`(/C)` -> `C`), a German/Czech `H`
+     * root rewritten as the `B` it is, and the Czech `mi` minor suffix written as the English `m`
+     * (`Hmi` -> `Bm`). The chord database and the chord API only know plain English chord names, so
+     * a chord written in personal notation has to be looked up by this name; what's *displayed*
+     * stays exactly as written (see [transposeChord]).
      */
     fun lookupName(chordName: String): String {
-        val undecorated = stripChordDecorations(chordName)
+        val undecorated = stripChordDecorations(chordName).removePrefix(ALTERNATIVE_CHORD_MARKER)
         val englishRoot = if (undecorated.startsWith(GERMAN_B_NATURAL_ROOT, true)) {
             ENGLISH_B_NATURAL_ROOT + undecorated.substring(1)
         } else {
@@ -118,6 +119,14 @@ object Chord {
     private const val GERMAN_B_NATURAL_ROOT = "H"
     private const val ENGLISH_B_NATURAL_ROOT = "B"
     private const val B_FLAT_ROOT = "Bb"
+
+    /**
+     * A chord token opening with `/` is an alternative to the chord before it (`D (/C)`: play D, or
+     * C instead). The marker is the writer's own notation, so it's kept in what's displayed and in
+     * what's transposed (the empty half before it simply has nothing to transpose), and only
+     * dropped when looking the chord up - see [lookupName].
+     */
+    private const val ALTERNATIVE_CHORD_MARKER = "/"
 
     /**
      * The Czech `mi` minor suffix (`Ami`, `F#mi7`) directly after the root note, captured with the
