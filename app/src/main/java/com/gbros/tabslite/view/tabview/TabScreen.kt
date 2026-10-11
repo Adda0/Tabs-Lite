@@ -72,6 +72,7 @@ import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.CapoSuggestion
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.KeepScreenOn
+import com.gbros.tabslite.utilities.TabViewMode
 import com.gbros.tabslite.utilities.TAG
 import com.gbros.tabslite.view.card.ErrorCard
 import com.gbros.tabslite.view.chorddisplay.ChordModalBottomSheet
@@ -172,6 +173,7 @@ fun NavGraphBuilder.tabScreen(
             onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
+            onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
@@ -266,6 +268,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
+            onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
             onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
@@ -317,6 +320,7 @@ fun TabScreen(
     onDetailsHiddenToggled: (hidden: Boolean) -> Unit,
     onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit,
     onChordHintsToggled: (shown: Boolean) -> Unit,
+    onTabViewModeSelected: (TabViewMode) -> Unit,
     onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
     onEditTabClick: (songId: String, tabId: String) -> Unit,
     onTwoColumnViewToggled: (Boolean) -> Unit,
@@ -361,6 +365,7 @@ fun TabScreen(
     val detailsHidden by viewState.detailsHidden.observeAsState(false)
     val sectionReferencesExpanded by viewState.sectionReferencesExpanded.observeAsState(true)
     val chordHintsShown by viewState.chordHintsShown.observeAsState(false)
+    val tabViewMode by viewState.tabViewMode.observeAsState(TabViewMode.Normal)
     val chordBlocks = viewState.content.observeAsState(emptyList()).value
     val loadingState = viewState.state.observeAsState(LoadingState.Loading).value
     val twoColumnView by viewState.twoColumnView.observeAsState(false)
@@ -420,6 +425,8 @@ fun TabScreen(
                 onSectionReferencesExpandedToggled = onSectionReferencesExpandedToggled,
                 chordHintsShown = chordHintsShown,
                 onChordHintsToggled = onChordHintsToggled,
+                tabViewMode = tabViewMode,
+                onTabViewModeSelected = onTabViewModeSelected,
                 twoColumnView = twoColumnView,
                 onTwoColumnViewToggled = onTwoColumnViewToggled,
                 onTextSizeDecreaseClick = onTextSizeDecreaseClick,
@@ -564,6 +571,8 @@ fun TabScreen(
                     onSectionReferencesExpandedToggled = onSectionReferencesExpandedToggled,
                     chordHintsShown = chordHintsShown,
                     onChordHintsToggled = onChordHintsToggled,
+                    tabViewMode = tabViewMode,
+                    onTabViewModeSelected = onTabViewModeSelected,
                     twoColumnView = twoColumnView,
                     onTwoColumnViewToggled = onTwoColumnViewToggled,
                     onTextSizeDecreaseClick = onTextSizeDecreaseClick,
@@ -806,6 +815,7 @@ private fun TabViewPreview() {
         override val tempo: LiveData<String>,
         override val rhythm: LiveData<String>,
         override val tags: LiveData<List<String>>,
+        override val tabViewMode: LiveData<TabViewMode>,
         override val author: LiveData<String>,
         override val version: LiveData<Int>,
         override val songVersions: LiveData<List<ITab>>,
@@ -858,6 +868,7 @@ private fun TabViewPreview() {
             tempo = MutableLiveData(tab.tempo),
             rhythm = MutableLiveData(tab.rhythm),
             tags = MutableLiveData(listOf()),
+            tabViewMode = MutableLiveData(TabViewMode.Normal),
             author = MutableLiveData(tab.artistName),
             version = MutableLiveData(tab.version),
             songVersions = MutableLiveData(listOf()),
@@ -974,6 +985,7 @@ private fun TabViewPreview() {
             onDetailsHiddenToggled = { },
             onSectionReferencesExpandedToggled = { },
             onChordHintsToggled = { },
+            onTabViewModeSelected = { },
             onEditTabClick = { _, _ -> },
             onTwoColumnViewToggled = { },
             onTextSizeDecreaseClick = { },

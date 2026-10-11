@@ -180,6 +180,9 @@
     <string name="tab_show_details_accessibility_text" translation_description="Accessibility text for the button that shows the song details and transpose controls above the tab content">Show song details</string>
     <string name="tab_expand_section_references" translation_description="Tab menu toggle: a later bare section label like R: shows that section again in full">Repeat sections in full</string>
     <string name="tab_chord_hints" translation_description="Tab menu toggle: verses and choruses written without chords show the chords of the first one of their kind">Chord hints on later verses</string>
+    <string name="tab_view_mode_normal" translation_description="Tab menu choice: show the song as written, lyrics with chords">Chords and lyrics</string>
+    <string name="tab_view_mode_lyrics_only" translation_description="Tab menu choice: show only the lyrics, for singing">Lyrics only</string>
+    <string name="tab_view_mode_chord_map" translation_description="Tab menu choice: show one line per section with the chords it is played with">Chord map</string>
     <string name="tab_version_number">Version %d</string>
     <string name="tab_version_abbreviation" translation_description="Shortened version number for display in places where space is limited (like in search results)">ver. %s</string>
     <string name="tab_favorite_button_accessibility_text" translation_description="Accessibility text used for the favorite button">Favorite</string>

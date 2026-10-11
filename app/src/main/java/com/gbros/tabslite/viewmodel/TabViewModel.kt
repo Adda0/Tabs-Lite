@@ -48,6 +48,7 @@ import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.addChordHints
 import com.gbros.tabslite.utilities.parseTags
 import com.gbros.tabslite.utilities.tagKey
+import com.gbros.tabslite.utilities.TabViewMode
 import com.gbros.tabslite.utilities.parseFavoriteKeys
 import com.gbros.tabslite.utilities.formatFavoriteKeys
 import com.gbros.tabslite.utilities.CapoSuggestion
@@ -276,7 +277,7 @@ class TabViewModel
             color = android.graphics.Color.BLACK
         }
 
-        val annotatedContent: AnnotatedString = TabContent(urlHandler::openUri, transposedContentString.value ?: "").contentBlocks
+        val annotatedContent: AnnotatedString = TabContent(urlHandler::openUri, shownContentString.value ?: "").contentBlocks
             .map { tabContent -> tabContent.content }
             .reduce { acc, annotatedString -> acc + annotatedString }
         val lineRegex = Regex(".*\\R?") // Regex to match a full line including its newline characters
@@ -412,6 +413,10 @@ class TabViewModel
 
     override val chordHintsShown: LiveData<Boolean> = dataAccess.getLivePreference(Preference.CHORD_HINTS).map { p -> p?.value?.toBoolean() == true }
 
+    override val tabViewMode: LiveData<TabViewMode> = dataAccess.getLivePreference(Preference.TAB_VIEW_MODE).map { p ->
+        TabViewMode.entries.firstOrNull { it.name == p?.value } ?: TabViewMode.Normal
+    }
+
     // tab content as displayed, before transposition: repeated sections written out where referenced,
     // chord hints on sections written without chords
     private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded, chordHintsShown) { t, expand, hints ->
@@ -516,7 +521,12 @@ class TabViewModel
         return@combine transposedContent
     }
 
-    private val tabContent: LiveData<TabContent> = transposedContentString.map { transposed -> TabContent(urlHandler::openUri, transposed) }
+    // the transposed content as the chosen view mode shows it
+    private val shownContentString: LiveData<String> = transposedContentString.combine(tabViewMode) { c, mode ->
+        (mode ?: TabViewMode.Normal).apply(c ?: "")
+    }
+
+    private val tabContent: LiveData<TabContent> = shownContentString.map { shown -> TabContent(urlHandler::openUri, shown) }
     // transposed content converted to a list of TabContentBlock (tags are stripped and chords are annotations not text)
     override val content: LiveData<List<TabContentBlock>> = tabContent.map { tc -> tc.contentBlocks }
 
@@ -1005,6 +1015,12 @@ class TabViewModel
     fun onTagClick(tag: String) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.TAG_FILTER, tagKey(tag)))
+        }
+    }
+
+    fun onTabViewModeSelected(mode: TabViewMode) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.TAB_VIEW_MODE, mode.name))
         }
     }
 

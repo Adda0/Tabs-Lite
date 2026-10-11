@@ -121,3 +121,52 @@ private fun withChordsOf(source: String, target: String): String {
     }
     return if (source.startsWith(TAB_OPEN)) TAB_OPEN + body + TAB_CLOSE else body.toString()
 }
+
+/** How the tab screen shows a song */
+enum class TabViewMode {
+    /** Lyrics with their chords, as written */
+    Normal,
+    /** Lyrics and section labels only, for whoever sings */
+    LyricsOnly,
+    /** One line per section: its label and the chords it's played with */
+    ChordMap;
+
+    fun apply(content: String): String = when (this) {
+        Normal -> content
+        LyricsOnly -> lyricsOnly(content)
+        ChordMap -> chordMap(content)
+    }
+}
+
+/** The song without chords: chord tags taken out of the lyrics, lines of nothing but chords dropped */
+fun lyricsOnly(content: String): String {
+    val lines = content.split("\n").mapNotNull { line ->
+        if (CHORD_TAG.containsMatchIn(line) && !hasLyrics(line)) null else displayText(line).trimEnd()
+    }
+    // a dropped chord line between two blank lines (or before the first lyrics) would leave a gap
+    return lines.filterIndexed { i, line -> line.isNotBlank() || (i > 0 && lines[i - 1].isNotBlank()) }
+        .dropWhile { it.isBlank() }.joinToString("\n")
+}
+
+/**
+ * The song's chord progression: for each section (or paragraph, where there's no label) with
+ * chords, its label and the chords of each of its lines, lines separated by `|`, a chord repeated
+ * right after itself shown once. The chords stay tags, so they can be looked up.
+ */
+fun chordMap(content: String): String {
+    val lines = content.split("\n")
+    val map = mutableListOf<String>()
+    var start = 0
+    while (start < lines.size) {
+        if (displayText(lines[start]).isBlank() && !CHORD_TAG.containsMatchIn(lines[start])) { start++; continue }
+        var end = start + 1
+        while (end < lines.size && (displayText(lines[end]).isNotBlank() || CHORD_TAG.containsMatchIn(lines[end])) && labelOf(lines[end]) == null) end++
+        val progression = (start until end)
+            .map { i -> CHORD_TAG.findAll(lines[i]).map { it.value }.toList().fold(listOf<String>()) { chords, chord -> if (chords.lastOrNull() == chord) chords else chords + chord } }
+            .filter { it.isNotEmpty() }
+            .joinToString(" | ") { it.joinToString(" ") }
+        if (progression.isNotEmpty()) map.add(listOfNotNull(labelOf(lines[start]), progression).joinToString(" "))
+        start = end
+    }
+    return map.joinToString("\n")
+}

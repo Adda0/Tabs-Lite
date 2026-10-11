@@ -31,6 +31,9 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.RadioButton
+import com.gbros.tabslite.utilities.TabViewMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -82,6 +85,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit = {},
                  chordHintsShown: Boolean = false,
                  onChordHintsToggled: (shown: Boolean) -> Unit = {},
+                 tabViewMode: TabViewMode = TabViewMode.Normal,
+                 onTabViewModeSelected: (TabViewMode) -> Unit = {},
                  twoColumnView: Boolean = false,
                  onTwoColumnViewToggled: (Boolean) -> Unit = {},
                  onTextSizeDecreaseClick: () -> Unit = {},
@@ -227,6 +232,19 @@ fun TabTopAppBar(isFavorite: Boolean,
                     trailingIcon = { Checkbox(checked = chordHintsShown, onCheckedChange = null) },
                     onClick = { onChordHintsToggled(!chordHintsShown) }
                 )
+                HorizontalDivider()
+                for ((mode, label) in listOf(
+                    TabViewMode.Normal to R.string.tab_view_mode_normal,
+                    TabViewMode.LyricsOnly to R.string.tab_view_mode_lyrics_only,
+                    TabViewMode.ChordMap to R.string.tab_view_mode_chord_map,
+                )) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(label)) },
+                        trailingIcon = { RadioButton(selected = tabViewMode == mode, onClick = null) },
+                        onClick = { onTabViewModeSelected(mode) }
+                    )
+                }
+                HorizontalDivider()
                 DropdownMenuItem(
                     text = {
                         Row {

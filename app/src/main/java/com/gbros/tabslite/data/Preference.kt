@@ -110,5 +110,10 @@ data class Preference(
          */
         const val TAG_FILTER: String = "TAG_FILTER"
 
+        /**
+         * The preference name for how the tab screen shows songs, a [com.gbros.tabslite.utilities.TabViewMode] name
+         */
+        const val TAB_VIEW_MODE: String = "TAB_VIEW_MODE"
+
     }
 }

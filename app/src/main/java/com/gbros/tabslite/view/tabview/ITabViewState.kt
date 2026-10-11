@@ -59,6 +59,9 @@ interface ITabViewState {
     /** Tags from a local song file's header */
     val tags: LiveData<List<String>>
 
+    /** How the song is shown: as written, lyrics only, or as a chord map */
+    val tabViewMode: LiveData<com.gbros.tabslite.utilities.TabViewMode>
+
     /**
      * The author of the tab not the song
      */
