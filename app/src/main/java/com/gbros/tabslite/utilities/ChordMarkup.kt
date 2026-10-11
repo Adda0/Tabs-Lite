@@ -244,15 +244,18 @@ private fun tagChordToken(token: String, peelUnbalancedParens: Boolean = false):
     return split.prefix + names.joinToString("") { "{ch:${sanitizeChordNameForTag(it)}}" } + split.suffix
 }
 
+/** A chord-line token; two bracketed groups written back to back (`[Em D][G C]`) end one at `][` */
+private val CHORD_LINE_TOKEN_REGEX = Regex("\\S+?(?:\\](?=\\[)|(?=\\s|$))")
+
 /** [line] with every chord name on it tagged, keeping its section label and notation as text */
 private fun tagChordLine(line: String): String {
     val label = SECTION_LABEL_REGEX.find(line)?.value.orEmpty()
-    return label + Regex("\\S+").replace(line.substring(label.length)) { tagChordToken(it.value) }
+    return label + CHORD_LINE_TOKEN_REGEX.replace(line.substring(label.length)) { tagChordToken(it.value) }
 }
 
 /** [annotation] with every chord name in it tagged, keeping the prose and the grouping parens as text */
 private fun tagAnnotation(annotation: String): String =
-    Regex("\\S+").replace(annotation) { tagChordToken(it.value, peelUnbalancedParens = true) }
+    CHORD_LINE_TOKEN_REGEX.replace(annotation) { tagChordToken(it.value, peelUnbalancedParens = true) }
 
 /**
  * Whether [line] is a line of chords: every token on it is either a chord or the notation chord
@@ -260,8 +263,7 @@ private fun tagAnnotation(annotation: String): String =
  * lines and repeat counts alone (`R: 2x`) says nothing about which chords to play.
  */
 private fun isBareChordLine(line: String): Boolean {
-    val tokens = line.replaceFirst(SECTION_LABEL_REGEX, "").trim().split(Regex("\\s+"))
-        .filter { it.isNotEmpty() }
+    val tokens = CHORD_LINE_TOKEN_REGEX.findAll(line.replaceFirst(SECTION_LABEL_REGEX, "")).map { it.value }.toList()
         .map { splitChordToken(it) }
     return tokens.any { it.isChord } && tokens.all { it.isChord || it.isNotation }
 }
