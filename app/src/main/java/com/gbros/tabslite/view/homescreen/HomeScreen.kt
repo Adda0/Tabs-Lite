@@ -24,9 +24,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -107,6 +111,8 @@ fun NavGraphBuilder.homeScreen(
             onPopularSongListSortByChange = viewModel.popularSongListViewModel::onSortSelectionChange,
             localFilesSongListViewState = viewModel.localFilesSongListViewModel,
             onLocalFilesSongListSortByChange = viewModel.localFilesSongListViewModel::onSortSelectionChange,
+            tonightSongListViewState = viewModel.tonightSongListViewModel,
+            onSaveTonightAsPlaylist = viewModel::saveTonightAsPlaylist,
             onPlaylistsSortByChange = viewModel::sortPlaylists,
             tabSearchBarViewState = viewModel.tabSearchBarViewModel,
             onTabSearchBarQueryChange = viewModel.tabSearchBarViewModel::onQueryChange,
@@ -136,6 +142,8 @@ fun HomeScreen(
     onPopularSongListSortByChange: (SortBy) -> Unit,
     localFilesSongListViewState: ISongListViewState,
     onLocalFilesSongListSortByChange: (SortBy) -> Unit,
+    tonightSongListViewState: ISongListViewState,
+    onSaveTonightAsPlaylist: (title: String) -> Unit,
     onPlaylistsSortByChange: (PlaylistsSortBy) -> Unit,
     tabSearchBarViewState: ITabSearchBarViewState,
     onTabSearchBarQueryChange: (query: String) -> Unit,
@@ -153,8 +161,8 @@ fun HomeScreen(
     navigateToPlaylistEntryById: (id: Int) -> Unit,
     onNavigateToCreateTab: () -> Unit
 ) {
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
-    val secondaryPagerState = rememberPagerState(initialPage = 0, pageCount = { 4 })
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 5 })
+    val secondaryPagerState = rememberPagerState(initialPage = 0, pageCount = { 5 })
     val scrollingFollowingPair by remember {  // handle the sort by dropdown being in a separate pager
         derivedStateOf {
             if (pagerState.isScrollInProgress) {
@@ -302,6 +310,14 @@ fun HomeScreen(
                 ) {
                     pagerNav = if (pagerNav != 3) 3 else -1
                 }
+                TabRowItem(
+                    selected = pagerState.currentPage == 4,
+                    inactiveIcon = Icons.Outlined.History,
+                    activeIcon = Icons.Filled.History,
+                    title = stringResource(id = R.string.title_tonight_page)
+                ) {
+                    pagerNav = if (pagerNav != 4) 4 else -1
+                }
             }
 
             // Sort By dropdowns
@@ -337,6 +353,23 @@ fun HomeScreen(
                         selectedSort = localFilesSongListViewState.sortBy.observeAsState().value,
                         onOptionSelected = onLocalFilesSongListSortByChange
                     )
+
+                    // Tonight page
+                    4 -> {
+                        val title = stringResource(R.string.title_tonight_playlist, java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT).format(java.util.Date()))
+                        val savedMessage = stringResource(R.string.message_tonight_saved_as_playlist, title)
+                        Button(
+                            onClick = {
+                                onSaveTonightAsPlaylist(title)
+                                android.widget.Toast.makeText(context, savedMessage, android.widget.Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = tonightSongListViewState.songs.observeAsState(listOf()).value.isNotEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.secondary)
+                        ) {
+                            Text(stringResource(R.string.action_save_tonight_as_playlist))
+                        }
+                    }
                 }
             }
         }
@@ -383,6 +416,15 @@ fun HomeScreen(
                     navigateToTabById = navigateToTabByTabId,
                     navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
                     navigateByPlaylistEntryId = true,  // open as playlist entries so next/previous song works
+                )
+
+                // Tonight page
+                4 -> SongListView(
+                    viewState = tonightSongListViewState,
+                    emptyListText = stringResource(R.string.empty_tonight),
+                    navigateToTabById = navigateToTabByTabId,
+                    navigateToTabByPlaylistEntryId = navigateToPlaylistEntryById,
+                    navigateByPlaylistEntryId = false,
                 )
             }
         }
@@ -486,6 +528,8 @@ private fun HomeScreenPreview() {
             onPopularSongListSortByChange = {},
             localFilesSongListViewState = songListState,
             onLocalFilesSongListSortByChange = {},
+            tonightSongListViewState = songListState,
+            onSaveTonightAsPlaylist = {},
             onPlaylistsSortByChange = {},
             tabSearchBarViewState = tabSearchBarViewState,
             onTabSearchBarQueryChange = {},

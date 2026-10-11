@@ -31,6 +31,10 @@
     <string name="title_popular_playlist" translation_description="The title of the Popular playlist/home tab">Popular</string>
     <string name="title_playlists_page" translation_description="The title of the Playlists home tab">Playlists</string>
     <string name="title_local_files_page" translation_description="The title of the home tab listing songs imported from a local folder">Local files</string>
+    <string name="title_tonight_page" translation_description="The title of the home tab listing the songs played in the last 12 hours">Tonight</string>
+    <string name="title_tonight_playlist" translation_description="Title of a playlist saved from the Tonight tab; the argument is today\'s date">Tonight %1$s</string>
+    <string name="action_save_tonight_as_playlist" translation_description="Button on the Tonight tab that saves its songs as a new playlist">Save as playlist</string>
+    <string name="message_tonight_saved_as_playlist" translation_description="Shown after the Tonight songs were saved as a playlist; the argument is its title">Saved as playlist \"%1$s\"</string>
     <string name="title_add_to_playlist_dialog" translation_description="The title of the Add To Playlist dialog">Add to playlist</string>
     <string name="title_create_playlist_dialog" translation_description="Title for the Create Playlist dialog">Create playlist</string>
     <string name="title_create_song" translation_description="Title for the Create Song screen">Create Song</string>
@@ -42,6 +46,7 @@
     <string name="empty_favorites" translation_description="The text shown on the Favorites page when no songs have been favorited">Select the heart icon on any song to save it offline in this list.</string>
     <string name="empty_popular" translation_description="The text shown on the Popular page when no popular songs have been loaded from the internet (yet).">Today\'s popular songs will load when you\'re connected to the internet.</string>
     <string name="empty_local_files" translation_description="The text shown on the Local files page when no songs have been imported from a local folder">Choose \"Import songs from folder\" in the menu to list your song files here.</string>
+    <string name="empty_tonight" translation_description="The text shown on the Tonight page when no song was played in the last 12 hours">Songs you play (open for half a minute or autoscroll) show up here for 12 hours.</string>
 
     <string name="generic_action_close">Close</string>
     <string name="generic_action_confirm">Confirm</string>

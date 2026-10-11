@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
  * to be used as a sub-view under another view model
  */
 class SongListViewModel(
-    playlistId: Int,
+    tabs: LiveData<List<TabWithDataPlaylistEntry>>,
     defaultSortBy: SortBy,
     private val sortPreferenceName: String? = null,
     private val dataAccess: DataAccess
@@ -44,7 +44,7 @@ class SongListViewModel(
     /**
      * The tabs to display in this song list
      */
-    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = dataAccess.getPlaylistTabs(playlistId).combine(sortBy, dataAccess.getLastPlayed()) { playlistTabs, currentSortBy, plays ->
+    override val songs: LiveData<List<TabWithDataPlaylistEntry>> = tabs.combine(sortBy, dataAccess.getLastPlayed()) { playlistTabs, currentSortBy, plays ->
         val lastPlayed = plays.orEmpty().associate { it.tabId to it.lastPlayed }
         when(currentSortBy) {
             SortBy.Name -> playlistTabs?.sortedBy { it.songName } ?: listOf()

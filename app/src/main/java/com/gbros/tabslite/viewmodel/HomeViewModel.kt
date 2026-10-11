@@ -119,7 +119,7 @@ class HomeViewModel
      * The view model for the list of favorited songs ("Favorites" tab)
      */
     val favoriteSongListViewModel = SongListViewModel(
-        playlistId = Playlist.FAVORITES_PLAYLIST_ID,
+        tabs = dataAccess.getPlaylistTabs(Playlist.FAVORITES_PLAYLIST_ID),
         defaultSortBy = SortBy.DateAdded,
         sortPreferenceName = Preference.FAVORITES_SORT,
         dataAccess = dataAccess
@@ -129,7 +129,7 @@ class HomeViewModel
      * The view model for the list of popular songs ("Popular" tab)
      */
     val popularSongListViewModel = SongListViewModel(
-        playlistId = Playlist.TOP_TABS_PLAYLIST_ID,
+        tabs = dataAccess.getPlaylistTabs(Playlist.TOP_TABS_PLAYLIST_ID),
         defaultSortBy = SortBy.Popularity,
         sortPreferenceName = Preference.POPULAR_SORT,
         dataAccess = dataAccess
@@ -139,9 +139,18 @@ class HomeViewModel
      * The view model for the list of songs imported from the local song folder ("Local files" tab)
      */
     val localFilesSongListViewModel = SongListViewModel(
-        playlistId = Playlist.LOCAL_FILES_PLAYLIST_ID,
+        tabs = dataAccess.getPlaylistTabs(Playlist.LOCAL_FILES_PLAYLIST_ID),
         defaultSortBy = SortBy.Name,
         sortPreferenceName = Preference.LOCAL_FILES_SORT,
+        dataAccess = dataAccess
+    )
+
+    /**
+     * The songs played in the last 12 hours, last played first ("Tonight" tab)
+     */
+    val tonightSongListViewModel = SongListViewModel(
+        tabs = dataAccess.getTabsPlayedSince(System.currentTimeMillis() - TONIGHT_MS),
+        defaultSortBy = SortBy.LastPlayed,
         dataAccess = dataAccess
     )
 
@@ -311,6 +320,21 @@ class HomeViewModel
     }
 
     /**
+     * Saves tonight's songs as a new playlist, in the order they were played
+     */
+    fun saveTonightAsPlaylist(title: String) {
+        val lastPlayedFirst = tonightSongListViewModel.songs.value.orEmpty()
+        if (lastPlayedFirst.isEmpty()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            val now = System.currentTimeMillis()
+            val playlistId = dataAccess.upsert(Playlist(userCreated = true, title = title, description = "", dateCreated = now, dateModified = now)).toInt()
+            for (song in lastPlayedFirst.asReversed()) {
+                dataAccess.appendToPlaylist(playlistId, song.tabId, transpose = song.defaultTranspose)
+            }
+        }
+    }
+
+    /**
      * Import (or re-import) songs from the given local folder into a "Local Files" playlist.
      * Persists the folder's URI so future rescans (including [rescanLocalSongsFolder]) don't need
      * the user to pick it again.
@@ -361,3 +385,6 @@ class HomeViewModel
     //#endregion
 
 }
+
+/** How far back the "Tonight" list reaches */
+private const val TONIGHT_MS = 12 * 60 * 60 * 1000L
