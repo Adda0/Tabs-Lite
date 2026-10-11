@@ -18,7 +18,7 @@ const val DATABASE_NAME = "local-tabs-db"
 /**
  * The Room database for this app
  */
-@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class], version = 24)
+@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class, PlayHistory::class], version = 25)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dataAccess(): DataAccess
@@ -334,6 +334,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_24_25 = object : Migration(24, 25) {
+            // when each song was played, for sorting by it and listing tonight's songs
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS play_history (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, tab_id TEXT NOT NULL, played_at INTEGER NOT NULL)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_play_history_tab_id ON play_history (tab_id)")
+            }
+        }
+
         // Create and pre-populate the database. See this article for more details:
         // https://medium.com/google-developers/7-pro-tips-for-room-fbadea4bfbd1#4785
         private fun buildDatabase(context: Context): AppDatabase {
@@ -343,7 +351,7 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
                         MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
                         MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
-                        MIGRATION_22_23, MIGRATION_23_24)
+                        MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25)
                     .build()
         }
     }

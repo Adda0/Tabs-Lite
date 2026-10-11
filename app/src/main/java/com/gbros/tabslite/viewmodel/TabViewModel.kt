@@ -23,6 +23,7 @@ import com.gbros.tabslite.LoadingState
 import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.FontStyle
+import com.gbros.tabslite.data.PlayHistory
 import com.gbros.tabslite.data.Preference
 import com.gbros.tabslite.data.chord.Chord
 import com.gbros.tabslite.data.chord.ChordVariation
@@ -61,6 +62,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -837,7 +839,20 @@ class TabViewModel
     }
 
     fun onAutoscrollButtonClick() {
+        if (autoscrollPaused.value != false) recordPlay()
         _autoscrollPaused.postValue(autoscrollPaused.value == false)  // toggle the pause state of autoscroll
+    }
+
+    private var playRecorded = false
+
+    /** Counts this opening of the song as played, once */
+    private fun recordPlay() {
+        val tabId = tab.value?.tabId ?: return
+        if (playRecorded) return
+        playRecorded = true
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.insert(PlayHistory(tabId = tabId, playedAt = System.currentTimeMillis()))
+        }
     }
 
     fun onFavoriteButtonClick() {
@@ -1012,7 +1027,17 @@ class TabViewModel
                 ?: autoscrollDelayForTempo(loadedTab.tempo, linePx)?.let { sliderForDelay(it, mapAutoscrollSliderToScrollDelay) }
             if (songSpeed != null) _autoscrollSpeedSliderPosition.value = songSpeed
         }
+
+        // a song open this long was played, even without autoscroll
+        viewModelScope.launch {
+            tab.asFlow().filterNotNull().first()
+            delay(PLAYED_AFTER_MS)
+            recordPlay()
+        }
     }
 
     //#endregion
 }
+
+/** How long a song has to be open to count as played */
+private const val PLAYED_AFTER_MS = 30_000L

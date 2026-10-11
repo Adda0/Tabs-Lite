@@ -11,7 +11,9 @@ enum class SortBy {
     DateAdded,
     Name,
     ArtistName,
-    Popularity;
+    Popularity,
+    LastPlayed,
+    NotPlayedRecently;
 
     companion object {
         @Composable
@@ -21,6 +23,8 @@ enum class SortBy {
                 Popularity -> stringResource(id = R.string.sort_by_popularity)
                 ArtistName -> stringResource(id = R.string.sort_by_artist_name)
                 Name -> stringResource(id = R.string.sort_by_title)
+                LastPlayed -> stringResource(id = R.string.sort_by_last_played)
+                NotPlayedRecently -> stringResource(id = R.string.sort_by_not_played_recently)
             }
         }
     }

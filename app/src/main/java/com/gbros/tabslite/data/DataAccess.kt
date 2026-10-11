@@ -424,6 +424,25 @@ interface DataAccess {
     }
 
     //#endregion
+
+    //#region play history table
+
+    @Insert
+    suspend fun insert(play: PlayHistory)
+
+    @Query("SELECT tab_id, MAX(played_at) AS last_played FROM play_history GROUP BY tab_id")
+    fun getLastPlayed(): LiveData<List<LastPlayed>>
+
+    /** Songs played since [sinceMs], last played first; [TabWithDataPlaylistEntry.dateAdded] is when */
+    @Query("""
+        SELECT tabs.*, tabs.id AS tab_id, -1 AS entry_id, 0 AS playlist_id, NULL AS next_entry_id, NULL AS prev_entry_id,
+            MAX(play_history.played_at) AS date_added, 0 AS transpose, NULL AS user_created, NULL AS title,
+            NULL AS date_created, NULL AS date_modified, NULL AS description
+        FROM tabs INNER JOIN play_history ON play_history.tab_id = tabs.id
+        WHERE play_history.played_at >= :sinceMs GROUP BY tabs.id ORDER BY date_added DESC""")
+    fun getTabsPlayedSince(sinceMs: Long): LiveData<List<TabWithDataPlaylistEntry>>
+
+    //#endregion
 }
 
 /**
