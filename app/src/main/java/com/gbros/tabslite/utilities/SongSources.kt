@@ -19,6 +19,8 @@ enum class SongSource(val prefix: String, val siteName: String) {
     PLNY_ZPEVNIK("plnyzpevnik", "plnyzpevnik.cz"),
     VELKY_ZPEVNIK("velkyzpevnik", "velkyzpevnik.cz"),
     KYTARISTKA("kytaristka", "kytaristka.cz"),
+    SUPERMUSIC("supermusic", "supermusic.cz"),
+    ZPEVNIK_WZ("zpevnikwz", "zpevnik.wz.cz"),
 }
 
 /**
@@ -37,6 +39,8 @@ data class SongbookSong(val source: SongSource, val path: String, val version: I
         SongSource.PLNY_ZPEVNIK -> "https://plnyzpevnik.cz/zpevnik/$path"
         SongSource.VELKY_ZPEVNIK -> "https://www.velkyzpevnik.cz/$path"
         SongSource.KYTARISTKA -> "https://kytaristka.cz/zpevnik/$path"
+        SongSource.SUPERMUSIC -> "https://www.supermusic.cz/piesen.php?idpiesne=$path"
+        SongSource.ZPEVNIK_WZ -> "https://www.zpevnik.wz.cz/index.php?id=$path"
     }
 }
 
@@ -89,6 +93,8 @@ object SongSources {
         SongSource.PLNY_ZPEVNIK -> searchPlnyZpevnik(query)
         SongSource.VELKY_ZPEVNIK -> searchVelkyZpevnik(query)
         SongSource.KYTARISTKA -> searchKytaristka(query)
+        SongSource.SUPERMUSIC -> searchSuperMusic(query)
+        SongSource.ZPEVNIK_WZ -> searchZpevnikWz(query)
     }.take(MAX_SEARCH_RESULTS)
 
     /**
@@ -105,6 +111,8 @@ object SongSources {
             SongSource.PLNY_ZPEVNIK -> downloadPlnyZpevnik(page)
             SongSource.VELKY_ZPEVNIK -> listOf(downloadVelkyZpevnik(page))
             SongSource.KYTARISTKA -> listOf(downloadKytaristka(page))
+            SongSource.SUPERMUSIC -> listOf(downloadSuperMusic(page))
+            SongSource.ZPEVNIK_WZ -> listOf(downloadZpevnikWz(page))
         }
     }
 
@@ -303,6 +311,98 @@ object SongSources {
 
     //#endregion
 
+    //#region supermusic.cz
+
+    /** The `_sm_verified` cookie the site's browser check sets, once solved; reused until the site asks again */
+    @Volatile private var superMusicCookie: String? = null
+
+    private val SUPERMUSIC_RESULT_REGEX = Regex(
+        "<a href=\"piesen\\.php\\?id=(\\d+)\">(.*?)</a>.*?class=\"result-artist\">\\s*<a[^>]*>(.*?)</a>.*?class=\"result-song-type\">(.*?)</span>",
+        RegexOption.DOT_MATCHES_ALL,
+    )
+
+    /** The site's own search page, songs with chords only (it also lists lyrics, tabs and sheet music) */
+    private fun searchSuperMusic(query: String): List<SongSearchHit> =
+        htmlBlocks(getSuperMusic("https://www.supermusic.cz/najdi.php?hladane=${encode(query)}"), "class=\"result-item\"")
+            .mapNotNull { SUPERMUSIC_RESULT_REGEX.find(it) }
+            .filter { it.groupValues[4].contains("akord") }
+            .map { SongSearchHit(SongbookSong(SongSource.SUPERMUSIC, it.groupValues[1]), htmlText(it.groupValues[2]).trim(), htmlText(it.groupValues[3]).trim()) }
+
+    /** Lyrics with each chord inline at its syllable, in `<sup><a class="chord">` */
+    private fun downloadSuperMusic(page: SongbookSong): DownloadedSong {
+        val html = getSuperMusic(page.pageUrl)
+        val text = Regex("<div class=\"chord-text\" id=\"chordText\">(.*?)</div>", RegexOption.DOT_MATCHES_ALL).find(html)?.groupValues?.get(1)
+            ?: throw SongPageException("No song found on ${page.pageUrl}")
+        val tagged = Regex("<sup>\\s*<a[^>]*class=\"chord\"[^>]*>(.*?)</a>\\s*</sup>", RegexOption.DOT_MATCHES_ALL)
+            .replace(text) { chord -> chordTag(htmlText(chord.groupValues[1]).trim()) }
+        val (songName, artistName) = musicRecording(html) ?: throw SongPageException("No song found on ${page.pageUrl}")
+        return DownloadedSong(
+            song = page,
+            versionCount = 1,
+            songName = songName,
+            artistName = artistName,
+            content = convertChordSheet(htmlText(tagged.replace(Regex("<br\\s*/?>"), "\n")).trimEnd()),
+        )
+    }
+
+    /** [url] from supermusic.cz, answering its browser check first when it asks for one */
+    private fun getSuperMusic(url: String): String {
+        val first = request(url, cookie = superMusicCookie)
+        val check = Regex("data-n=\"([^\"]+)\" data-l=\"(\\d+)\" data-t=\"([^\"]+)\" data-u=\"([^\"]+)\"").find(first.body)
+        if (check == null || first.body.length > 4096) return first.bodyOrThrow(url)
+        val (nonce, limit, token, target) = check.destructured
+        val answer = solveSuperMusicCheck(nonce, limit.toLong())
+        val solved = request("https://www.supermusic.cz${htmlText(target)}${if ('?' in target) '&' else '?'}_smc=$token.$answer")
+        superMusicCookie = solved.cookies.joinToString("; ").ifEmpty { null }
+        return solved.bodyOrThrow(url)
+    }
+
+    /** The site's browser check: the first `i` whose 32-bit FNV-1a hash of `<nonce>:<i>` is below [limit] */
+    private fun solveSuperMusicCheck(nonce: String, limit: Long): Int {
+        for (i in 0 until 100_000_000) {
+            var hash = 0x811c9dc5L
+            for (byte in "$nonce:$i".toByteArray(Charsets.UTF_8)) {
+                hash = ((hash xor (byte.toLong() and 0xff)) * 16777619L) and 0xffffffffL
+            }
+            if (hash < limit) return i
+        }
+        throw SongPageException("supermusic.cz browser check could not be solved")
+    }
+
+    //#endregion
+
+    //#region zpevnik.wz.cz
+
+    private val ZPEVNIK_WZ_RESULT_REGEX = Regex("<li><a href=\"\\?id=(\\d+)\">(.*?)</a> \\(<a href=\"\\?id=\\d+\">(.*?)</a>\\)</li>")
+
+    private fun searchZpevnikWz(query: String): List<SongSearchHit> =
+        ZPEVNIK_WZ_RESULT_REGEX.findAll(get("https://www.zpevnik.wz.cz/index.php?pg=vysledky_vyhledavani&nazev=${encode(query)}&slova=&autor="))
+            .map { SongSearchHit(SongbookSong(SongSource.ZPEVNIK_WZ, it.groupValues[1]), htmlText(it.groupValues[2]).trim(), zpevnikWzArtist(it.groupValues[3])) }
+            .toList()
+
+    /** The site files songs without a known artist under categories it marks with a dash: `- Ostatní` */
+    private fun zpevnikWzArtist(html: String): String = htmlText(html).trim().removePrefix("-").trim()
+
+    /** A plain chord sheet, chords on their own lines above the lyrics, in `<div class="song">` */
+    private fun downloadZpevnikWz(page: SongbookSong): DownloadedSong {
+        val html = get(page.pageUrl)
+        val heading = Regex("<h1>(.*?)\\(<a href=\"\\?id_a=\\d+\">(.*?)</a>\\)</h1>", RegexOption.DOT_MATCHES_ALL).find(html)
+        val sheet = Regex("<div class=\"song\">(.*?)</div>", RegexOption.DOT_MATCHES_ALL).find(html)?.groupValues?.get(1)
+        if (heading == null || sheet == null) throw SongPageException("No song found on ${page.pageUrl}")
+        return DownloadedSong(
+            song = page,
+            versionCount = 1,
+            songName = htmlText(heading.groupValues[1]).trim(),
+            artistName = zpevnikWzArtist(heading.groupValues[2]),
+            content = convertChordSheet(htmlText(sheet.replace("\r\n", "\n").replace(Regex("<br\\s*/?>"), "\n")).trimEnd()),
+        )
+    }
+
+    /** The parts of [html] that each start with [marker], up to the next one */
+    private fun htmlBlocks(html: String, marker: String): List<String> = html.split(marker).drop(1)
+
+    //#endregion
+
     //#region shared parsing
 
     private fun songFromChordPro(song: SongbookSong, versionCount: Int, chordPro: String, recording: Pair<String, String>?): DownloadedSong {
@@ -399,12 +499,16 @@ object SongSources {
 
     //#region HTTP
 
-    private class Response(val code: Int, val body: String) {
+    private class Response(val code: Int, val body: String, val headers: Map<String?, List<String>> = emptyMap()) {
         fun bodyOrThrow(what: String): String = when {
             code == 404 -> throw FileNotFoundException("$what: not found (404)")
             code !in 200..299 -> throw IOException("$what: HTTP $code")
             else -> body
         }
+
+        /** The `name=value` of every cookie the response sets */
+        val cookies: List<String> get() = headers.entries.filter { it.key.equals("Set-Cookie", ignoreCase = true) }
+            .flatMap { it.value }.map { it.substringBefore(';') }
     }
 
     private fun get(url: String): String = request(url).bodyOrThrow(url)
@@ -426,7 +530,7 @@ object SongSources {
             }
             val code = connection.responseCode
             val stream = if (code >= 400) connection.errorStream else connection.inputStream
-            return Response(code, stream?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty())
+            return Response(code, stream?.use { it.readBytes().toString(Charsets.UTF_8) }.orEmpty(), connection.headerFields)
         } finally {
             connection.disconnect()
         }
