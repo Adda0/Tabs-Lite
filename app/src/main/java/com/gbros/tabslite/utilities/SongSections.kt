@@ -51,7 +51,8 @@ private fun hasLyrics(line: String) = LETTER.containsMatchIn(REPEAT_COUNT.replac
 /**
  * A later label with nothing but a repeat count after it (`R:`, `R: 2x`) stands for the section of
  * the same kind written out earlier: its lyrics are shown there again, with its chords only when
- * [includeChords] is set (chord-only lines are dropped without them). With a repeat count the
+ * [includeChords] is set. Without them, chord-only lines are dropped and the `[tab]` wrappers too,
+ * since a `[tab]` block keeps an empty row above each line for its chords. With a repeat count the
  * reference line stays and the copy follows with its label blanked out.
  */
 fun expandSectionReferences(content: String, includeChords: Boolean = true): String {
@@ -65,8 +66,8 @@ fun expandSectionReferences(content: String, includeChords: Boolean = true): Str
         val source = written[section.key]
         if (source != null && section.end == section.start + 1 && REFERENCE_REST.matches(rest) && !CHORD_TAG.containsMatchIn(lines[section.start])) {
             val copy = lines.subList(source.start, source.end).let { linesSublist ->
-                if (includeChords) linesSublist else linesSublist.map { CHORD_TAG.replace(it, "") }
-                    .filter { displayText(it).isNotBlank() } // written sections always keep their lyrics
+                if (includeChords) linesSublist else linesSublist.map { CHORD_TAG.replace(it, "").replace(TAB_OPEN, "").replace(TAB_CLOSE, "") }
+                    .filter { it.isNotBlank() } // written sections always keep their lyrics
             }
             expansions[section.start] = if (rest.isBlank()) copy else listOf(lines[section.start]) + blankLabel(copy.first()) + copy.drop(1)
         } else if (source == null && (section.start until section.end).any { hasLyrics(lines[it]) }) {
