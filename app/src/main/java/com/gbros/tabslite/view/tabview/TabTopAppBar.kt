@@ -85,6 +85,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit = {},
                  chordHintsShown: Boolean = false,
                  onChordHintsToggled: (shown: Boolean) -> Unit = {},
+                 headerDiagramsShown: Boolean = false,
+                 onHeaderDiagramsToggled: (shown: Boolean) -> Unit = {},
                  tabViewMode: TabViewMode = TabViewMode.Normal,
                  onTabViewModeSelected: (TabViewMode) -> Unit = {},
                  twoColumnView: Boolean = false,
@@ -231,6 +233,11 @@ fun TabTopAppBar(isFavorite: Boolean,
                     text = { Text(text = stringResource(R.string.tab_chord_hints)) },
                     trailingIcon = { Checkbox(checked = chordHintsShown, onCheckedChange = null) },
                     onClick = { onChordHintsToggled(!chordHintsShown) }
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.tab_header_diagrams)) },
+                    trailingIcon = { Checkbox(checked = headerDiagramsShown, onCheckedChange = null) },
+                    onClick = { onHeaderDiagramsToggled(!headerDiagramsShown) }
                 )
                 HorizontalDivider()
                 for ((mode, label) in listOf(

@@ -188,6 +188,9 @@ interface ITabViewState {
     /** Whether verses and choruses written without chords show those of the first one of their kind */
     val chordHintsShown: LiveData<Boolean>
 
+    /** Whether the song header shows the rhythm and every chord used as diagrams */
+    val headerDiagramsShown: LiveData<Boolean>
+
     /**
      * Map of chord names to their first chord variation for pinned display
      */

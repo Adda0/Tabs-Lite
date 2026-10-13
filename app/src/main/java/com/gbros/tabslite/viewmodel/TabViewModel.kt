@@ -413,6 +413,8 @@ class TabViewModel
 
     override val chordHintsShown: LiveData<Boolean> = dataAccess.getLivePreference(Preference.CHORD_HINTS).map { p -> p?.value?.toBoolean() == true }
 
+    override val headerDiagramsShown: LiveData<Boolean> = dataAccess.getLivePreference(Preference.HEADER_DIAGRAMS).map { p -> p?.value?.toBoolean() == true }
+
     override val tabViewMode: LiveData<TabViewMode> = dataAccess.getLivePreference(Preference.TAB_VIEW_MODE).map { p ->
         TabViewMode.entries.firstOrNull { it.name == p?.value } ?: TabViewMode.Normal
     }
@@ -1012,6 +1014,12 @@ class TabViewModel
     fun onChordHintsToggled(shown: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.CHORD_HINTS, shown.toString()))
+        }
+    }
+
+    fun onHeaderDiagramsToggled(shown: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.HEADER_DIAGRAMS, shown.toString()))
         }
     }
 

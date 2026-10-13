@@ -173,6 +173,7 @@ fun NavGraphBuilder.tabScreen(
             onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
+            onHeaderDiagramsToggled = viewModel::onHeaderDiagramsToggled,
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
@@ -268,6 +269,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onDetailsHiddenToggled = viewModel::onDetailsHiddenToggled,
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
+            onHeaderDiagramsToggled = viewModel::onHeaderDiagramsToggled,
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
@@ -320,6 +322,7 @@ fun TabScreen(
     onDetailsHiddenToggled: (hidden: Boolean) -> Unit,
     onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit,
     onChordHintsToggled: (shown: Boolean) -> Unit,
+    onHeaderDiagramsToggled: (shown: Boolean) -> Unit,
     onTabViewModeSelected: (TabViewMode) -> Unit,
     onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
     onEditTabClick: (songId: String, tabId: String) -> Unit,
@@ -365,6 +368,7 @@ fun TabScreen(
     val detailsHidden by viewState.detailsHidden.observeAsState(false)
     val sectionReferencesExpanded by viewState.sectionReferencesExpanded.observeAsState(true)
     val chordHintsShown by viewState.chordHintsShown.observeAsState(false)
+    val headerDiagramsShown by viewState.headerDiagramsShown.observeAsState(false)
     val tabViewMode by viewState.tabViewMode.observeAsState(TabViewMode.Normal)
     val chordBlocks = viewState.content.observeAsState(emptyList()).value
     val loadingState = viewState.state.observeAsState(LoadingState.Loading).value
@@ -425,6 +429,8 @@ fun TabScreen(
                 onSectionReferencesExpandedToggled = onSectionReferencesExpandedToggled,
                 chordHintsShown = chordHintsShown,
                 onChordHintsToggled = onChordHintsToggled,
+                headerDiagramsShown = headerDiagramsShown,
+                onHeaderDiagramsToggled = onHeaderDiagramsToggled,
                 tabViewMode = tabViewMode,
                 onTabViewModeSelected = onTabViewModeSelected,
                 twoColumnView = twoColumnView,
@@ -475,7 +481,11 @@ fun TabScreen(
                     tempo = viewState.tempo.observeAsState("").value,
                     rhythm = viewState.rhythm.observeAsState("").value,
                     tags = viewState.tags.observeAsState(emptyList()).value,
-                    onTagClick = onTagClick
+                    onTagClick = onTagClick,
+                    diagramsShown = headerDiagramsShown,
+                    chordVariations = viewState.pinnedChordVariations.observeAsState(emptyList()).value,
+                    instrument = viewState.chordInstrument.observeAsState(Instrument.Guitar).value,
+                    onChordClick = onTextClick
                 )
 
                 TabTransposeSection(
@@ -571,6 +581,8 @@ fun TabScreen(
                     onSectionReferencesExpandedToggled = onSectionReferencesExpandedToggled,
                     chordHintsShown = chordHintsShown,
                     onChordHintsToggled = onChordHintsToggled,
+                    headerDiagramsShown = headerDiagramsShown,
+                    onHeaderDiagramsToggled = onHeaderDiagramsToggled,
                     tabViewMode = tabViewMode,
                     onTabViewModeSelected = onTabViewModeSelected,
                     twoColumnView = twoColumnView,
@@ -621,7 +633,11 @@ fun TabScreen(
                         tempo = viewState.tempo.observeAsState("").value,
                         rhythm = viewState.rhythm.observeAsState("").value,
                         tags = viewState.tags.observeAsState(emptyList()).value,
-                        onTagClick = onTagClick
+                        onTagClick = onTagClick,
+                        diagramsShown = headerDiagramsShown,
+                        chordVariations = viewState.pinnedChordVariations.observeAsState(emptyList()).value,
+                        instrument = viewState.chordInstrument.observeAsState(Instrument.Guitar).value,
+                        onChordClick = onTextClick
                     )
 
                     TabTransposeSection(
@@ -848,6 +864,7 @@ private fun TabViewPreview() {
         override val detailsHidden: LiveData<Boolean>,
         override val sectionReferencesExpanded: LiveData<Boolean>,
         override val chordHintsShown: LiveData<Boolean>,
+        override val headerDiagramsShown: LiveData<Boolean>,
         override val pinnedChordVariations: LiveData<List<ChordVariation>>,
         override val fontStylePreference: LiveData<FontStyle>
 
@@ -901,6 +918,7 @@ private fun TabViewPreview() {
             detailsHidden = MutableLiveData(false),
             sectionReferencesExpanded = MutableLiveData(true),
             chordHintsShown = MutableLiveData(false),
+            headerDiagramsShown = MutableLiveData(true),
             pinnedChordVariations = MutableLiveData(emptyList()),
             fontStylePreference = MutableLiveData(FontStyle.Modern)
         )
@@ -985,6 +1003,7 @@ private fun TabViewPreview() {
             onDetailsHiddenToggled = { },
             onSectionReferencesExpandedToggled = { },
             onChordHintsToggled = { },
+            onHeaderDiagramsToggled = { },
             onTabViewModeSelected = { },
             onEditTabClick = { _, _ -> },
             onTwoColumnViewToggled = { },

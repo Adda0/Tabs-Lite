@@ -93,6 +93,24 @@ fun formatRhythms(references: List<RhythmReference>, tempo: String, rhythms: Map
 }
 
 /**
+ * One row of a [formatRhythms] table split up for drawing: [cells] are its bars between `|`s, each
+ * a list of strums (`D`, `u`, `-`, `vvv`), without the note in parentheses after them. The beat
+ * header row has a blank [name]; a reference without a known pattern has no cells.
+ */
+data class RhythmRow(val name: String, val cells: List<List<String>>)
+
+private val RHYTHM_NOTE_REGEX = Regex("\\s*\\(.*\\)\\s*$")
+
+/** [formatted] (the output of [formatRhythms]) split into its rows */
+fun parseRhythmRows(formatted: String): List<RhythmRow> = formatted.lines().filter { it.isNotBlank() }.map { line ->
+    val bar = line.indexOf('|')
+    if (bar == -1) return@map RhythmRow(line.trim(), emptyList())
+    val cells = RHYTHM_NOTE_REGEX.replace(line.substring(bar + 1), "").split("|")
+        .map { cell -> cell.trim().split(Regex("\\s+")).filter { it.isNotEmpty() } }
+    RhythmRow(line.substring(0, bar).trim(), cells)
+}
+
+/**
  * One fingering from the chords file. [frets] runs from the low E string to the high e string;
  * `null` is a muted string, 0 an open one.
  */

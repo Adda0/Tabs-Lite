@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.chrynan.chords.compose.ChordWidget
@@ -80,19 +81,20 @@ fun PinnedChords(
 }
 
 /**
- * Individual chord diagram chip
+ * Individual chord diagram chip, [diagramWidth] wide (the chip adds a little around it)
  */
 @OptIn(ExperimentalUnsignedTypes::class)
 @Composable
-private fun ChordDiagramChip(
+internal fun ChordDiagramChip(
     chord: ChordVariation,
     instrument: Instrument,
     modifier: Modifier = Modifier,
+    diagramWidth: Dp = 80.dp,
     onClick: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
-            .width(90.dp)
+            .width(diagramWidth + 10.dp)
             .clickable(onClick = onClick)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(vertical = 3.dp, horizontal = 2.dp),
@@ -129,8 +131,8 @@ private fun ChordDiagramChip(
             chord = chord,
             chart = chartLayout,
             modifier = Modifier
-                .width(80.dp)
-                .height(100.dp),
+                .width(diagramWidth)
+                .height(diagramWidth * 1.25f),
             viewData = ChordViewData(
                 noteColor = MaterialTheme.colorScheme.primary.toChrynanRgba(),
                 noteLabelTextColor = MaterialTheme.colorScheme.onPrimary.toChrynanRgba(),

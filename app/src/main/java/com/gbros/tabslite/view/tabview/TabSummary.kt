@@ -40,6 +40,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.gbros.tabslite.R
+import com.gbros.tabslite.data.chord.ChordVariation
+import com.gbros.tabslite.data.chord.Instrument
 import com.gbros.tabslite.data.tab.ITab
 import com.gbros.tabslite.data.tab.Tab
 import com.gbros.tabslite.ui.theme.AppTheme
@@ -63,7 +65,13 @@ fun TabSummary(
     rhythm: String = "",
     tags: List<String> = emptyList(),
     /** Opens the song lists filtered by this tag */
-    onTagClick: (String) -> Unit = {}) {
+    onTagClick: (String) -> Unit = {},
+    /** Whether to draw [rhythm] as a diagram and show [chordVariations] as chord diagrams */
+    diagramsShown: Boolean = false,
+    /** The first fingering of each chord used in the song */
+    chordVariations: List<ChordVariation> = emptyList(),
+    instrument: Instrument = Instrument.Guitar,
+    onChordClick: (String) -> Unit = {}) {
     var versionDropdownExpanded by remember { mutableStateOf(false) }
 
     Column(
@@ -166,6 +174,7 @@ fun TabSummary(
                 )
             }
         }
+        if (diagramsShown && rhythm.isNotBlank()) RhythmDiagram(rhythm, modifier = Modifier.padding(top = 4.dp))
         if (rhythm.isNotBlank()) {
             // monospaced so the strums line up under the beat header
             Text(
@@ -175,6 +184,17 @@ fun TabSummary(
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(top = 4.dp)
             )
+        }
+        if (diagramsShown && chordVariations.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(top = 6.dp)
+            ) {
+                for (chord in chordVariations) {
+                    ChordDiagramChip(chord = chord, instrument = instrument, diagramWidth = 56.dp, onClick = { onChordClick(chord.chordId) })
+                }
+            }
         }
     }
 }
