@@ -87,22 +87,24 @@ private fun blankLabel(line: String): String {
 }
 
 /**
- * Chord hints: a later verse or chorus written without chords gets the chords of the first section
- * of its kind that has them - the n-th lyric line those of the n-th lyric line there, at the same
- * columns. Only a hint: the lyrics differ, so the chords land roughly where the original had them.
+ * Chord hints: a verse or chorus written without chords gets the chords of the first section of its
+ * kind that has them - the n-th lyric line those of the n-th lyric line there, at the same columns.
+ * Verses fall back to the chorus when no verse has chords. Only a hint: the lyrics differ, so the
+ * chords land roughly where the original had them.
  */
 fun addChordHints(content: String): String {
     val lines = content.split("\n").toMutableList()
+    val sections = findSections(lines)
     val sources = mutableMapOf<String, List<String>>() // section key -> its lyric lines with chords
-    for (section in findSections(lines)) {
+    for (section in sections) {
         val lyricLines = (section.start until section.end).filter { hasLyrics(lines[it]) }
-        val withChords = (section.start until section.end).any { CHORD_TAG.containsMatchIn(lines[it]) }
-        val source = sources[section.key]
-        if (source == null) {
-            if (withChords && lyricLines.any { CHORD_TAG.containsMatchIn(lines[it]) }) sources[section.key] = lyricLines.map { lines[it] }
-        } else if (!withChords) {
-            lyricLines.zip(source).forEach { (target, from) -> lines[target] = withChordsOf(from, lines[target]) }
-        }
+        if (section.key !in sources && lyricLines.any { CHORD_TAG.containsMatchIn(lines[it]) }) sources[section.key] = lyricLines.map { lines[it] }
+    }
+    for (section in sections) {
+        if ((section.start until section.end).any { CHORD_TAG.containsMatchIn(lines[it]) }) continue
+        val source = sources[section.key] ?: (if (section.key == "#") sources["R"] else null) ?: continue
+        val lyricLines = (section.start until section.end).filter { hasLyrics(lines[it]) }
+        lyricLines.zip(source).forEach { (target, from) -> lines[target] = withChordsOf(from, lines[target]) }
     }
     return lines.joinToString("\n")
 }
