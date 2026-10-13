@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -156,8 +156,14 @@ fun TabSummary(
                     modifier = Modifier.padding(end = 4.dp)
                 )
             }
+            // plain links, not chips: a song's tags wrapped into rows of 48dp chips buried the lyrics
             for (tag in tags) {
-                AssistChip(onClick = { onTagClick(tag) }, label = { Text("#$tag") })
+                Text(
+                    text = "#$tag",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onTagClick(tag) }
+                )
             }
         }
         if (rhythm.isNotBlank()) {
