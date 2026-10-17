@@ -15,5 +15,8 @@ data class TabContentBlock(
      * Whether the content was in a `[tab]` block. Informs content styling. If true, content will be double-spaced and chords will be raised above
      * the text content. This will usually be true for most tab content lines, false for introductory text and chord-only interludes.
      */
-    val tab: Boolean
+    val tab: Boolean,
+
+    /** Whether a paragraph gap separates this block from the one above */
+    val gapAbove: Boolean = !tab
 )

@@ -56,7 +56,7 @@ fun TabContentBlockView(
 
     Column(modifier = modifier) {
         // consecutive chord lines are separate blocks: no spacer, so a chord row sits right under the lyrics above
-        if (!block.tab) Spacer(modifier = Modifier.height(24.dp))
+        if (block.gapAbove) Spacer(modifier = Modifier.height(24.dp))
 
         Layout(
             modifier = modifier,

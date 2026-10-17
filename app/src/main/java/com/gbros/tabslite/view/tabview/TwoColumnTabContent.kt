@@ -66,7 +66,7 @@ fun TwoColumnTabContent(
             // doesn't fit whole: move as many of its leading lines as fit into the left column
             val lineEnds = block.content.text.indices.filter { block.content.text[it] == '\n' }
             val split = lineEnds.asReversed().firstNotNullOfOrNull { end ->
-                val head = TabContentBlock(block.content.subSequence(0, end), block.tab)
+                val head = block.copy(content = block.content.subSequence(0, end))
                 val headHeight = heightOf(head)
                 if (leftHeight + headHeight <= columnHeight) Triple(head, headHeight, end) else null
             }

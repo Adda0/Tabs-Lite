@@ -37,10 +37,11 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
         var lastIndex = 0
         tagPattern.findAll(tabContent).forEach { matchResult ->
             // Process text before the match (outside [tab] block)
-            val beforeText = trimBlankLines(tabContent.substring(lastIndex, matchResult.range.first))
+            val rawBefore = tabContent.substring(lastIndex, matchResult.range.first)
+            val beforeText = trimBlankLines(rawBefore)
             if (beforeText.isNotEmpty()) {
                 val beforeBlock = buildContentBlock(beforeText, chordsSet, inline = true)
-                contentBlocks.add(TabContentBlock(beforeBlock, tab = false))
+                contentBlocks.add(TabContentBlock(beforeBlock, tab = false, gapAbove = startsParagraph(rawBefore, lastIndex)))
             }
 
             // Process the content inside the [tab] block
@@ -55,15 +56,21 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
 
         // Process any remaining text after the last match (outside [tab] block)
         if (lastIndex < tabContent.length) {
-            val remainingText = trimBlankLines(tabContent.substring(lastIndex))
+            val rawRemaining = tabContent.substring(lastIndex)
+            val remainingText = trimBlankLines(rawRemaining)
             if (remainingText.isNotEmpty()) {
                 val remainingBlock = buildContentBlock(remainingText, chordsSet, inline = true)
-                contentBlocks.add(TabContentBlock(remainingBlock, tab = false))
+                contentBlocks.add(TabContentBlock(remainingBlock, tab = false, gapAbove = startsParagraph(rawRemaining, lastIndex)))
             }
         }
 
         return Pair(contentBlocks, chordsSet)
     }
+
+    // text right after a [tab] block continues its paragraph (e.g. a `G ...` chord line under a verse's
+    // first line) unless a blank line separates them
+    private fun startsParagraph(rawText: String, offset: Int): Boolean =
+        offset == 0 || Regex("^[ \\t]*\\r?\\n[ \\t]*\\r?\\n").containsMatchIn(rawText)
 
     // drops surrounding blank lines and trailing whitespace, keeping the first line's indentation,
     // which aligns it with the chord line above (e.g. lines continuing a "1. " verse)
