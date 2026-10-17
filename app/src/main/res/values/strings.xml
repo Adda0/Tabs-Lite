@@ -176,7 +176,6 @@
     <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that adds the current key and capo to the favorites">Add to favorite keys</string>
     <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that removes the current key and capo from the favorites">Remove from favorite keys</string>
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>
-    <string name="tab_hide_blank_lines_accessibility_text" translation_description="Accessibility text for the toggle button that hides the empty lines between verses and sections of the tab content">Hide empty lines</string>
     <string name="tab_text_size_decrease_accessibility_text" translation_description="Accessibility text for the button that decreases the tab content text size">Decrease text size</string>
     <string name="tab_text_size_increase_accessibility_text" translation_description="Accessibility text for the button that increases the tab content text size">Increase text size</string>
     <string name="tab_hide_details_accessibility_text" translation_description="Accessibility text for the button that hides the song details and transpose controls above the tab content">Hide song details</string>
@@ -184,6 +183,7 @@
     <string name="tab_expand_section_references" translation_description="Tab menu toggle: a later bare section label like R: shows that section again in full">Repeat sections in full</string>
     <string name="tab_chord_hints" translation_description="Tab menu toggle: verses and choruses written without chords show the chords of the first one of their kind (verses: of the chorus when no verse has chords)">Chord hints on later verses</string>
     <string name="tab_header_diagrams" translation_description="Tab menu toggle: the song details above the tab show the strumming pattern as arrows and a diagram of every chord used">Rhythm and chord diagrams</string>
+    <string name="tab_hide_blank_lines" translation_description="Tab menu toggle: hides the empty lines between verses and sections of the tab content, fitting more of the song on screen">Hide empty lines</string>
     <string name="tab_view_mode_normal" translation_description="Tab menu choice: show the song as written, lyrics with chords">Chords and lyrics</string>
     <string name="tab_view_mode_lyrics_only" translation_description="Tab menu choice: show only the lyrics, for singing">Lyrics only</string>
     <string name="tab_view_mode_chord_map" translation_description="Tab menu choice: show one line per section with the chords it is played with">Chord map</string>

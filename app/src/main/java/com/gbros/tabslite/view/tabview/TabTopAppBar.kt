@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DensitySmall
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -158,13 +157,6 @@ fun TabTopAppBar(isFavorite: Boolean,
                     tint = if (twoColumnView) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                 )
             }
-            IconButton(onClick = { onBlankLinesHiddenToggled(!blankLinesHidden) }) {
-                Icon(
-                    imageVector = Icons.Filled.DensitySmall,
-                    contentDescription = stringResource(R.string.tab_hide_blank_lines_accessibility_text),
-                    tint = if (blankLinesHidden) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                )
-            }
             IconButton(onClick = {onChordsPinnedToggled(!chordsPinned)}) {
                 Icon(
                     imageVector = if (chordsPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
@@ -248,6 +240,11 @@ fun TabTopAppBar(isFavorite: Boolean,
                     text = { Text(text = stringResource(R.string.tab_header_diagrams)) },
                     trailingIcon = { Checkbox(checked = headerDiagramsShown, onCheckedChange = null) },
                     onClick = { onHeaderDiagramsToggled(!headerDiagramsShown) }
+                )
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.tab_hide_blank_lines)) },
+                    trailingIcon = { Checkbox(checked = blankLinesHidden, onCheckedChange = null) },
+                    onClick = { onBlankLinesHiddenToggled(!blankLinesHidden) }
                 )
                 HorizontalDivider()
                 for ((mode, label) in listOf(
