@@ -55,8 +55,8 @@ fun TabContentBlockView(
     val selectedContentFontFamily = if (fontStyle == FontStyle.Mono) Font(R.font.roboto_mono_regular).toFontFamily() else null
 
     Column(modifier = modifier) {
-        val spacerSize = if (block.tab) 4.dp else 24.dp
-        Spacer(modifier = Modifier.height(spacerSize))
+        // consecutive chord lines are separate blocks: no spacer, so a chord row sits right under the lyrics above
+        if (!block.tab) Spacer(modifier = Modifier.height(24.dp))
 
         Layout(
             modifier = modifier,
@@ -70,7 +70,7 @@ fun TabContentBlockView(
                         fontSize = TextUnit(fontSizeSp, TextUnitType.Sp),
                         fontFamily = selectedContentFontFamily,
                         color = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = if (block.tab) 2.8.em else 1.5.em, // double spaced for tabs, normal for non-tab content
+                        lineHeight = if (block.tab) 2.5.em else 1.5.em, // room for the chord row above each lyric line in tabs
                         lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Bottom, LineHeightStyle.Trim.None),
                         baselineShift = if (block.tab) BaselineShift(.15f) else BaselineShift(0f)
                     )
@@ -128,7 +128,7 @@ private fun MeasureScope.placeChordButtons(
                 val left = boundingBox.left.toInt()
                 val x = if (left >= lastButtonRightEdge) left else lastButtonRightEdge + 16
                 val y = if (inline) boundingBox.bottom.toInt() - chordButton.height
-                        else boundingBox.top.toInt() + (chordButton.height.toDouble() * 0.25).toInt()
+                        else boundingBox.top.toInt()
                 chordButton.placeRelative(x, y)
 
                 lastButtonRightEdge = x + chordButton.width
