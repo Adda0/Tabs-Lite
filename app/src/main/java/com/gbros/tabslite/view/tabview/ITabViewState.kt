@@ -191,6 +191,9 @@ interface ITabViewState {
     /** Whether the song header shows the rhythm and every chord used as diagrams */
     val headerDiagramsShown: LiveData<Boolean>
 
+    /** Whether the empty lines between verses and sections are hidden */
+    val blankLinesHidden: LiveData<Boolean>
+
     /**
      * Map of chord names to their first chord variation for pinned display
      */

@@ -415,6 +415,8 @@ class TabViewModel
 
     override val headerDiagramsShown: LiveData<Boolean> = dataAccess.getLivePreference(Preference.HEADER_DIAGRAMS).map { p -> p?.value?.toBoolean() == true }
 
+    override val blankLinesHidden: LiveData<Boolean> = dataAccess.getLivePreference(Preference.HIDE_BLANK_LINES).map { p -> p?.value?.toBoolean() == true }
+
     override val tabViewMode: LiveData<TabViewMode> = dataAccess.getLivePreference(Preference.TAB_VIEW_MODE).map { p ->
         TabViewMode.entries.firstOrNull { it.name == p?.value } ?: TabViewMode.Normal
     }
@@ -527,9 +529,10 @@ class TabViewModel
         return@combine transposedContent
     }
 
-    // the transposed content as the chosen view mode shows it
-    private val shownContentString: LiveData<String> = transposedContentString.combine(tabViewMode) { c, mode ->
-        (mode ?: TabViewMode.Normal).apply(c ?: "")
+    // the transposed content as the chosen view mode shows it, without empty lines when they're hidden
+    private val shownContentString: LiveData<String> = transposedContentString.combine(tabViewMode, blankLinesHidden) { c, mode, hideBlank ->
+        val shown = (mode ?: TabViewMode.Normal).apply(c ?: "")
+        if (hideBlank == true) shown.lines().filterNot { it.isBlank() }.joinToString("\n") else shown
     }
 
     private val tabContent: LiveData<TabContent> = shownContentString.map { shown -> TabContent(urlHandler::openUri, shown) }
@@ -1020,6 +1023,12 @@ class TabViewModel
     fun onHeaderDiagramsToggled(shown: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
             dataAccess.upsert(Preference(Preference.HEADER_DIAGRAMS, shown.toString()))
+        }
+    }
+
+    fun onBlankLinesHiddenToggled(hidden: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.upsert(Preference(Preference.HIDE_BLANK_LINES, hidden.toString()))
         }
     }
 

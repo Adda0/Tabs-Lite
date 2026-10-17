@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DensitySmall
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -87,6 +88,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onChordHintsToggled: (shown: Boolean) -> Unit = {},
                  headerDiagramsShown: Boolean = false,
                  onHeaderDiagramsToggled: (shown: Boolean) -> Unit = {},
+                 blankLinesHidden: Boolean = false,
+                 onBlankLinesHiddenToggled: (hidden: Boolean) -> Unit = {},
                  tabViewMode: TabViewMode = TabViewMode.Normal,
                  onTabViewModeSelected: (TabViewMode) -> Unit = {},
                  twoColumnView: Boolean = false,
@@ -153,6 +156,13 @@ fun TabTopAppBar(isFavorite: Boolean,
                     contentDescription = stringResource(R.string.tab_two_column_view_accessibility_text),
                     // filled and outlined look alike; colour shows the state
                     tint = if (twoColumnView) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+                )
+            }
+            IconButton(onClick = { onBlankLinesHiddenToggled(!blankLinesHidden) }) {
+                Icon(
+                    imageVector = Icons.Filled.DensitySmall,
+                    contentDescription = stringResource(R.string.tab_hide_blank_lines_accessibility_text),
+                    tint = if (blankLinesHidden) MaterialTheme.colorScheme.primary else LocalContentColor.current,
                 )
             }
             IconButton(onClick = {onChordsPinnedToggled(!chordsPinned)}) {

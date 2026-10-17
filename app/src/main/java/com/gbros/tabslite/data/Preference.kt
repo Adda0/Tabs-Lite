@@ -116,6 +116,12 @@ data class Preference(
         const val HEADER_DIAGRAMS: String = "HEADER_DIAGRAMS"
 
         /**
+         * The preference name for whether the tab screen hides the empty lines between verses and
+         * sections, fitting more of the song on screen while playing
+         */
+        const val HIDE_BLANK_LINES: String = "HIDE_BLANK_LINES"
+
+        /**
          * The preference name for the tags the home song lists are filtered by: comma-separated tag
          * keys (see [com.gbros.tabslite.utilities.tagKey]), a song needing all of them
          */

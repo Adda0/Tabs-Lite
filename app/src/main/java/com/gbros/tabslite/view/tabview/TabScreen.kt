@@ -174,6 +174,7 @@ fun NavGraphBuilder.tabScreen(
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
             onHeaderDiagramsToggled = viewModel::onHeaderDiagramsToggled,
+            onBlankLinesHiddenToggled = viewModel::onBlankLinesHiddenToggled,
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
@@ -270,6 +271,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onSectionReferencesExpandedToggled = viewModel::onSectionReferencesExpandedToggled,
             onChordHintsToggled = viewModel::onChordHintsToggled,
             onHeaderDiagramsToggled = viewModel::onHeaderDiagramsToggled,
+            onBlankLinesHiddenToggled = viewModel::onBlankLinesHiddenToggled,
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
@@ -323,6 +325,7 @@ fun TabScreen(
     onSectionReferencesExpandedToggled: (expanded: Boolean) -> Unit,
     onChordHintsToggled: (shown: Boolean) -> Unit,
     onHeaderDiagramsToggled: (shown: Boolean) -> Unit,
+    onBlankLinesHiddenToggled: (hidden: Boolean) -> Unit,
     onTabViewModeSelected: (TabViewMode) -> Unit,
     onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
     onEditTabClick: (songId: String, tabId: String) -> Unit,
@@ -369,6 +372,7 @@ fun TabScreen(
     val sectionReferencesExpanded by viewState.sectionReferencesExpanded.observeAsState(true)
     val chordHintsShown by viewState.chordHintsShown.observeAsState(false)
     val headerDiagramsShown by viewState.headerDiagramsShown.observeAsState(false)
+    val blankLinesHidden by viewState.blankLinesHidden.observeAsState(false)
     val tabViewMode by viewState.tabViewMode.observeAsState(TabViewMode.Normal)
     val chordBlocks = viewState.content.observeAsState(emptyList()).value
     val loadingState = viewState.state.observeAsState(LoadingState.Loading).value
@@ -431,6 +435,8 @@ fun TabScreen(
                 onChordHintsToggled = onChordHintsToggled,
                 headerDiagramsShown = headerDiagramsShown,
                 onHeaderDiagramsToggled = onHeaderDiagramsToggled,
+                blankLinesHidden = blankLinesHidden,
+                onBlankLinesHiddenToggled = onBlankLinesHiddenToggled,
                 tabViewMode = tabViewMode,
                 onTabViewModeSelected = onTabViewModeSelected,
                 twoColumnView = twoColumnView,
@@ -583,6 +589,8 @@ fun TabScreen(
                     onChordHintsToggled = onChordHintsToggled,
                     headerDiagramsShown = headerDiagramsShown,
                     onHeaderDiagramsToggled = onHeaderDiagramsToggled,
+                    blankLinesHidden = blankLinesHidden,
+                    onBlankLinesHiddenToggled = onBlankLinesHiddenToggled,
                     tabViewMode = tabViewMode,
                     onTabViewModeSelected = onTabViewModeSelected,
                     twoColumnView = twoColumnView,
@@ -865,6 +873,7 @@ private fun TabViewPreview() {
         override val sectionReferencesExpanded: LiveData<Boolean>,
         override val chordHintsShown: LiveData<Boolean>,
         override val headerDiagramsShown: LiveData<Boolean>,
+        override val blankLinesHidden: LiveData<Boolean>,
         override val pinnedChordVariations: LiveData<List<ChordVariation>>,
         override val fontStylePreference: LiveData<FontStyle>
 
@@ -919,6 +928,7 @@ private fun TabViewPreview() {
             sectionReferencesExpanded = MutableLiveData(true),
             chordHintsShown = MutableLiveData(false),
             headerDiagramsShown = MutableLiveData(true),
+            blankLinesHidden = MutableLiveData(false),
             pinnedChordVariations = MutableLiveData(emptyList()),
             fontStylePreference = MutableLiveData(FontStyle.Modern)
         )
@@ -1004,6 +1014,7 @@ private fun TabViewPreview() {
             onSectionReferencesExpandedToggled = { },
             onChordHintsToggled = { },
             onHeaderDiagramsToggled = { },
+            onBlankLinesHiddenToggled = { },
             onTabViewModeSelected = { },
             onEditTabClick = { _, _ -> },
             onTwoColumnViewToggled = { },

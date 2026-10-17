@@ -176,6 +176,7 @@
     <string name="tab_transpose_favorite_set_accessibility_text" translation_description="Accessibility text for the button that adds the current key and capo to the favorites">Add to favorite keys</string>
     <string name="tab_transpose_favorite_remove_accessibility_text" translation_description="Accessibility text for the button that removes the current key and capo from the favorites">Remove from favorite keys</string>
     <string name="tab_two_column_view_accessibility_text" translation_description="Accessibility text for the toggle button that switches the tab content between one and two columns">Two column view</string>
+    <string name="tab_hide_blank_lines_accessibility_text" translation_description="Accessibility text for the toggle button that hides the empty lines between verses and sections of the tab content">Hide empty lines</string>
     <string name="tab_text_size_decrease_accessibility_text" translation_description="Accessibility text for the button that decreases the tab content text size">Decrease text size</string>
     <string name="tab_text_size_increase_accessibility_text" translation_description="Accessibility text for the button that increases the tab content text size">Increase text size</string>
     <string name="tab_hide_details_accessibility_text" translation_description="Accessibility text for the button that hides the song details and transpose controls above the tab content">Hide song details</string>
