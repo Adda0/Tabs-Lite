@@ -179,10 +179,11 @@ private data class ChordLineToken(val prefix: String, val core: String, val suff
 
     /**
      * Nothing but notation: a bar line, a repeat bracket, a repeat count (`2x`, `(2x)`), an ellipsis,
-     * a rest (`-`, `–`: stop playing for a beat, as in `[Am - -]`)
+     * a rest (`-`, `–`: stop playing for a beat, as in `[Am - -]`), a lone bracket or alternative
+     * marker (`(C C) \ (D D)`: play these, or those instead)
      */
     val isNotation: Boolean get() = core.isEmpty() || stripChordDecorations(core).let {
-        REPEAT_COUNT_REGEX.matches(it) || REST_REGEX.matches(it)
+        it.isEmpty() || REPEAT_COUNT_REGEX.matches(it) || REST_REGEX.matches(it)
     }
 }
 
