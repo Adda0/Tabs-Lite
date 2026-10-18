@@ -426,7 +426,9 @@ private fun mergeChordLineIntoLyricLine(chordLine: String, lyricLine: String): S
     val builder = StringBuilder(lyricLineBody)
     var insertedSoFar = 0
     for ((column, tag) in insertions) {
-        val insertPosition = (column + insertedSoFar).coerceIn(0, builder.length)
+        val insertPosition = column + insertedSoFar
+        // A chord past the lyrics' end keeps its column, or it would butt against the chord before it
+        while (builder.length < insertPosition) builder.append(' ')
         builder.insert(insertPosition, tag)
         insertedSoFar += tag.length
     }
