@@ -42,7 +42,7 @@ private val APP_CHORD_TAG_REGEX = Regex("\\{ch:([^}]*)\\}")
  * A root followed by nothing but repeated m's is a hum (`Hmm...`), not a chord.
  */
 private val CHORD_TOKEN_REGEX = Regex(
-    "^(?!/?[A-H][#b]?(?i:m){2,}$)/?[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?(?:/[A-H][#b]?)?$"
+    "^(?!/?[A-H][#b]?(?i:m){2,}$)/?[A-H][#b]?(?:(?i:maj|min|dim|aug|sus|add|mi|m)?[0-9]{0,2}){0,2}(?:[#b][0-9]{1,2})?\\+?(?:/[A-H][#b]?)?$"
 )
 
 private const val CHORD_DECORATION_CHAR_CLASS = "[()\\[\\]{}<>\\\\]"
