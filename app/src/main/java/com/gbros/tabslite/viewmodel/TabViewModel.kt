@@ -46,6 +46,7 @@ import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.addChordHints
+import com.gbros.tabslite.utilities.allTags
 import com.gbros.tabslite.utilities.parseTags
 import com.gbros.tabslite.utilities.tagKey
 import com.gbros.tabslite.utilities.TabViewMode
@@ -483,6 +484,8 @@ class TabViewModel
     override val rhythm: LiveData<String> = tab.map { t -> t?.rhythm ?: "" }
 
     override val tags: LiveData<List<String>> = tab.map { t -> parseTags(t?.tags.orEmpty()) }
+
+    override val allTags: LiveData<List<String>> = dataAccess.getAllTagLists().map { allTags(it) }
     
     override val author: LiveData<String> = tab.map { t -> t?.contributorUserName ?: "" }
 
@@ -785,6 +788,27 @@ class TabViewModel
                     }
                 } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
                     Log.e(TAG, "Couldn't save favorite keys to local song file: ${ex.message}", ex)
+                }
+            }
+        }
+    }
+
+    /**
+     * Stores [tags] as the song's tags; for a song imported from the local song folder, also writes
+     * them into the file's `tags` header, so a rescan keeps them.
+     */
+    fun onTagsChange(context: Context, tags: List<String>) {
+        val currentTab = tab.value ?: return
+        val cleaned = parseTags(tags.joinToString(","))
+        CoroutineScope(Dispatchers.IO).launch {
+            dataAccess.updateTags(currentTab.tabId, cleaned.joinToString(", "))
+            if (currentTab.tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE) {
+                try {
+                    if (!LocalFileImporter.writeTagsToFile(context.applicationContext, dataAccess, currentTab.tabId, cleaned)) {
+                        Log.w(TAG, "Couldn't find the local song file for tab ${currentTab.tabId} to save its tags")
+                    }
+                } catch (ex: Exception) {  // e.g. SecurityException when the folder was granted read-only
+                    Log.e(TAG, "Couldn't save tags to local song file: ${ex.message}", ex)
                 }
             }
         }

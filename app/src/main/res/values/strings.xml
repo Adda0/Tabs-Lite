@@ -39,10 +39,12 @@
     <string name="action_random_song" translation_description="Button on a song list that opens a random song from it, preferring ones not played in the last 12 hours">Random song</string>
     <string name="title_add_to_playlist_dialog" translation_description="The title of the Add To Playlist dialog">Add to playlist</string>
     <string name="title_create_playlist_dialog" translation_description="Title for the Create Playlist dialog">Create playlist</string>
+    <string name="title_edit_tags_dialog" translation_description="Title for the dialog adding and removing a song's tags">Song tags</string>
     <string name="title_create_song" translation_description="Title for the Create Song screen">Create Song</string>
 
     <string name="placeholder_playlist_title" translation_description="Placeholder text for Playlist Title entry field">Playlist Title</string>
     <string name="placeholder_playlist_description" translation_description="Placeholder text for Playlist Description entry field">Playlist Description</string>
+    <string name="placeholder_new_tag" translation_description="Placeholder text for the field to type a new tag for a song, in the Song tags dialog">New tag</string>
     <string name="playlist_empty_description" translation_description="The description shown on the playlist screen for an empty playlist with no songs added">Add songs to your playlist by finding the song you\'d like and selecting the three dot menu at the top right of the screen.</string>
     <string name="select_playlist_dialog_no_selection" translation_description="The playlist text shown when there's no playlist selected in the Add To Playlist dialog. This can happen when no playlists have been created yet.">Select a playlist…</string>
     <string name="empty_favorites" translation_description="The text shown on the Favorites page when no songs have been favorited">Select the heart icon on any song to save it offline in this list.</string>
@@ -158,6 +160,9 @@
     <string name="tab_key" translation_description="The key the song's chords are written in">Written in: %s</string>
     <string name="tab_tempo" translation_description="Time signature and/or speed of a song, e.g. 4/4 or 4/4 (~68 BPM)">Tempo: %s</string>
     <string name="tab_author">Tab Author: %s</string>
+    <string name="tab_edit_tags" translation_description="Content description of the button next to a song's tags that opens the dialog to add and remove them">Edit tags</string>
+    <string name="tab_add_tag" translation_description="Content description of the button adding the typed tag to the song, in the Song tags dialog">Add tag</string>
+    <string name="tab_remove_tag" translation_description="Content description of the button removing a tag from the song, in the Song tags dialog; %s is the tag">Remove %s</string>
     <string name="tab_origin_local_file" translation_description="Where a song comes from, shown in search results and version lists for a song imported from a local file (other songs show the name of the website they come from)">Local file</string>
     <string name="tab_transpose" translation_description="The key the song sounds in as currently played (chord shapes + capo), e.g. \u0022Sounds in: E (+4) · chords D (+2) · capo 2\u0022">Sounds in: %1$s · chords %2$s · capo %3$d</string>
     <string name="tab_transpose_chords" translation_description="Chord shapes as currently shown and their distance from the written chords, e.g. \u0022D (+2)\u0022">Chords: %s</string>

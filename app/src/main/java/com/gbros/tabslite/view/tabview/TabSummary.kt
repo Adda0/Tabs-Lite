@@ -16,14 +16,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -66,6 +70,10 @@ fun TabSummary(
     tags: List<String> = emptyList(),
     /** Opens the song lists filtered by this tag */
     onTagClick: (String) -> Unit = {},
+    /** Every tag any song has, offered when editing [tags] */
+    allTags: List<String> = emptyList(),
+    /** Replaces [tags] */
+    onTagsChange: (List<String>) -> Unit = {},
     /** Whether to draw [rhythm] as a diagram and show [chordVariations] as chord diagrams */
     diagramsShown: Boolean = false,
     /** The first fingering of each chord used in the song */
@@ -73,6 +81,16 @@ fun TabSummary(
     instrument: Instrument = Instrument.Guitar,
     onChordClick: (String) -> Unit = {}) {
     var versionDropdownExpanded by remember { mutableStateOf(false) }
+    var editingTags by remember { mutableStateOf(false) }
+
+    if (editingTags) {
+        EditTagsDialog(
+            tags = tags,
+            allTags = allTags,
+            onConfirm = { edited -> onTagsChange(edited); editingTags = false },
+            onDismiss = { editingTags = false }
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -173,6 +191,15 @@ fun TabSummary(
                     modifier = Modifier.clickable { onTagClick(tag) }
                 )
             }
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = stringResource(id = R.string.tab_edit_tags),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .size(16.dp)
+                    .clickable { editingTags = true }
+            )
         }
         if (diagramsShown && rhythm.isNotBlank()) RhythmDiagram(rhythm, modifier = Modifier.padding(top = 4.dp))
         if (rhythm.isNotBlank()) {

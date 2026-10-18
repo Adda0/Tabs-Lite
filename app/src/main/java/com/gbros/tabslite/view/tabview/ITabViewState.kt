@@ -56,8 +56,11 @@ interface ITabViewState {
     /** The song's strumming patterns, one per line with a beat header, blank if none */
     val rhythm: LiveData<String>
 
-    /** Tags from a local song file's header */
+    /** The song's tags, from a local song file's header or added in the app */
     val tags: LiveData<List<String>>
+
+    /** Every tag any song has, to pick from when tagging this one */
+    val allTags: LiveData<List<String>>
 
     /** How the song is shown: as written, lyrics only, or as a chord map */
     val tabViewMode: LiveData<com.gbros.tabslite.utilities.TabViewMode>

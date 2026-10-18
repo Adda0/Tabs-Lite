@@ -188,6 +188,10 @@ object LocalFileImporter {
     suspend fun writeAutoscrollToFile(context: Context, dataAccess: DataAccess, tabId: String, value: Float): Boolean =
         rewriteSongFile(context, dataAccess, tabId) { rawText -> withAutoscrollHeader(rawText, value) }
 
+    /** Writes [tags] into the `tags` header of the local song file behind [tabId], or removes the header when empty */
+    suspend fun writeTagsToFile(context: Context, dataAccess: DataAccess, tabId: String, tags: List<String>): Boolean =
+        rewriteSongFile(context, dataAccess, tabId) { rawText -> withTagsHeader(rawText, tags) }
+
     /** Replaces the text of the local song file behind [tabId] with [edit] of it; false if there's no such file */
     private suspend fun rewriteSongFile(context: Context, dataAccess: DataAccess, tabId: String, edit: (String) -> String): Boolean {
         val treeUri = dataAccess.getPreferenceValue(Preference.LOCAL_IMPORT_FOLDER_URI)?.let { Uri.parse(it) } ?: return false
@@ -263,6 +267,7 @@ object LocalFileImporter {
             tab.capo.takeIf { it > 0 }?.let { "capo: $it" },
             tab.tempo.takeIf { it.isNotBlank() }?.let { "tempo: $it" },
             tab.language.takeIf { it.isNotBlank() }?.let { "language: $it" },
+            parseTags(tab.tags).takeIf { it.isNotEmpty() }?.let { "tags: " + it.joinToString(", ") },
             "version_description: " + (SongSources.pageUrl(tab.tabId) ?: "ultimate-guitar.com tab ${tab.tabId}, version ${tab.version}"),
         )
         val text = header.joinToString("\n") + "\n\n" + toChordSheet(tab.content).trim('\n') + "\n"

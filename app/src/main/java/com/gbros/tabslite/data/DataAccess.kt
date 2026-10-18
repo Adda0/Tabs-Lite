@@ -360,6 +360,13 @@ interface DataAccess {
     @Query("UPDATE tabs SET autoscroll_slider = :slider WHERE id = :tabId")
     suspend fun updateAutoscrollSlider(tabId: String, slider: Float)
 
+    @Query("UPDATE tabs SET tags = :tags WHERE id = :tabId")
+    suspend fun updateTags(tabId: String, tags: String)
+
+    /** The stored tag list (see [com.gbros.tabslite.utilities.parseTags]) of every tab that has tags */
+    @Query("SELECT tags FROM tabs WHERE tags != ''")
+    fun getAllTagLists(): LiveData<List<String>>
+
     //#endregion
 
     //#region chord variation table

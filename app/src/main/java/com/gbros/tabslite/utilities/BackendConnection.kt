@@ -435,7 +435,7 @@ object BackendConnection {
 
     /**
      * Stores a freshly fetched tab, keeping its remembered local settings (two-column view, text
-     * size, fallback, favourite and original transpose) across the re-fetch, since they're
+     * size, fallback, favourite and original transpose, tags) across the re-fetch, since they're
      * local-only and the source knows nothing of them
      */
     private suspend fun storeFetchedTab(result: TabDataType, dataAccess: DataAccess) {
@@ -450,6 +450,7 @@ object BackendConnection {
             result.currentCapo = existing.currentCapo
             result.originalTranspose = existing.originalTranspose
             result.autoscrollSlider = existing.autoscrollSlider
+            result.tags = existing.tags
         } catch (ex: Exception) {
             // no existing row for this tab id - nothing to preserve
         }

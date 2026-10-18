@@ -157,6 +157,10 @@ fun withFavoriteHeader(rawText: String, favorite: Pair<String, String>?): String
 fun withAutoscrollHeader(rawText: String, value: Float?): String =
     withHeaderLine(rawText, setOf("autoscroll"), value?.let { "autoscroll: " + String.format(java.util.Locale.ROOT, "%.2f", it) })
 
+/** Returns [rawText] with its `tags` (or `tag`) header set to [tags], or removed when there are none; see [withFavoriteHeader] */
+fun withTagsHeader(rawText: String, tags: List<String>): String =
+    withHeaderLine(rawText, setOf("tags", "tag"), tags.takeIf { it.isNotEmpty() }?.let { "tags: " + it.joinToString(", ") })
+
 private fun withHeaderLine(rawText: String, keys: Set<String>, newLine: String?): String {
     val lineEnding = if (rawText.contains("\r\n")) "\r\n" else "\n"
     val lines = rawText.split(lineEnding).toMutableList()
