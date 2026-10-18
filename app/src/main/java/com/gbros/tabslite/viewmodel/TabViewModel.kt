@@ -276,6 +276,8 @@ class TabViewModel
             textSize = 12f
             color = android.graphics.Color.BLACK
         }
+        // chord hints copied from another section, at approximate positions
+        val chordHintTextPaint = Paint(chordTextPaint).apply { color = android.graphics.Color.GRAY }
 
         val annotatedContent: AnnotatedString = TabContent(urlHandler::openUri, shownContentString.value ?: "").contentBlocks
             .map { tabContent -> tabContent.content }
@@ -324,19 +326,20 @@ class TabViewModel
                 if (isInline) {
                     chordText = chordText.substring(4)
                 }
+                val paint = if (annotatedContent.hasStringAnnotations("chordHint", annotation.start, annotation.end)) chordHintTextPaint else chordTextPaint
 
                 // Draw the chord text above the current position
                 if (!isInline) {
                     val chordY = currentY - contentPaint.textSize // Position above the main text line
-                    canvas.drawText(chordText, currentX, chordY, chordTextPaint)
+                    canvas.drawText(chordText, currentX, chordY, paint)
 
                     // Draw the annotated character(s) itself
                     canvas.drawText(annotatedChar, currentX, currentY, contentPaint)
                     currentX += annotatedCharWidth // Advance currentX
                 } else {
                     // If it's an inline chord, just draw the chord, not the annotated character
-                    canvas.drawText(chordText, currentX, currentY, chordTextPaint)
-                    currentX += chordTextPaint.measureText(chordText)
+                    canvas.drawText(chordText, currentX, currentY, paint)
+                    currentX += paint.measureText(chordText)
                 }
 
                 lastCharIndexInLine = annotationEndInLine
@@ -520,10 +523,10 @@ class TabViewModel
         val currentTranspose = tr ?: 0
         val useFlats = f == true
 
-        val chordPattern = Regex("\\{ch:([^}]+?)\\}")
+        val chordPattern = Regex("\\{(ch~?):([^}]+?)\\}") // chords and chord hints
         val transposedContent = chordPattern.replace(currentDbContent) {
-            val chord = it.groupValues[1]
-            "{ch:" + Chord.transposeChord(chord, currentTranspose, useFlats) + "}"
+            val (tag, chord) = it.destructured
+            "{$tag:" + Chord.transposeChord(chord, currentTranspose, useFlats) + "}"
         }
 
         return@combine transposedContent

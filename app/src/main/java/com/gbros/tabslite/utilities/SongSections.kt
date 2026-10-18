@@ -8,7 +8,8 @@ package com.gbros.tabslite.utilities
 
 private const val TAB_OPEN = "[tab]"
 private const val TAB_CLOSE = "[/tab]"
-private val CHORD_TAG = Regex("\\{ch:[^}]*\\}")
+/** A chord, `{ch:C}`, or a chord hint, `{ch~:C}` (see [addChordHints]) */
+private val CHORD_TAG = Regex("\\{ch~?:[^}]*\\}")
 private val SECTION_LABEL = Regex("^\\s*(\\d{1,2}\\.|(?:Ref|Rec|Coda|[RBIOMC])\\d?:)", RegexOption.IGNORE_CASE)
 /** What may follow a label that only points back at an earlier section: `R:`, `R: 2x`, `R: (3×)` */
 private val REFERENCE_REST = Regex("^\\s*\\(?\\s*(?:\\d+\\s*[x×]|[x×]\\s*\\d+)?\\s*\\)?\\s*$", RegexOption.IGNORE_CASE)
@@ -90,7 +91,8 @@ private fun blankLabel(line: String): String {
  * Chord hints: a verse or chorus written without chords gets the chords of the first section of its
  * kind that has them - the n-th lyric line those of the n-th lyric line there, at the same columns.
  * Verses fall back to the chorus when no verse has chords. Only a hint: the lyrics differ, so the
- * chords land roughly where the original had them.
+ * chords land roughly where the original had them; they're tagged `{ch~:C}` so they can be shown
+ * apart from the chords written where they're played.
  */
 fun addChordHints(content: String): String {
     val lines = content.split("\n").toMutableList()
@@ -115,7 +117,7 @@ private fun withChordsOf(source: String, target: String): String {
     val chords = mutableListOf<Pair<Int, String>>() // display column -> tag
     var removed = 0
     for (tag in CHORD_TAG.findAll(sourceBody)) {
-        chords.add(tag.range.first - removed to tag.value)
+        chords.add(tag.range.first - removed to tag.value.replaceFirst("{ch:", "{ch~:"))
         removed += tag.value.length
     }
     if (chords.isEmpty()) return target

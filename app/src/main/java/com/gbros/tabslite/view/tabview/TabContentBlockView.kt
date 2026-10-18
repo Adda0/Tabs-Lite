@@ -82,6 +82,7 @@ fun TabContentBlockView(
                         text = chord,
                         fontFamily = selectedContentFontFamily,
                         fontSizeSp = fontSizeSp,
+                        hint = block.content.hasStringAnnotations("chordHint", annotation.start, annotation.end),
                     ) {
                         onChordClick(chord)
                     }

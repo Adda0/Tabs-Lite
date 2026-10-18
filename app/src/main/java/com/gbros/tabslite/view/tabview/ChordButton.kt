@@ -18,15 +18,18 @@ fun ChordButton(
     text: String,
     fontSizeSp: Float,
     fontFamily: FontFamily? = null,
+    /** only a hint, copied from another section: its position over the lyrics is approximate */
+    hint: Boolean = false,
     onClick: () -> Unit
 ){
     // same font, size and weight as the lyrics, and no horizontal padding, so a chord starts exactly
-    // above the character it belongs to and spans the same columns; color alone sets it apart
+    // above the character it belongs to and spans the same columns; color alone sets it apart, and
+    // a hint apart from a chord written where it's played
     BasicText(
         text = text,
         modifier = modifier.clickable(onClick = onClick),
         style = TextStyle(
-            color = MaterialTheme.colorScheme.primary,
+            color = if (hint) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
             fontSize = TextUnit(fontSizeSp, TextUnitType.Sp),
             fontFamily = fontFamily
         )

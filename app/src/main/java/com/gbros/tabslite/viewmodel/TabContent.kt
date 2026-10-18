@@ -1,6 +1,5 @@
 package com.gbros.tabslite.viewmodel
 
-import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -10,7 +9,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withAnnotation
 import androidx.compose.ui.text.withStyle
 import com.gbros.tabslite.data.tab.TabContentBlock
-import com.gbros.tabslite.utilities.TAG
 
 class TabContent(private val urlHandler: (String) -> Unit, content: String){
     val contentBlocks: List<TabContentBlock>
@@ -26,7 +24,7 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
 
     /**
      * Word wrap, style, and annotate a given tab.  Does not add click functionality, but adds an annotation around
-     * every chord with tag "chord"
+     * every chord with tag "chord", and around each chord that's only a hint also one with tag "chordHint"
      */
     @OptIn(ExperimentalTextApi::class)
     private fun processTabContent(tabContent: String): Pair<List<TabContentBlock>, Set<String>> {
@@ -100,37 +98,19 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
     }
     /**
      * Represents a found chord match, including its start and end indices in the original text,
-     * and the extracted chord name.
+     * the extracted chord name, and whether it's only a hint (a `{ch~:...}` tag, see addChordHints).
      */
-    private data class ChordMatch(val start: Int, val end: Int, val chordName: String)
+    private data class ChordMatch(val start: Int, val end: Int, val chordName: String, val hint: Boolean)
 
     /**
-     * Finds the next occurrence of a chord tag (either [ch]...[/ch] or {ch:...}) starting from
-     * a given index.
+     * Finds the next occurrence of a chord tag ({ch:...} or {ch~:...}) starting from a given index.
      * @param text The text to search within.
      * @param startIndex The index to start the search from.
      * @return A [ChordMatch] object if a chord is found, or null otherwise.
      */
     private fun findNextChordMatch(text: CharSequence, startIndex: Int): ChordMatch? {
-        val newStartTag = "{ch:"
-        val newEndTag = "}"
-
-        val nextNewStart = text.indexOf(newStartTag, startIndex)
-
-        // If no chords found at all
-        if (nextNewStart == -1) {
-            return null
-        }
-
-        // New format is first or only one
-        val firstIndex = nextNewStart
-        val endIndex = text.indexOf(newEndTag, firstIndex + newStartTag.length)
-        if (endIndex == -1) {
-            Log.w(TAG, "Couldn't find closing $newEndTag tag for chord starting at position $firstIndex")
-            return null // Malformed tag, skip this one
-        }
-        val chordName = text.subSequence(firstIndex + newStartTag.length, endIndex).toString()
-        return ChordMatch(firstIndex, endIndex + newEndTag.length, chordName)
+        val match = CHORD_TAG.find(text, startIndex) ?: return null
+        return ChordMatch(match.range.first, match.range.last + 1, match.groupValues[2], hint = match.groupValues[1].isNotEmpty())
     }
 
     /**
@@ -158,6 +138,7 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
             }
 
             // Append the next character, annotated with the chord
+            val annotationStart = builder.length
             val annotationPrefix = if (inline) ("{il}") else ""
             builder.withAnnotation("chord", annotationPrefix + chordMatch.chordName) {
                 if (inline) {
@@ -170,6 +151,7 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
                     append(nextContentCharacter)
                 }
             }
+            if (chordMatch.hint) builder.addStringAnnotation("chordHint", "", annotationStart, builder.length)
         }
 
         // Append any remaining non-chords after the last chord (or the entire line if no chords were found)
@@ -189,3 +171,5 @@ class TabContent(private val urlHandler: (String) -> Unit, content: String){
 
     //endregion Process Tab Content
 }
+
+private val CHORD_TAG = Regex("\\{ch(~?):([^}]*)\\}")
