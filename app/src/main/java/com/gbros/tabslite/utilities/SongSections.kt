@@ -90,9 +90,9 @@ private fun blankLabel(line: String): String {
 /**
  * Chord hints: a verse or chorus written without chords gets the chords of the first section of its
  * kind that has them - the n-th lyric line those of the n-th lyric line there, at the same columns.
- * Verses fall back to the chorus when no verse has chords. Only a hint: the lyrics differ, so the
- * chords land roughly where the original had them; they're tagged `{ch~:C}` so they can be shown
- * apart from the chords written where they're played.
+ * Verses fall back to the chorus when no verse has chords, and the chorus to the verses when it has
+ * none. Only a hint: the lyrics differ, so the chords land roughly where the original had them;
+ * they're tagged `{ch~:C}` so they can be shown apart from the chords written where they're played.
  */
 fun addChordHints(content: String): String {
     val lines = content.split("\n").toMutableList()
@@ -104,7 +104,8 @@ fun addChordHints(content: String): String {
     }
     for (section in sections) {
         if ((section.start until section.end).any { CHORD_TAG.containsMatchIn(lines[it]) }) continue
-        val source = sources[section.key] ?: (if (section.key == "#") sources["R"] else null) ?: continue
+        val fallback = when (section.key) { "#" -> sources["R"]; "R" -> sources["#"]; else -> null }
+        val source = sources[section.key] ?: fallback ?: continue
         val lyricLines = (section.start until section.end).filter { hasLyrics(lines[it]) }
         lyricLines.zip(source).forEach { (target, from) -> lines[target] = withChordsOf(from, lines[target]) }
     }
