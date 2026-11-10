@@ -38,10 +38,10 @@ data class TabDataType(
     @ColumnInfo(name = "contributor_user_name") var contributorUserName: String = "Unregistered",
     @ColumnInfo(name = "content") var content: String = "",
 
-    /** Whether this song's content should render in two reflowing columns instead of one */
-    @ColumnInfo(name = "two_column_view") var twoColumnView: Boolean = false,
-    /** See [ITab.twoColumnViewSet] */
-    @ColumnInfo(name = "two_column_view_set") var twoColumnViewSet: Boolean = false,
+    /** Stored under the pre-multi-column name; migration 27→28 converts booleans to 1/2 */
+    @ColumnInfo(name = "two_column_view") var columnCount: Int = 1,
+    /** See [ITab.columnCountSet] */
+    @ColumnInfo(name = "two_column_view_set") var columnCountSet: Boolean = false,
     /** This song's remembered text size in sp, or null to use the app-wide default */
     @ColumnInfo(name = "text_size_sp") var textSizeSp: Float? = null,
     /** Fallback transpose value for when this tab isn't in a playlist or favorited (see [ITab.transpose]) */

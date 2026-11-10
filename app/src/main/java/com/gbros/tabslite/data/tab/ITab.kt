@@ -50,10 +50,10 @@ interface ITab {
 
     val transpose: Int?
 
-    /** Whether this song's content should render in two reflowing columns instead of one, remembered per-song */
-    var twoColumnView: Boolean
-    /** Whether [twoColumnView] was chosen for this song itself; otherwise the app-wide default applies */
-    var twoColumnViewSet: Boolean
+    /** How many reflowing columns this song uses, remembered per-song */
+    var columnCount: Int
+    /** Whether [columnCount] was chosen for this song itself; otherwise the app-wide default applies */
+    var columnCountSet: Boolean
     /** This song's remembered text size in sp, or null to use the app-wide default, remembered per-song */
     var textSizeSp: Float?
     /**

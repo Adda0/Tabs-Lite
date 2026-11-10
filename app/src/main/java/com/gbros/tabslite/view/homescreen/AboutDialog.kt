@@ -60,6 +60,7 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.FontStyle
 import com.gbros.tabslite.data.ThemeSelection
 import com.gbros.tabslite.ui.theme.AppTheme
+import com.gbros.tabslite.view.ColumnCountStepper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,8 +79,8 @@ fun AboutDialog(
     onRescanLocalSongsFolderClicked: () -> Unit = {},
     rescanLocalSongsOnStart: Boolean = false,
     onRescanLocalSongsOnStartChanged: (Boolean) -> Unit = {},
-    twoColumnViewDefault: Boolean = false,
-    onTwoColumnViewDefaultChanged: (Boolean) -> Unit = {}
+    columnCountDefault: Int = 1,
+    onColumnCountDefaultChanged: (Int) -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -162,8 +163,8 @@ fun AboutDialog(
                                         selectedFontStyle = selectedFontStyle,
                                         onSwitchThemeMode = onSwitchThemeMode,
                                         onSwitchFontStyle = onSwitchFontStyle,
-                                        twoColumnViewDefault = twoColumnViewDefault,
-                                        onTwoColumnViewDefaultChanged = onTwoColumnViewDefaultChanged
+                                        columnCountDefault = columnCountDefault,
+                                        onColumnCountDefaultChanged = onColumnCountDefaultChanged
                                     )
                                 }
                             }
@@ -186,8 +187,8 @@ fun AboutDialog(
                             selectedFontStyle = selectedFontStyle,
                             onSwitchThemeMode = onSwitchThemeMode,
                             onSwitchFontStyle = onSwitchFontStyle,
-                            twoColumnViewDefault = twoColumnViewDefault,
-                            onTwoColumnViewDefaultChanged = onTwoColumnViewDefaultChanged
+                            columnCountDefault = columnCountDefault,
+                            onColumnCountDefaultChanged = onColumnCountDefaultChanged
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         ImportExportActionsCard(
@@ -307,8 +308,8 @@ private fun ThemeFontSettingsCard(
     selectedFontStyle: FontStyle,
     onSwitchThemeMode: (ThemeSelection) -> Unit,
     onSwitchFontStyle: (FontStyle) -> Unit,
-    twoColumnViewDefault: Boolean = false,
-    onTwoColumnViewDefaultChanged: (Boolean) -> Unit = {}
+    columnCountDefault: Int = 1,
+    onColumnCountDefaultChanged: (Int) -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -441,24 +442,22 @@ private fun ThemeFontSettingsCard(
                 }
             }
 
-            // two-column view by default
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .padding(all = 8.dp)
                     .fillMaxWidth()
-                    .clickable { onTwoColumnViewDefaultChanged(!twoColumnViewDefault) }
             ) {
                 Text(
                     modifier = Modifier
                         .padding(all = 8.dp)
                         .weight(1f),
-                    text = stringResource(R.string.app_setting_two_column_view_default)
+                    text = stringResource(R.string.app_setting_column_count_default)
                 )
-                Switch(
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                    checked = twoColumnViewDefault,
-                    onCheckedChange = onTwoColumnViewDefaultChanged
+                ColumnCountStepper(
+                    columnCount = columnCountDefault,
+                    onColumnCountChange = onColumnCountDefaultChanged,
+                    modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
         }

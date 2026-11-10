@@ -112,11 +112,8 @@ interface ITabViewState {
      */
     val fontSizeSp: LiveData<Float>
 
-    /**
-     * Whether this song's content should render in two reflowing columns instead of one.
-     * Remembered per-song, persisted across app restarts.
-     */
-    val twoColumnView: LiveData<Boolean>
+    /** Number of reflowing content columns, remembered per song across app restarts */
+    val columnCount: LiveData<Int>
 
     /**
      * The current status of this tab's load process

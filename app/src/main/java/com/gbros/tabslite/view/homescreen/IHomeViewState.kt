@@ -48,8 +48,6 @@ interface IHomeViewState {
      */
     val rescanLocalSongsOnStart: LiveData<Boolean>
 
-    /**
-     * Whether songs that have no own choice open in two-column view
-     */
-    val twoColumnViewDefault: LiveData<Boolean>
+    /** Number of columns used by songs that have no own choice */
+    val columnCountDefault: LiveData<Int>
 }

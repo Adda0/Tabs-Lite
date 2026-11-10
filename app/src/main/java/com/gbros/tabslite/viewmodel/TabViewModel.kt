@@ -386,6 +386,8 @@ class TabViewModel
      */
     private val userAdjustedFontSize: MutableLiveData<Float?> = MutableLiveData(null)
 
+    private val userAdjustedColumnCount: MutableLiveData<Int?> = MutableLiveData(null)
+
     override val allPlaylists: LiveData<List<Playlist>> = dataAccess.getLivePlaylists()
 
     private val _addToPlaylistDialogSelectedPlaylist: MutableLiveData<Playlist> = MutableLiveData()
@@ -516,10 +518,14 @@ class TabViewModel
         override ?: t?.textSizeSp ?: defaultFontSize
     }
 
-    override val twoColumnView: LiveData<Boolean> = tab.map { t ->
-        t?.twoColumnView?.takeIf { t.twoColumnViewSet }
-    }.combine(dataAccess.getLivePreference(Preference.TWO_COLUMN_VIEW_DEFAULT).map { it?.value == "true" }) { perSong, default ->
-        perSong ?: default ?: false
+    private val rememberedColumnCount: LiveData<Int> = tab.map { t ->
+        t?.columnCount?.takeIf { t.columnCountSet }?.coerceAtLeast(Preference.DEFAULT_COLUMN_COUNT)
+    }.combine(dataAccess.getLivePreference(Preference.COLUMN_COUNT_DEFAULT).map { Preference.parseColumnCount(it?.value) }) { perSong, default ->
+        perSong ?: default ?: Preference.DEFAULT_COLUMN_COUNT
+    }
+
+    override val columnCount: LiveData<Int> = rememberedColumnCount.combine(userAdjustedColumnCount) { remembered, adjusted ->
+        adjusted ?: remembered ?: Preference.DEFAULT_COLUMN_COUNT
     }
 
     // tab content after transposition and useFlats
@@ -983,14 +989,13 @@ class TabViewModel
         }
     }
 
-    /**
-     * Handle user toggling two-column view for this song's content, remembering the choice for
-     * next time this song is opened
-     */
-    fun onTwoColumnViewToggled(enabled: Boolean) {
+    /** Remember this song's number of columns for the next time it is opened */
+    fun onColumnCountChange(count: Int) {
         val tabId = tab.value?.tabId ?: return
+        val newCount = count.coerceAtLeast(Preference.DEFAULT_COLUMN_COUNT)
+        userAdjustedColumnCount.value = newCount
         CoroutineScope(Dispatchers.IO).launch {
-            dataAccess.updateTwoColumnView(tabId, enabled)
+            dataAccess.updateColumnCount(tabId, newCount)
         }
     }
 

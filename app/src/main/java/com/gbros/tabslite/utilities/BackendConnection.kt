@@ -434,15 +434,15 @@ object BackendConnection {
     }
 
     /**
-     * Stores a freshly fetched tab, keeping its remembered local settings (two-column view, text
+     * Stores a freshly fetched tab, keeping its remembered local settings (column count, text
      * size, fallback, favourite and original transpose, tags) across the re-fetch, since they're
      * local-only and the source knows nothing of them
      */
     private suspend fun storeFetchedTab(result: TabDataType, dataAccess: DataAccess) {
         try {
             val existing = dataAccess.getTabInstance(result.tabId)
-            result.twoColumnView = existing.twoColumnView
-            result.twoColumnViewSet = existing.twoColumnViewSet
+            result.columnCount = existing.columnCount
+            result.columnCountSet = existing.columnCountSet
             result.textSizeSp = existing.textSizeSp
             result.defaultTranspose = existing.defaultTranspose
             result.favoriteTranspose = existing.favoriteTranspose

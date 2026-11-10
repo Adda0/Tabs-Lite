@@ -1,0 +1,1 @@
+- Choose any number of tab columns, either per song or as the app-wide default

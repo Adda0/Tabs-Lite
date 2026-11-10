@@ -107,10 +107,12 @@ class HomeViewModel
      */
     override val rescanLocalSongsOnStart: LiveData<Boolean> = dataAccess.getLivePreference(Preference.RESCAN_LOCAL_SONGS_ON_START).map { it?.value?.toBoolean() == true }
 
-    /**
-     * Whether songs that have no own two-column choice open in two-column view. Defaults to off.
-     */
-    override val twoColumnViewDefault: LiveData<Boolean> = dataAccess.getLivePreference(Preference.TWO_COLUMN_VIEW_DEFAULT).map { it?.value?.toBoolean() == true }
+    private val userAdjustedColumnCountDefault: MutableLiveData<Int?> = MutableLiveData(null)
+
+    /** Number of columns for songs without their own choice, including the legacy boolean preference */
+    override val columnCountDefault: LiveData<Int> = dataAccess.getLivePreference(Preference.COLUMN_COUNT_DEFAULT).map { Preference.parseColumnCount(it?.value) }.combine(userAdjustedColumnCountDefault) { stored, adjusted ->
+        adjusted ?: stored ?: Preference.DEFAULT_COLUMN_COUNT
+    }
 
     //#endregion
 
@@ -191,12 +193,12 @@ class HomeViewModel
         }
     }
 
-    /**
-     * Set whether songs that have no own two-column choice open in two-column view
-     */
-    fun setTwoColumnViewDefault(enabled: Boolean) {
+    /** Remember the default number of columns for songs without their own choice */
+    fun setColumnCountDefault(count: Int) {
+        val newCount = count.coerceAtLeast(Preference.DEFAULT_COLUMN_COUNT)
+        userAdjustedColumnCountDefault.value = newCount
         CoroutineScope(Dispatchers.IO).launch {
-            dataAccess.upsert(Preference(Preference.TWO_COLUMN_VIEW_DEFAULT, enabled.toString()))
+            dataAccess.upsert(Preference(Preference.COLUMN_COUNT_DEFAULT, newCount.toString()))
         }
     }
 

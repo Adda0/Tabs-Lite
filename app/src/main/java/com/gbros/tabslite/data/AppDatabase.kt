@@ -18,7 +18,7 @@ const val DATABASE_NAME = "local-tabs-db"
 /**
  * The Room database for this app
  */
-@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class, PlayHistory::class], version = 27)
+@Database(entities = [TabDataType::class, ChordVariation::class, Playlist::class, DataPlaylistEntry::class, Preference::class, SearchSuggestions::class, PlayHistory::class], version = 28)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun dataAccess(): DataAccess
@@ -357,6 +357,13 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_27_28 = object : Migration(27, 28) {
+            // the former false/true values become one/two columns; newer values remain arbitrary positive counts
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE tabs SET two_column_view = two_column_view + 1")
+            }
+        }
+
         // Create and pre-populate the database. See this article for more details:
         // https://medium.com/google-developers/7-pro-tips-for-room-fbadea4bfbd1#4785
         private fun buildDatabase(context: Context): AppDatabase {
@@ -366,7 +373,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
                         MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
                         MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
-                        MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27)
+                        MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27,
+                        MIGRATION_27_28)
                     .build()
         }
     }

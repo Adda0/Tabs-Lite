@@ -123,13 +123,13 @@ object LocalFileImporter {
                         tags = parsed.tags.joinToString(", "),
                         language = parsed.language
                     )
-                    // preserve this tab's remembered local settings (two-column view, text size,
+                    // preserve this tab's remembered local settings (column count, text size,
                     // last played transpose, and an in-app favourite when the file names none)
                     // across a rescan of the same file, since re-importing overwrites the whole row
                     try {
                         val existing = dataAccess.getTabInstance(tabId)
-                        tab.twoColumnView = existing.twoColumnView
-                        tab.twoColumnViewSet = existing.twoColumnViewSet
+                        tab.columnCount = existing.columnCount
+                        tab.columnCountSet = existing.columnCountSet
                         tab.textSizeSp = existing.textSizeSp
                         tab.defaultTranspose = existing.defaultTranspose
                         tab.currentCapo = existing.currentCapo

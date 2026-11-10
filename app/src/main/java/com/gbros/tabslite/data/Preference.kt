@@ -70,10 +70,14 @@ data class Preference(
          */
         const val PIN_CHORDS: String = "PIN_CHORDS"
 
-        /**
-         * The preference name for whether songs that have no own choice open in two-column view
-         */
-        const val TWO_COLUMN_VIEW_DEFAULT: String = "TWO_COLUMN_VIEW_DEFAULT"
+        const val DEFAULT_COLUMN_COUNT: Int = 1
+
+        /** Number of columns for songs without their own choice; the stored key predates counts above two */
+        const val COLUMN_COUNT_DEFAULT: String = "TWO_COLUMN_VIEW_DEFAULT"
+
+        /** Reads both numeric counts and the boolean values written by earlier versions */
+        fun parseColumnCount(value: String?): Int = value?.toIntOrNull()?.coerceAtLeast(DEFAULT_COLUMN_COUNT)
+            ?: if (value?.toBoolean() == true) 2 else DEFAULT_COLUMN_COUNT
 
         /**
          * The preference name for the font style to use

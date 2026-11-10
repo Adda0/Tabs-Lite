@@ -22,8 +22,6 @@ import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.TextDecrease
 import androidx.compose.material.icons.filled.TextIncrease
-import androidx.compose.material.icons.filled.ViewColumn
-import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
@@ -37,7 +35,6 @@ import com.gbros.tabslite.utilities.TabViewMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -61,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import com.gbros.tabslite.R
 import com.gbros.tabslite.data.playlist.Playlist
 import com.gbros.tabslite.ui.theme.AppTheme
+import com.gbros.tabslite.view.ColumnCountStepper
 import com.gbros.tabslite.view.addtoplaylistdialog.AddToPlaylistDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,8 +89,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  onBlankLinesHiddenToggled: (hidden: Boolean) -> Unit = {},
                  tabViewMode: TabViewMode = TabViewMode.Normal,
                  onTabViewModeSelected: (TabViewMode) -> Unit = {},
-                 twoColumnView: Boolean = false,
-                 onTwoColumnViewToggled: (Boolean) -> Unit = {},
+                 columnCount: Int = 1,
+                 onColumnCountChange: (Int) -> Unit = {},
                  onTextSizeDecreaseClick: () -> Unit = {},
                  onTextSizeIncreaseClick: () -> Unit = {},
                  onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
@@ -149,14 +147,7 @@ fun TabTopAppBar(isFavorite: Boolean,
             IconButton(onClick = onTextSizeIncreaseClick) {
                 Icon(Icons.Filled.TextIncrease, stringResource(R.string.tab_text_size_increase_accessibility_text))
             }
-            IconButton(onClick = { onTwoColumnViewToggled(!twoColumnView) }) {
-                Icon(
-                    imageVector = if (twoColumnView) Icons.Filled.ViewColumn else Icons.Outlined.ViewColumn,
-                    contentDescription = stringResource(R.string.tab_two_column_view_accessibility_text),
-                    // filled and outlined look alike; colour shows the state
-                    tint = if (twoColumnView) MaterialTheme.colorScheme.primary else LocalContentColor.current,
-                )
-            }
+            ColumnCountStepper(columnCount = columnCount, onColumnCountChange = onColumnCountChange)
             IconButton(onClick = {onChordsPinnedToggled(!chordsPinned)}) {
                 Icon(
                     imageVector = if (chordsPinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,

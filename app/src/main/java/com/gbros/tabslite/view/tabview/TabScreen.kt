@@ -179,7 +179,7 @@ fun NavGraphBuilder.tabScreen(
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
-            onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
+            onColumnCountChange = viewModel::onColumnCountChange,
             onTextSizeDecreaseClick = viewModel::onTextSizeDecreaseClick,
             onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick,
             onSaveAsLocalFileClick = viewModel::onSaveAsLocalFileClick
@@ -277,7 +277,7 @@ fun NavGraphBuilder.playlistEntryScreen(
             onTabViewModeSelected = viewModel::onTabViewModeSelected,
             onExportToPdfClick = viewModel::onExportToPdfClick,
             onEditTabClick = onNavigateToEditTab,
-            onTwoColumnViewToggled = viewModel::onTwoColumnViewToggled,
+            onColumnCountChange = viewModel::onColumnCountChange,
             onTextSizeDecreaseClick = viewModel::onTextSizeDecreaseClick,
             onTextSizeIncreaseClick = viewModel::onTextSizeIncreaseClick,
             onSaveAsLocalFileClick = viewModel::onSaveAsLocalFileClick
@@ -333,7 +333,7 @@ fun TabScreen(
     onTabViewModeSelected: (TabViewMode) -> Unit,
     onExportToPdfClick: (exportFile: Uri, contentResolver: ContentResolver) -> Unit,
     onEditTabClick: (songId: String, tabId: String) -> Unit,
-    onTwoColumnViewToggled: (Boolean) -> Unit,
+    onColumnCountChange: (Int) -> Unit,
     onTextSizeDecreaseClick: () -> Unit,
     onTextSizeIncreaseClick: () -> Unit,
     onSaveAsLocalFileClick: (Context) -> Unit = {}
@@ -341,8 +341,8 @@ fun TabScreen(
     val context = LocalContext.current
     // handle autoscroll
     val scrollState = rememberLazyListState()
-    val twoColumnScrollState = rememberScrollState()
-    val twoColumnAutoscroll = remember { TwoColumnAutoscroll() }
+    val lastColumnScrollState = rememberScrollState()
+    val multiColumnAutoscroll = remember { MultiColumnAutoscroll() }
     val coroutineScope = rememberCoroutineScope()
     // create clickable title
     val songName by viewState.songName.observeAsState("...")
@@ -380,7 +380,7 @@ fun TabScreen(
     val tabViewMode by viewState.tabViewMode.observeAsState(TabViewMode.Normal)
     val chordBlocks = viewState.content.observeAsState(emptyList()).value
     val loadingState = viewState.state.observeAsState(LoadingState.Loading).value
-    val twoColumnView by viewState.twoColumnView.observeAsState(false)
+    val columnCount by viewState.columnCount.observeAsState(1)
     val fontSizeSp = viewState.fontSizeSp.observeAsState(FALLBACK_FONT_SIZE_SP).value
     val fontStyle = viewState.fontStylePreference.observeAsState(FontStyle.Modern).value
     val saveAsLocalFile: (() -> Unit)? = if (viewState.canSaveAsLocalFile.observeAsState(false).value) {
@@ -413,7 +413,7 @@ fun TabScreen(
         )
         .fillMaxWidth()
 
-    if (twoColumnView) {
+    if (columnCount > 1) {
         Column(modifier = contentModifier.fillMaxSize()) {
             TabTopAppBar(
                 title = titleBuilder.toString(),
@@ -443,8 +443,8 @@ fun TabScreen(
                 onBlankLinesHiddenToggled = onBlankLinesHiddenToggled,
                 tabViewMode = tabViewMode,
                 onTabViewModeSelected = onTabViewModeSelected,
-                twoColumnView = twoColumnView,
-                onTwoColumnViewToggled = onTwoColumnViewToggled,
+                columnCount = columnCount,
+                onColumnCountChange = onColumnCountChange,
                 onTextSizeDecreaseClick = onTextSizeDecreaseClick,
                 onTextSizeIncreaseClick = onTextSizeIncreaseClick,
                 onEditTabClick = {
@@ -535,13 +535,14 @@ fun TabScreen(
             }
 
             if (loadingState is LoadingState.Success) {
-                TwoColumnTabContent(
+                MultiColumnTabContent(
                     blocks = chordBlocks,
+                    columnCount = columnCount,
                     fontSizeSp = fontSizeSp,
                     fontStyle = fontStyle,
                     onChordClick = onTextClick,
-                    rightColumnScrollState = twoColumnScrollState,
-                    autoscroll = twoColumnAutoscroll,
+                    lastColumnScrollState = lastColumnScrollState,
+                    autoscroll = multiColumnAutoscroll,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -599,8 +600,8 @@ fun TabScreen(
                     onBlankLinesHiddenToggled = onBlankLinesHiddenToggled,
                     tabViewMode = tabViewMode,
                     onTabViewModeSelected = onTabViewModeSelected,
-                    twoColumnView = twoColumnView,
-                    onTwoColumnViewToggled = onTwoColumnViewToggled,
+                    columnCount = columnCount,
+                    onColumnCountChange = onColumnCountChange,
                     onTextSizeDecreaseClick = onTextSizeDecreaseClick,
                     onTextSizeIncreaseClick = onTextSizeIncreaseClick,
                     onEditTabClick = {
@@ -772,9 +773,9 @@ fun TabScreen(
             onAutoscrollResetClick()
             coroutineScope.launch {
                 scrollState.scrollToItem(0)
-                twoColumnScrollState.scrollTo(0)
+                lastColumnScrollState.scrollTo(0)
             }
-            twoColumnAutoscroll.leftColumnProgress = 0f  // the next play waits through the first column again
+            multiColumnAutoscroll.fixedColumnsProgress = 0f  // the next play waits through the fixed columns again
         },
         onValueChange = onAutoscrollSliderValueChange,
         paused = viewState.autoscrollPaused.observeAsState(false).value,
@@ -785,21 +786,21 @@ fun TabScreen(
     // scroll if autoscroll isn't paused
     if (!viewState.autoscrollPaused.observeAsState(true).value) {
         val autoscrollDelay = viewState.autoscrollDelay.observeAsState(Float.POSITIVE_INFINITY)
-        if (twoColumnView) {
+        if (columnCount > 1) {
             LaunchedEffect(key1 = autoscrollDelay.value) {
                 while (isActive) {
                     delay(autoscrollDelay.value.toLong())
-                    if (twoColumnScrollState.isScrollInProgress) continue  // pause autoscroll while user is manually scrolling
-                    if (twoColumnScrollState.value > 0) {
-                        // the right column was already scrolled (e.g. by hand): the reader is past the left column
-                        twoColumnAutoscroll.leftColumnProgress = twoColumnAutoscroll.leftColumnHeight.toFloat()
+                    if (lastColumnScrollState.isScrollInProgress) continue  // pause autoscroll while user is manually scrolling
+                    if (lastColumnScrollState.value > 0) {
+                        // the final column was already scrolled (e.g. by hand): the reader is past the fixed columns
+                        multiColumnAutoscroll.fixedColumnsProgress = multiColumnAutoscroll.fixedColumnsHeight.toFloat()
                     }
-                    if (twoColumnAutoscroll.leftColumnProgress < twoColumnAutoscroll.leftColumnHeight) {
-                        // the left column is fixed: spend the time it would take to scroll through it,
-                        // so the right column only starts moving once the reader gets there
-                        twoColumnAutoscroll.leftColumnProgress += 1f
-                    } else if (twoColumnScrollState.canScrollForward) {
-                        twoColumnScrollState.scrollBy(1f)
+                    if (multiColumnAutoscroll.fixedColumnsProgress < multiColumnAutoscroll.fixedColumnsHeight) {
+                        // the fixed columns stay still: spend the time it would take to scroll through them,
+                        // so the final column only starts moving once the reader gets there
+                        multiColumnAutoscroll.fixedColumnsProgress += 1f
+                    } else if (lastColumnScrollState.canScrollForward) {
+                        lastColumnScrollState.scrollBy(1f)
                     }
                 }
             }
@@ -874,7 +875,7 @@ private fun TabViewPreview() {
         override val addToPlaylistDialogSelectedPlaylistTitle: LiveData<String?>,
         override val addToPlaylistDialogConfirmButtonEnabled: LiveData<Boolean>,
         override val fontSizeSp: LiveData<Float>,
-        override val twoColumnView: LiveData<Boolean>,
+        override val columnCount: LiveData<Int>,
         override val chordInstrument: LiveData<Instrument>,
         override val useFlats: LiveData<Boolean>,
         override val chordsPinned: LiveData<Boolean>,
@@ -930,7 +931,7 @@ private fun TabViewPreview() {
             addToPlaylistDialogSelectedPlaylistTitle = MutableLiveData("Playlist1"),
             addToPlaylistDialogConfirmButtonEnabled = MutableLiveData(false),
             fontSizeSp = MutableLiveData(FALLBACK_FONT_SIZE_SP),
-            twoColumnView = MutableLiveData(tab.twoColumnView),
+            columnCount = MutableLiveData(tab.columnCount),
             chordInstrument = MutableLiveData(Instrument.Guitar),
             useFlats = MutableLiveData(false),
             chordsPinned = MutableLiveData(true),
@@ -1028,7 +1029,7 @@ private fun TabViewPreview() {
             onBlankLinesHiddenToggled = { },
             onTabViewModeSelected = { },
             onEditTabClick = { _, _ -> },
-            onTwoColumnViewToggled = { },
+            onColumnCountChange = { },
             onTextSizeDecreaseClick = { },
             onTextSizeIncreaseClick = { }
         )
