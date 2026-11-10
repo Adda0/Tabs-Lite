@@ -1,5 +1,6 @@
 package com.gbros.tabslite.view.tabsearchbar
 
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,23 +12,25 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExpandedFullScreenSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SearchBarValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,6 +42,7 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.tab.TabWithDataPlaylistEntry
 import com.gbros.tabslite.utilities.LocalSearchResult
 import com.gbros.tabslite.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -56,53 +60,76 @@ fun TabsSearchBar(
     onNavigateToPlaylistEntryById: ((playlistEntryId: Int) -> Unit)? = null
 ) {
     val query = viewState.query.observeAsState("")
-    var active by remember { mutableStateOf(false) }
+    // An animated full-screen surface can cover freshly loaded search results.
+    val searchBarState = rememberSearchBarState(
+        animationSpecForExpand = snap(),
+        animationSpecForCollapse = snap(),
+    )
+    val coroutineScope = rememberCoroutineScope()
     val lazyColumnState = rememberLazyListState()
     val searchSuggestions = viewState.searchSuggestions.observeAsState(listOf())
     val suggestedTabs = viewState.tabSuggestions.observeAsState(listOf())
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
-    val onActiveChange = {expanded: Boolean -> active = expanded}
-    val submitSearch = { query: String ->
-        if (query.isNotBlank()) {
-            active = false
-            onSearch(query)
+    val onActiveChange: (Boolean) -> Unit = { expanded ->
+        coroutineScope.launch {
+            if (expanded) {
+                searchBarState.animateToExpanded()
+            } else {
+                searchBarState.animateToCollapsed()
+            }
         }
     }
-    SearchBar(
-        modifier = modifier.focusRequester(focusRequester),
-        expanded = active,
-        onExpandedChange = onActiveChange,
-        windowInsets = WindowInsets.safeDrawing,
-        inputField = {
-            SearchBarDefaults.InputField(
-                query = query.value,
-                onQueryChange = onQueryChange,
-                onSearch = submitSearch,
-                expanded = active,
-                onExpandedChange = onActiveChange,
-                enabled = true,
-                placeholder = {
-                    Text(text = stringResource(id = R.string.app_action_search))
-                },
-                leadingIcon = leadingIcon,
-                trailingIcon = {
-                    IconButton(onClick = {
-                        onQueryChange("")
+    val submitSearch = { query: String ->
+        if (query.isNotBlank()) {
+            focusManager.clearFocus()
+            coroutineScope.launch {
+                searchBarState.animateToCollapsed()
+                onSearch(query)
+            }
+        }
+    }
+    val inputField = @Composable {
+        SearchBarDefaults.InputField(
+            query = query.value,
+            onQueryChange = onQueryChange,
+            onSearch = submitSearch,
+            expanded = searchBarState.targetValue == SearchBarValue.Expanded,
+            onExpandedChange = onActiveChange,
+            enabled = true,
+            placeholder = {
+                Text(text = stringResource(id = R.string.app_action_search))
+            },
+            leadingIcon = leadingIcon,
+            trailingIcon = {
+                IconButton(onClick = {
+                    onQueryChange("")
+                    if (searchBarState.targetValue == SearchBarValue.Collapsed) {
                         focusRequester.requestFocus()
-                    }) {
-                        if (query.value.isNotEmpty()) {
-                            Icon(Icons.Filled.Clear, stringResource(R.string.generic_action_clear))
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = stringResource(id = R.string.app_action_description_search)
-                            )
-                        }
+                    }
+                }) {
+                    if (query.value.isNotEmpty()) {
+                        Icon(Icons.Filled.Clear, stringResource(R.string.generic_action_clear))
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = stringResource(id = R.string.app_action_description_search)
+                        )
                     }
                 }
-            )
-        },
+            }
+        )
+    }
+    SearchBar(
+        state = searchBarState,
+        inputField = inputField,
+        modifier = modifier.focusRequester(focusRequester),
+    )
+    ExpandedFullScreenSearchBar(
+        state = searchBarState,
+        inputField = inputField,
+        windowInsets = { WindowInsets.safeDrawing },
         content = {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(2.dp), state = lazyColumnState) {
                 if (query.value.isNotBlank()) {
