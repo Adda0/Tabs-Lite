@@ -63,6 +63,12 @@ fun TabsSearchBar(
     val focusRequester = remember { FocusRequester() }
 
     val onActiveChange = {expanded: Boolean -> active = expanded}
+    val submitSearch = { query: String ->
+        if (query.isNotBlank()) {
+            active = false
+            onSearch(query)
+        }
+    }
     SearchBar(
         modifier = modifier.focusRequester(focusRequester),
         expanded = active,
@@ -72,7 +78,7 @@ fun TabsSearchBar(
             SearchBarDefaults.InputField(
                 query = query.value,
                 onQueryChange = onQueryChange,
-                onSearch = {q -> if(q.isNotBlank()) {onSearch(q)}},
+                onSearch = submitSearch,
                 expanded = active,
                 onExpandedChange = onActiveChange,
                 enabled = true,
@@ -111,7 +117,7 @@ fun TabsSearchBar(
                                 when {
                                     suggestedTab.entryId > 0 && suggestedTab.playlistId > 0 && onNavigateToPlaylistEntryById != null -> onNavigateToPlaylistEntryById(suggestedTab.entryId)
                                     onNavigateToTabById != null -> onNavigateToTabById(suggestedTab.tabId)
-                                    else -> onSearch(suggestedTab.songName)
+                                    else -> submitSearch(suggestedTab.songName)
                                 }
                             }
                         )
@@ -122,7 +128,7 @@ fun TabsSearchBar(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if (searchSuggestion.isNotBlank())
-                                onSearch(searchSuggestion)
+                                submitSearch(searchSuggestion)
                         }
                     }
                 }
