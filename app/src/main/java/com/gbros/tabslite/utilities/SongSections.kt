@@ -132,6 +132,41 @@ private fun withChordsOf(source: String, target: String): String {
     return if (source.startsWith(TAB_OPEN)) TAB_OPEN + body + TAB_CLOSE else body.toString()
 }
 
+/** The chord tags of [line], in order */
+private fun chordSequence(line: String): List<String> = CHORD_TAG.findAll(line).map { it.value }.toList()
+
+/**
+ * Original chords that only restate an earlier section of the same kind: dropped, so that with
+ * chord hints off a later verse or chorus written out with the same chords shows just its lyrics.
+ * The n-th lyric line's chords must equal the n-th lyric line's of the section that established
+ * them; a section whose chords differ anywhere (a transposed repeat, an added chord) keeps them
+ * and becomes the reference for what follows, so a change is never hidden. Sections whose chords
+ * sit anywhere but on their lyric lines are left alone.
+ */
+fun dropRepeatedChords(content: String): String {
+    val lines = content.split("\n").toMutableList()
+    val references = mutableMapOf<String, List<Int>>() // section key -> lyric line indexes of the reference section
+    var changed = false
+    for (section in findSections(lines)) {
+        val lyricLines = (section.start until section.end).filter { hasLyrics(lines[it]) }
+        if (lyricLines.none { CHORD_TAG.containsMatchIn(lines[it]) }) continue
+        if ((section.start until section.end).any { it !in lyricLines && CHORD_TAG.containsMatchIn(lines[it]) }) continue
+        val reference = references[section.key]
+        val redundant = reference != null
+            && lyricLines.drop(reference.size).none { CHORD_TAG.containsMatchIn(lines[it]) }
+            && lyricLines.zip(reference).all { (target, source) -> chordSequence(lines[target]) == chordSequence(lines[source]) }
+        if (redundant) {
+            for (i in section.start until section.end) {
+                lines[i] = CHORD_TAG.replace(lines[i], "").replace(TAB_OPEN, "").replace(TAB_CLOSE, "")
+            }
+            changed = true
+        } else {
+            references[section.key] = lyricLines
+        }
+    }
+    return if (changed) lines.joinToString("\n") else content
+}
+
 /** How the tab screen shows a song */
 enum class TabViewMode {
     /** Lyrics with their chords, as written */

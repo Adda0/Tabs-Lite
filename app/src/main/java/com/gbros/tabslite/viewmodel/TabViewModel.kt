@@ -46,6 +46,7 @@ import com.gbros.tabslite.utilities.MAX_CAPO
 import com.gbros.tabslite.utilities.keyOrFirstChord
 import com.gbros.tabslite.utilities.expandSectionReferences
 import com.gbros.tabslite.utilities.addChordHints
+import com.gbros.tabslite.utilities.dropRepeatedChords
 import com.gbros.tabslite.utilities.allTags
 import com.gbros.tabslite.utilities.parseTags
 import com.gbros.tabslite.utilities.tagKey
@@ -426,11 +427,12 @@ class TabViewModel
     }
 
     // tab content as displayed, before transposition: repeated sections written out where referenced
-    // (with their chords only when chord hints are on), chord hints on sections written without chords
+    // (with their chords only when chord hints are on), chord hints on sections written without chords;
+    // without hints, original chords that only repeat a section's earlier ones are dropped too
     private val displayedContentString: LiveData<String> = tab.combine(sectionReferencesExpanded, chordHintsShown) { t, expand, hints ->
         var content = t?.content ?: ""
         if (expand != false) content = expandSectionReferences(content, includeChords = hints == true)
-        if (hints == true) content = addChordHints(content)
+        content = if (hints == true) addChordHints(content) else dropRepeatedChords(content)
         content
     }
 

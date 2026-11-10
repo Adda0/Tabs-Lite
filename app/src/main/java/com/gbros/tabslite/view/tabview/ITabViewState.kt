@@ -188,7 +188,11 @@ interface ITabViewState {
     /** Whether a later bare section label (`R:`) shows that section's lyrics and chords again */
     val sectionReferencesExpanded: LiveData<Boolean>
 
-    /** Whether verses and choruses written without chords show those of the first one of their kind */
+    /**
+     * Whether later verses and choruses show chords: when on, sections written without chords get
+     * the first chorded section's of their kind; when off, original chords that only repeat an
+     * earlier section's are hidden too (a section with different chords keeps them)
+     */
     val chordHintsShown: LiveData<Boolean>
 
     /** Whether the song header shows the rhythm and every chord used as diagrams */
