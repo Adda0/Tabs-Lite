@@ -15,6 +15,7 @@ private val SECTION_LABEL = Regex("^\\s*(\\d{1,2}\\.|(?:Ref|Rec|Coda|[RBIOMC])\\
 private val REFERENCE_REST = Regex("^\\s*\\(?\\s*(?:\\d+\\s*[x×]|[x×]\\s*\\d+)?\\s*\\)?\\s*$", RegexOption.IGNORE_CASE)
 private val LETTER = Regex("\\p{L}")
 private val REPEAT_COUNT = Regex("(?<!\\p{L})(?:\\d+\\s*[x×]|[x×]\\s*\\d+)(?!\\p{L})", RegexOption.IGNORE_CASE)
+private val BRACED_INSTRUCTION = Regex("^\\s*\\{[^{}]*\\}\\s*$")
 
 /** [line] as displayed: without its `[tab]` wrapper and chord tags */
 private fun displayText(line: String): String = CHORD_TAG.replace(line.removePrefix(TAB_OPEN).removeSuffix(TAB_CLOSE), "")
@@ -47,7 +48,11 @@ private fun findSections(lines: List<String>): List<Section> {
     return sections
 }
 
-private fun hasLyrics(line: String) = LETTER.containsMatchIn(REPEAT_COUNT.replace(displayText(line).replaceFirst(SECTION_LABEL, ""), ""))
+/** Lyric lines receive chords by position; braced performance instructions such as `{strum}` don't. */
+private fun hasLyrics(line: String): Boolean {
+    val text = displayText(line).replaceFirst(SECTION_LABEL, "")
+    return !BRACED_INSTRUCTION.matches(text) && LETTER.containsMatchIn(REPEAT_COUNT.replace(text, ""))
+}
 
 /**
  * A later label with nothing but a repeat count after it (`R:`, `R: 2x`) stands for the section of
