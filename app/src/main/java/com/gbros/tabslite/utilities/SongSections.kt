@@ -16,6 +16,8 @@ private val REFERENCE_REST = Regex("^\\s*\\(?\\s*(?:\\d+\\s*[x×]|[x×]\\s*\\d+)
 private val LETTER = Regex("\\p{L}")
 private val REPEAT_COUNT = Regex("(?<!\\p{L})(?:\\d+\\s*[x×]|[x×]\\s*\\d+)(?!\\p{L})", RegexOption.IGNORE_CASE)
 private val BRACED_INSTRUCTION = Regex("^\\s*\\{[^{}]*\\}\\s*$")
+/** A chord followed by an ellipsis, `C ...`: the lines below continue the chords of an earlier verse or chorus opening with C */
+private val CONTINUATION = Regex("^\\s*\\{ch:([^}]*)\\}\\s*(?:\\.\\.\\.|…)\\s*$")
 
 /** [line] as displayed: without its `[tab]` wrapper and chord tags */
 private fun displayText(line: String): String = CHORD_TAG.replace(line.removePrefix(TAB_OPEN).removeSuffix(TAB_CLOSE), "")
@@ -115,6 +117,52 @@ fun addChordHints(content: String): String {
         lyricLines.zip(source).forEach { (target, from) -> lines[target] = withChordsOf(from, lines[target]) }
     }
     return lines.joinToString("\n")
+}
+
+/** The chord a `C ...` line continues with, without its decoration, or null when [line] isn't one */
+private fun continuedChord(line: String): String? =
+    CONTINUATION.find(line.removePrefix(TAB_OPEN).removeSuffix(TAB_CLOSE).replaceFirst(SECTION_LABEL, ""))?.groupValues?.get(1)?.let(::stripChordDecorations)
+
+/** The name inside a chord or chord hint tag, without its decoration: `{ch:[Am}` is an Am */
+private fun chordName(tag: String): String = stripChordDecorations(tag.substringAfter(':').removeSuffix("}"))
+
+/**
+ * Chord hints for `C ...`: the lyric lines below it, up to the next blank line, label or `...` line,
+ * get the chords of the nearest block above (a paragraph, split at labels too) whose first chords are
+ * a C: its lines with chords in turn, starting over when they run out. Lines with chords of their own
+ * keep them. Hints written for one `...` can be what a later one continues.
+ */
+fun continueChords(content: String): String {
+    val lines = content.split("\n").toMutableList()
+    var changed = false
+    for (marker in lines.indices) {
+        val chord = continuedChord(lines[marker]) ?: continue
+        val pattern = chordBlocksAbove(lines, marker).firstOrNull { block -> chordName(CHORD_TAG.find(block.first())!!.value) == chord } ?: continue
+        var target = marker + 1
+        var lyricIndex = 0
+        while (target < lines.size && displayText(lines[target]).isNotBlank() && continuedChord(lines[target]) == null
+            && (target == marker + 1 || labelOf(lines[target]) == null)) {
+            if (hasLyrics(lines[target])) {
+                if (!CHORD_TAG.containsMatchIn(lines[target])) {
+                    lines[target] = withChordsOf(pattern[lyricIndex % pattern.size], lines[target])
+                    changed = true
+                }
+                lyricIndex++
+            }
+            target++
+        }
+    }
+    return if (changed) lines.joinToString("\n") else content
+}
+
+/** The lyric lines with chords of each block above [end], nearest block first; blocks start at blank lines and labels */
+private fun chordBlocksAbove(lines: List<String>, end: Int): List<List<String>> {
+    val blocks = mutableListOf<MutableList<String>>(mutableListOf())
+    for (i in 0 until end) {
+        if (displayText(lines[i]).isBlank() || labelOf(lines[i]) != null) blocks.add(mutableListOf())
+        if (hasLyrics(lines[i]) && CHORD_TAG.containsMatchIn(lines[i])) blocks.last().add(lines[i])
+    }
+    return blocks.filter { it.isNotEmpty() }.asReversed()
 }
 
 /** [target] (a line without chords) with the chord tags of [source] at the columns they're displayed at there */
