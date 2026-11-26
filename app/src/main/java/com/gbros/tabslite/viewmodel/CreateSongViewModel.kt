@@ -43,6 +43,7 @@ class CreateSongViewModel @AssistedInject constructor(
     override val songName = MutableLiveData(initialSongName)
     override val artistName = MutableLiveData("")
     override val artistFetchState: MutableLiveData<LoadingState> = MutableLiveData(LoadingState.NotStarted)
+    override val artistWasCreated = MutableLiveData(false)
     private val artistId = MutableLiveData("")
     override val songGenre = MutableLiveData(SongGenre.Other)
 
@@ -94,6 +95,7 @@ class CreateSongViewModel @AssistedInject constructor(
 
     override fun artistNameUpdated(name: String) {
         artistName.value = name.trim()
+        artistWasCreated.value = false
         artistFetchState.value = LoadingState.Loading
 
         if (name.isBlank()) {
@@ -122,6 +124,7 @@ class CreateSongViewModel @AssistedInject constructor(
             CoroutineScope(Dispatchers.IO).async {
                 val newArtistId = BackendConnection.createNewArist(artistName.value ?: "")
                 artistId.postValue(newArtistId)
+                artistWasCreated.postValue(true)
                 artistFetchState.postValue(LoadingState.Success)
             }.invokeOnCompletion { throwable ->
                 if (throwable != null) {

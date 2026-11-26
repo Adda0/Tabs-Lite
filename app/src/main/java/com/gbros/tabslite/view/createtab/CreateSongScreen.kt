@@ -181,7 +181,12 @@ fun CreateSongScreen(
                     }
                 }
             } else if (artistFetchState is LoadingState.Success) {
-                InfoCard("Artist found!")
+                val artistWasCreated by viewState.artistWasCreated.observeAsState(false)
+                InfoCard(
+                    stringResource(
+                        id = if (artistWasCreated) R.string.message_artist_created else R.string.message_artist_found
+                    )
+                )
             }
 
             val genreState by viewState.songGenre.observeAsState(SongGenre.Other)

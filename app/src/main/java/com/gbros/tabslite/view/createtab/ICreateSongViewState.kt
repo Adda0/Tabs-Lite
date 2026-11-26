@@ -12,6 +12,7 @@ interface ICreateSongViewState {
     val songCreationState: LiveData<LoadingState>
     val newSongId: LiveData<String?>
     val artistFetchState: LiveData<LoadingState>
+    val artistWasCreated: LiveData<Boolean>
 
     fun songNameUpdated(name: String)
     fun artistNameUpdated(name: String)
