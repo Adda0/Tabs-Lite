@@ -110,7 +110,7 @@ interface DataAccess {
      * with a matching artist name. Used when creating a new song locally, so it attaches to an
      * existing artist instead of always minting a new one.
      */
-    @Query("SELECT artist_id FROM tabs WHERE artist_name = :artistName LIMIT 1")
+    @Query("SELECT artist_id FROM tabs WHERE artist_name = :artistName COLLATE NOCASE LIMIT 1")
     suspend fun findArtistId(artistName: String): String?
 
     /**

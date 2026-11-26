@@ -119,8 +119,20 @@ object BackendConnection {
 
         pendingArtists[trimmedName.lowercase()]?.let { return it }
 
-        return dataAccess.findArtistId(trimmedName)
-            ?: throw NotFoundException("Artist $trimmedName not found in database")
+        dataAccess.findArtistId(trimmedName)?.let { return it }
+
+        // not known locally: the artist may still exist on Ultimate Guitar, which a
+        // tab search reveals through the artist_name/artist_id of its results
+        try {
+            val onlineTabs = search(title = trimmedName, page = 1).getAllTabs()
+            val onlineMatch = onlineTabs.firstOrNull { it.artistName.trim() == trimmedName }
+                ?: onlineTabs.firstOrNull { it.artistName.trim().equals(trimmedName, ignoreCase = true) }
+            if (onlineMatch != null) return onlineMatch.artistId
+        } catch (ex: Exception) {
+            Log.w(TAG, "Online artist lookup for '$trimmedName' failed, falling back to a local artist", ex)
+        }
+
+        throw NotFoundException("Artist $trimmedName not found in database")
     }
 
     suspend fun fetchSongDetails(songId: String, dataAccess: DataAccess): SongRequestType? {

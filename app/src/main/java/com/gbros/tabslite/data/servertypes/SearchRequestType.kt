@@ -53,6 +53,7 @@ class SearchRequestType(private var tabs: List<SearchResultTab>, private var art
     // region public methods
 
     fun getAllTabs(): List<TabDataType> {
+        initTabs()
         return tabFulls.values.toList()
     }
 
