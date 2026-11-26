@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -76,6 +77,11 @@ fun NavGraphBuilder.createTabContentScreen(onNavigateBack: () -> Unit, onNavigat
             factory.create(dataAccess = db.dataAccess(), selectedSongId = songId)
         }
 
+        // keep the edit as an "Edited version" tab when leaving without submitting
+        DisposableEffect(Unit) {
+            onDispose { if (createTabViewModel.submissionStatus.value !is LoadingState.Success) createTabViewModel.saveDraft() }
+        }
+
         CreateTabContentScreen(
             viewState = createTabViewModel,
             capoUpdated = createTabViewModel::capoUpdated,
@@ -110,6 +116,11 @@ fun NavGraphBuilder.createTabContentPrefilledScreen(onNavigateBack: () -> Unit, 
         val db = AppDatabase.getInstance(LocalContext.current)
         val createTabViewModel: CreateTabViewModel = hiltViewModel<CreateTabViewModel, CreateTabViewModel.CreateTabViewModelFactory> { factory ->
             factory.create(dataAccess = db.dataAccess(), selectedSongId = songId, startingContentTabId = tabId)
+        }
+
+        // keep the edit as an "Edited version" tab when leaving without submitting
+        DisposableEffect(Unit) {
+            onDispose { if (createTabViewModel.submissionStatus.value !is LoadingState.Success) createTabViewModel.saveDraft() }
         }
 
         CreateTabContentScreen(

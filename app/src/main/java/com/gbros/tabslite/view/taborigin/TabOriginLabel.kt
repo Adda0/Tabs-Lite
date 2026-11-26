@@ -10,6 +10,7 @@ import com.gbros.tabslite.data.tab.origin
 /** Where a tab comes from, as shown to the user: "Local file", or the site's name */
 @Composable
 fun tabOriginLabel(origin: TabOrigin): String = when (origin) {
+    TabOrigin.LocalEdit -> stringResource(R.string.tab_origin_local_edit)
     TabOrigin.LocalFile -> stringResource(R.string.tab_origin_local_file)
     TabOrigin.UltimateGuitar -> "ultimate-guitar.com"
     is TabOrigin.Songbook -> origin.source.siteName
