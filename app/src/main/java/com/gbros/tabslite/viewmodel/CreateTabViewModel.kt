@@ -12,7 +12,9 @@ import com.gbros.tabslite.R
 import com.gbros.tabslite.data.DataAccess
 import com.gbros.tabslite.data.FontStyle
 import com.gbros.tabslite.data.servertypes.TabRequestType
+import com.gbros.tabslite.data.tab.LOCAL_EDIT_ACCESS_TYPE
 import com.gbros.tabslite.data.tab.TabContentBlock
+import com.gbros.tabslite.data.tab.TabDataType
 import com.gbros.tabslite.data.tab.TabDifficulty
 import com.gbros.tabslite.data.tab.TabTuning
 import com.gbros.tabslite.utilities.BackendConnection
@@ -94,6 +96,12 @@ class CreateTabViewModel @AssistedInject constructor(
     )
 
     val createdTabId: MutableStateFlow<String> = MutableStateFlow("")
+
+    /** Id of the persisted edit draft for this editing session (an "Edited version" tab row) */
+    private val draftTabId = "draft-" + (startingContentTabId ?: "song-$selectedSongId")
+
+    /** The content this editing session started with; the draft is only saved when it differs */
+    private var loadedContentText: String? = null
 
     val fontStylePreference: LiveData<FontStyle> = dataAccess.getLivePreference(com.gbros.tabslite.data.Preference.FONT_STYLE).map { p ->
         if (p != null) FontStyle.valueOf(p.value) else FontStyle.Modern
@@ -177,6 +185,7 @@ class CreateTabViewModel @AssistedInject constructor(
             CoroutineScope(Dispatchers.IO).async {
                 val completedTab = BackendConnection.createTab(tab = newTab, dataAccess = dataAccess)
                 createdTabId.value = completedTab.tabId
+                dataAccess.deleteTab(draftTabId) // the submitted version replaces the saved edit draft
                 dataAccess.upsert(completedTab)
                 dataAccess.insertToFavorites(completedTab.tabId, 0)
                 submissionStatus.value = LoadingState.Success
@@ -198,10 +207,57 @@ class CreateTabViewModel @AssistedInject constructor(
 
     //#region constructor
 
+    /**
+     * Persist the current editor state as an "Edited version" tab, so leaving the screen keeps the
+     * work, the draft shows up in the song's version dropdown, and the next edit continues from it.
+     * Called when the edit screen is disposed; skipped when nothing was changed or still blank.
+     */
+    fun saveDraft() {
+        val text = content.value.text
+        if (text.isBlank() || text == loadedContentText) return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val songDetails = BackendConnection.fetchSongDetails(selectedSongId, dataAccess)
+                    ?: throw IllegalStateException("Song $selectedSongId not found for edit draft")
+                val sourceType = startingContentTabId?.let {
+                    try { dataAccess.getTabInstance(it).type } catch (_: Exception) { null }
+                } ?: "Chords"
+                dataAccess.upsert(
+                    TabDataType(
+                        tabId = draftTabId,
+                        songId = selectedSongId,
+                        songName = songDetails.song_name,
+                        artistName = songDetails.artist_name,
+                        artistId = songDetails.artist_id,
+                        songGenre = songDetails.song_genre,
+                        type = sourceType,
+                        status = "approved",
+                        tabAccessType = LOCAL_EDIT_ACCESS_TYPE,
+                        date = System.currentTimeMillis(),
+                        versionDescription = versionDescription.value,
+                        difficulty = difficulty.value.takeIf { it != TabDifficulty.NotSet }?.name ?: "novice",
+                        tuning = tuning.value.toString(),
+                        capo = capo.value,
+                        content = text,
+                    )
+                )
+            } catch (ex: Exception) {
+                Log.w(TAG, "Saving the edit draft for song $selectedSongId failed; the edit is lost on leaving", ex)
+            }
+        }
+    }
+
     init {
         if (startingContentTabId != null) {
             CoroutineScope(Dispatchers.IO).async {
-                val tabContent = dataAccess.getTabInstance(startingContentTabId)
+                // continue a previously saved edit draft when there is one, else start from the tab
+                val tabContent = try {
+                    dataAccess.getTabInstance(draftTabId)
+                } catch (_: Exception) {
+                    dataAccess.getTabInstance(startingContentTabId)
+                }
+                loadedContentText = tabContent.content
                 content.value = TextFieldValue(tabContent.content)
                 capo.value = tabContent.capo
                 tuning.value = TabTuning.fromString(tabContent.tuning)

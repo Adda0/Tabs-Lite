@@ -6,20 +6,26 @@ import com.gbros.tabslite.utilities.SongSources
 
 /** Where a tab comes from */
 sealed interface TabOrigin {
+    data object LocalEdit : TabOrigin
     data object LocalFile : TabOrigin
     data object UltimateGuitar : TabOrigin
     data class Songbook(val source: SongSource) : TabOrigin
 }
 
+/** [ITab.tabAccessType] marking a tab row as a locally edited version (a saved edit draft) */
+const val LOCAL_EDIT_ACCESS_TYPE = "local_edit"
+
 val ITab.origin: TabOrigin
     get() = when {
+        tabAccessType == LOCAL_EDIT_ACCESS_TYPE -> TabOrigin.LocalEdit
         tabAccessType == LocalFileImporter.LOCAL_FILE_ACCESS_TYPE -> TabOrigin.LocalFile
         else -> SongSources.sourceOf(tabId)?.let { TabOrigin.Songbook(it.source) } ?: TabOrigin.UltimateGuitar
     }
 
-/** Versions of a song in the order they're listed: local files, Ultimate Guitar, then each songbook site, each by version number */
+/** Versions of a song in the order they're listed: locally edited versions, local files, Ultimate Guitar, then each songbook site, each by version number */
 fun List<ITab>.sortedAsVersions(): List<ITab> = sortedWith(compareBy({ tab ->
     when (val origin = tab.origin) {
+        TabOrigin.LocalEdit -> -1
         TabOrigin.LocalFile -> 0
         TabOrigin.UltimateGuitar -> 1
         is TabOrigin.Songbook -> 2 + origin.source.ordinal
