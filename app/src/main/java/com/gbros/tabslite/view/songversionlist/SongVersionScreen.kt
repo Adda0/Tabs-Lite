@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -81,6 +82,7 @@ fun SongVersionScreen(
     Column(
         modifier = Modifier
             .fillMaxHeight()
+            .statusBarsPadding()
             .background(color = MaterialTheme.colorScheme.background)
     ) {
         TabsSearchBar(

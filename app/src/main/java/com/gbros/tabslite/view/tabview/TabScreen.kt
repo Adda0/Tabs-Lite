@@ -71,6 +71,7 @@ import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.utilities.FavoriteKey
 import com.gbros.tabslite.utilities.CapoSuggestion
 import com.gbros.tabslite.utilities.parseFavoriteKeys
+import com.gbros.tabslite.utilities.ImmersiveMode
 import com.gbros.tabslite.utilities.KeepScreenOn
 import com.gbros.tabslite.utilities.TabViewMode
 import com.gbros.tabslite.utilities.TAG
@@ -339,6 +340,10 @@ fun TabScreen(
     onSaveAsLocalFileClick: (Context) -> Unit = {}
 ) {
     val context = LocalContext.current
+
+    // immersive tab view: the system status bar makes room for the song, restored on leaving
+    ImmersiveMode()
+
     // handle autoscroll
     val scrollState = rememberLazyListState()
     val lastColumnScrollState = rememberScrollState()
@@ -566,10 +571,11 @@ fun TabScreen(
             }
         }
     } else {
-        LazyColumn(
-            state = scrollState,
-            modifier = contentModifier
-        )
+        Column(modifier = contentModifier.fillMaxSize()) {
+            LazyColumn(
+                state = scrollState,
+                modifier = Modifier.fillMaxSize()
+            )
         {
             item {
                 TabTopAppBar(
@@ -748,6 +754,7 @@ fun TabScreen(
                         }
                     }
                 }
+            }
             }
         }
     }
