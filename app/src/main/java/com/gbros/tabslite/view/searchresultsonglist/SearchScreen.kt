@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -219,6 +220,7 @@ fun SearchScreen(
 
     Column(
         modifier = Modifier
+            .statusBarsPadding()
             .background(color = MaterialTheme.colorScheme.background)
     ) {
         TabsSearchBar(
