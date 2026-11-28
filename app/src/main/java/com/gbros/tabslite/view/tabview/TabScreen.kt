@@ -21,7 +21,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,6 +62,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.gbros.tabslite.LoadingState
+import com.gbros.tabslite.R
 import com.gbros.tabslite.data.AppDatabase
 import com.gbros.tabslite.data.FontStyle
 import com.gbros.tabslite.data.chord.ChordVariation
@@ -571,7 +576,7 @@ fun TabScreen(
             }
         }
     } else {
-        Column(modifier = contentModifier.fillMaxSize()) {
+        Box(modifier = contentModifier.fillMaxSize()) {
             LazyColumn(
                 state = scrollState,
                 modifier = Modifier.fillMaxSize()
@@ -585,7 +590,7 @@ fun TabScreen(
                     shareUrl = viewState.shareUrl.observeAsState("https://tabslite.com/").value,
                     isFavorite = viewState.isFavorite.observeAsState(false).value,
                     chordsPinned = chordsPinned,
-                    onNavigateBack = onNavigateBack,
+                    onNavigateBack = null,
                     onReloadClick = onReload,
                     onFavoriteButtonClick = onFavoriteButtonClick,
                     onAddToPlaylist = onAddToPlaylist,
@@ -755,6 +760,14 @@ fun TabScreen(
                     }
                 }
             }
+            }
+
+            // fixed overlay: just the arrow, no background, so the tab scrolls past underneath
+            IconButton(
+                onClick = onNavigateBack,
+                modifier = Modifier.align(Alignment.TopStart)
+            ) {
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.generic_action_back))
             }
         }
     }

@@ -7,6 +7,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,19 +35,15 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.RadioButton
 import com.gbros.tabslite.utilities.TabViewMode
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,7 +51,6 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.gbros.tabslite.R
@@ -61,7 +59,6 @@ import com.gbros.tabslite.ui.theme.AppTheme
 import com.gbros.tabslite.view.ColumnCountStepper
 import com.gbros.tabslite.view.addtoplaylistdialog.AddToPlaylistDialog
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TabTopAppBar(isFavorite: Boolean,
                  title: String,
@@ -70,7 +67,8 @@ fun TabTopAppBar(isFavorite: Boolean,
                  selectedPlaylistTitle: String?,
                  selectPlaylistConfirmButtonEnabled: Boolean,
                  chordsPinned: Boolean,
-                 onNavigateBack: () -> Unit,
+                 /** null keeps the back button out of the bar (e.g. when the caller renders a fixed one) */
+                 onNavigateBack: (() -> Unit)?,
                  onReloadClick: () -> Unit,
                  onAddToPlaylist: () -> Unit,
                  onCreatePlaylist: (title: String, description: String) -> Unit,
@@ -114,25 +112,23 @@ fun TabTopAppBar(isFavorite: Boolean,
         } // else: user cancelled the action
     }
 
-    val topAppBarState = rememberTopAppBarState()
-    TopAppBar(
-        title = {
-            Text(
-                text = if (topAppBarState.overlappedFraction > 0) title else "",
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+    // the back button gets its own line above, so the action icons can share the full width evenly
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+            if (onNavigateBack != null) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.generic_action_back))
+                }
+            }
+            Row(
+                // start below a fixed overlay back button when this bar carries none
                 modifier = Modifier
                     .fillMaxWidth()
-            )
-        },
-        scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(state = topAppBarState,),
-        navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
-                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.generic_action_back))
-            }
-        },
-        actions = {
+                    .then(if (onNavigateBack == null) Modifier.padding(top = 48.dp) else Modifier),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
             IconButton(onClick = { onDetailsHiddenToggled(!detailsHidden) }) {
                 Icon(
                     imageVector = if (detailsHidden) Icons.Filled.UnfoldMore else Icons.Filled.UnfoldLess,
@@ -179,9 +175,10 @@ fun TabTopAppBar(isFavorite: Boolean,
                 )
             }
 
-            IconButton(onClick = { showMenu = !showMenu }) {
-                Icon(Icons.Default.MoreVert, stringResource(R.string.generic_action_more))
-            }
+            Box {
+                IconButton(onClick = { showMenu = !showMenu }) {
+                    Icon(Icons.Default.MoreVert, stringResource(R.string.generic_action_more))
+                }
 
             DropdownMenu(
                 expanded = showMenu,
@@ -306,8 +303,9 @@ fun TabTopAppBar(isFavorite: Boolean,
                     }
                 )
             }
-        }
-    )
+            }
+            }
+    }
 
     if (showAddToPlaylistDialog) {
         AddToPlaylistDialog(
